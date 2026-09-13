@@ -10,7 +10,7 @@ import { buildReply, replyPayload } from 'utils/reply.js';
 
 const failureContainer = (channelId: Snowflake) =>
   buildReply({
-    title: `${emojis.crossmark} Couldn't enable auto-publishing`,
+    title: `${emojis.crossmark} Failed to enable auto-publishing`,
     body: `Something went wrong while enabling auto-publishing in <#${channelId}>. Please try again later.`,
   });
 

@@ -128,7 +128,7 @@ export async function chatInputDisable(
     return interaction.editReply(
       replyPayload(
         buildReply({
-          title: `${emojis.crossmark} Couldn't disable auto-publishing`,
+          title: `${emojis.crossmark} Failed to disable auto-publishing`,
           body: `Something went wrong while disabling auto-publishing in <#${channel.id}>. Please try again later.`,
         })
       )

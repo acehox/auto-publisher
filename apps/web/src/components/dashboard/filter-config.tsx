@@ -127,7 +127,7 @@ function ChannelRuleEditor({
       toast.error('Premium is not active for this server.');
       return;
     }
-    toast.error("Couldn't save filters", { description: 'Please try again.' });
+    toast.error('Failed to save filters', { description: 'Please try again.' });
   };
 
   const revert = () => {

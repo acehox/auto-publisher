@@ -405,7 +405,7 @@ const buildOverviewContainer = (state: OverviewState): ContainerBuilder => {
 
 const buildErrorContainer = (): ContainerBuilder =>
   buildReply({
-    title: `${emojis.crossmark} Couldn't load this server's channels`,
+    title: `${emojis.crossmark} Failed to load this server's channels`,
     body: 'Something went wrong while retrieving auto-publishing channels. Please try again later.',
   });
 

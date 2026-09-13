@@ -66,7 +66,7 @@ export async function chatInputFilters(
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
   const notEnabled = `${emojis.crossmark} Auto-publishing is not enabled in <#${channel.id}> channel.\n\n-# Use </ap enable:${interaction.commandId}> to enable auto-publishing in this channel.`;
-  const unreadable = `${emojis.crossmark} Couldn't load the filters for <#${channel.id}>. Please try again in a moment.`;
+  const unreadable = `${emojis.crossmark} Failed to load the filters for <#${channel.id}>. Please try again in a moment.`;
 
   const unavailableNotice = (reason: PanelUnavailable): string =>
     reason === 'disabled' ? notEnabled : unreadable;

@@ -175,7 +175,7 @@ export function ChannelConfig({
         // Disable never hits the channel cap, so a non-auth failure there is a
         // transient error — a refresh re-syncs the toggle to server truth.
         if (enabled) {
-          toast.error("Couldn't update the channel", { description: 'Please try again.' });
+          toast.error('Failed to update the channel', { description: 'Please try again.' });
           router.refresh();
           return;
         }
@@ -205,7 +205,7 @@ export function ChannelConfig({
           setLimitReason((result.code as ChannelLimitReason | undefined) ?? 'LIMIT_FREE');
           return;
         }
-        toast.error("Couldn't enable the channel", { description: 'Please try again.' });
+        toast.error('Failed to enable the channel', { description: 'Please try again.' });
       } finally {
         setPendingChannelId(null);
       }
