@@ -33,7 +33,7 @@ const SNOWFLAKE_PATTERN = /^\d{17,19}$/;
  * from the `wait` list and only falls back to the prioritized sorted set when
  * `wait` is empty. So leaving any job untagged (priority 0 = "no priority")
  * would starve the boosted tier behind a backlog that at peak never drains,
- * making the boost strictly worse than plain FIFO. See ADR 0012.
+ * making the boost strictly worse than plain FIFO. See ADR 0011.
  */
 const PRIORITY = { BOOSTED: 1, PREMIUM: 5, NORMAL: 10 } as const;
 

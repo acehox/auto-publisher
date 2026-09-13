@@ -7,14 +7,11 @@ export enum DatabaseIDs {
   // MIGRATION: retired at sunset (v6→v7 migration markers, derived from guild.migratedAt)
   MigratedGuilds = 5,
   PaddleWebhookDedupe = 6,
-  // 7 retired (was LegacyGuildPerms) — legacy canPublish maps now recompute from
-  // the backend's in-memory Discord read cache (ADR 0007)
+  // 7 retired — legacy canPublish maps recompute from the backend's in-memory
+  // Discord read cache (ADR 0007)
   Alerts = 8,
-  // 9, 10, 11 retired — were the premium proxy's queue/sublimit/denylist triple
-  // back when each edition ran its own bot, proxy and token.
-  // 12 retired (was PremiumPending) — the premium handover marker; there is one
-  // bot now, so nothing ever idles waiting to take a guild over.
-  // Per-guild publish-state hash (backend-owned; the bot pushes, dashboard + gate read)
+  // 9-12 retired — unused ids, never reused.
+  // Per-guild publish-state hash (backend-owned; the bot pushes, the dashboard reads)
   PublishState = 13,
   // Per-guild queue-priority state, backend-written and proxy-read at enqueue:
   // the onboarding boost budget (`boost:{guildId}`, remaining priority

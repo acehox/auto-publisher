@@ -10,7 +10,7 @@ import { useIsPublicInstance } from '@/components/site-config-context';
  * sublimit. Mirrors `notes.publishDelay*` in the bot.
  *
  * Says "priority", not "dedicated capacity": there is one publishing queue and
- * Premium is a tier within it (ADR 0012). čl. 60 st. 2 makes this a contract
+ * Premium is a tier within it (ADR 0011). čl. 60 st. 2 makes this a contract
  * term, so it has to describe what actually runs.
  *
  * `hasSubscription` is the whole of the condition — an entitled guild is served

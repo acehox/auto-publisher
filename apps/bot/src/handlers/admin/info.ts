@@ -31,7 +31,7 @@ export async function chatInputInfo(
     `> Waiting: ${proxy ? untagged + (proxy.queue.prioritized ?? 0) : 'N/A'}`,
     `> Active: ${proxy?.queue.active ?? 'N/A'}`,
     // Every enqueue passes an explicit priority, so an untagged job is a
-    // regression that starves the boosted tier behind the base (ADR 0012).
+    // regression that starves the boosted tier behind the base (ADR 0011).
     ...(untagged > 0 ? [`> Unprioritized: ${untagged} (should be 0)`] : []),
   ].join('\n');
 

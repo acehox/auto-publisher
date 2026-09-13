@@ -120,7 +120,7 @@ export const notes = {
   publishDelayFree:
     "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium and your messages move to the front of the queue.",
   // Priority publishing, NOT "dedicated capacity": there is one publishing
-  // pipeline and Premium is a queue tier within it (ADR 0012). ZZP čl. 60 st. 2
+  // pipeline and Premium is a queue tier within it (ADR 0011). ZZP čl. 60 st. 2
   // makes this copy a contract term, so it has to describe what actually runs.
   publishDelayPremium:
     "Your messages are published at Premium priority — they go ahead of the free queue whenever there's a backlog.",

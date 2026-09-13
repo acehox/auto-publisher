@@ -30,7 +30,7 @@ const channelLimit = async (guildId: Snowflake): Promise<number> =>
 
 /**
  * Mirror a guild's Premium entitlement into the `QueuePriority` Redis DB, where
- * the proxy reads it at enqueue to pick the `PREMIUM` tier (ADR 0012).
+ * the proxy reads it at enqueue to pick the `PREMIUM` tier (ADR 0011).
  *
  * Presence IS the state, so a downgrade deletes rather than writing a falsy
  * value — the proxy's read fails closed, and a lingering key would keep a

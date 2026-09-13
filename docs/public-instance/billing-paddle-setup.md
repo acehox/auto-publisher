@@ -1,6 +1,6 @@
 # Paddle billing — setup guide
 
-How premium billing works and how to configure it, for sandbox testing and production. Architecture background: [ADR 0004](./adr/0004-paddle-merchant-of-record.md) and the Billing section of [CONTEXT.md](../CONTEXT.md).
+How premium billing works and how to configure it, for sandbox testing and production. Architecture background: [ADR 0004](../adr/0004-paddle-merchant-of-record.md) and the Billing section of [CONTEXT.md](../../CONTEXT.md).
 
 ## How it flows
 
@@ -145,7 +145,7 @@ PADDLE_CLIENT_TOKEN = "test_..."              # client-side token; runtime, not 
    - Withdrawing during a trial reports "nothing to refund" rather than a pending refund
      (`refundStatus: 'none'`, row `refund_outcome = no_completed_transaction`) — there is no
      completed transaction to reverse, and the acknowledgement email's wording covers both cases.
-5. Cancel from the portal → dashboard shows "Access Until" (scheduled change). To test revocation without waiting for the period end, cancel the subscription immediately from the Paddle dashboard (Subscriptions → cancel → "immediately") — `subscription.canceled` arrives and the guild's channels are trimmed to the free shape (nothing leaves the guild; ADR 0013). Paddle's notification **simulator** (Developer tools → Notifications) can also send synthetic events, but simulated payloads carry no real `custom_data`, so prefer real sandbox subscriptions for end-to-end tests.
+5. Cancel from the portal → dashboard shows "Access Until" (scheduled change). To test revocation without waiting for the period end, cancel the subscription immediately from the Paddle dashboard (Subscriptions → cancel → "immediately") — `subscription.canceled` arrives and the guild's channels are trimmed to the free shape (nothing leaves the guild; ADR 0006). Paddle's notification **simulator** (Developer tools → Notifications) can also send synthetic events, but simulated payloads carry no real `custom_data`, so prefer real sandbox subscriptions for end-to-end tests.
 6. Replay/duplicate deliveries are ignored (Redis `paddle_event:{id}` dedupe) — safe to use the dashboard's "resend" button while testing.
 
 ## 2. Production setup
@@ -195,7 +195,7 @@ PADDLE_CLIENT_TOKEN = "live_..."              # client-side token; runtime, not 
 
 ## Operational notes
 
-- **Self-hosted instances** skip all of this: no Paddle client, no webhook route, no billing crons, no withdrawal flow (`DEPLOYMENT_MODE` unset or `self-host`). There is one backend, and it configures Paddle whenever `DEPLOYMENT_MODE=public` (ADR 0006 + 0013).
+- **Self-hosted instances** skip all of this: no Paddle client, no webhook route, no billing crons, no withdrawal flow (`DEPLOYMENT_MODE` unset or `self-host`). There is one backend, and it configures Paddle whenever `DEPLOYMENT_MODE=public` (ADR 0006).
 - **Missed webhooks**: the daily reconcile cron corrects Postgres from the Paddle API and enforces revocations; nothing needs manual replay.
 - **Re-subscribing**: a new Paddle subscription for the same guild replaces the local row (stale events from the old subscription are ignored). It also checks out at the **plain** price — the replaced row is what makes the guild trial-ineligible, and it is never deleted on cancellation, only overwritten. The only thing that restores eligibility is retention hard-deleting the row after the 11-year accounting window (`services/retention.ts`), which is not a limit worth engineering around.
 - **Free trial**: 14 days, card required, one per guild ever, regardless of which user buys. Cardless was rejected — no card means unlimited trials. The trial is not offered on the free plan's own terms: it exists so that a consumer exercising the statutory withdrawal inside the window has had nothing charged, which turns a full refund into a $0 event.
