@@ -1,11 +1,18 @@
 import { config } from '@ap/config';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
-import { type ChannelType, ContainerBuilder, MessageFlags } from 'discord.js';
+import { type ChannelType, MessageFlags, type Snowflake } from 'discord.js';
 import { emojis, links, notes } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 import { formatNotes } from 'utils/notes.js';
 import { checkChannelPermissions } from 'utils/permissions.js';
+import { buildReply, replyPayload } from 'utils/reply.js';
+
+const failureContainer = (channelId: Snowflake) =>
+  buildReply({
+    title: `${emojis.crossmark} Couldn't enable auto-publishing`,
+    body: `Something went wrong while enabling auto-publishing in <#${channelId}>. Please try again later.`,
+  });
 
 export async function chatInputEnable(
   this: Subcommand,
@@ -23,40 +30,31 @@ export async function chatInputEnable(
   if (!botMember) {
     logger.error('Failed to fetch bot member information');
 
-    const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(
-        `${emojis.crossmark} Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
-      )
-    );
-
-    return interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [errorContainer],
-    });
+    return interaction.editReply(replyPayload(failureContainer(channel.id)));
   }
 
   const permissionCheck = checkChannelPermissions(botMember, channel);
 
   if (!permissionCheck.hasAll) {
-    const title = `### ${emojis.warning} Missing Permissions`;
-    const content = `Bot requires the following permissions in <#${channel.id}> channel to enable auto-publishing:`;
     const permissionsList = permissionCheck.permissions
       .map(perm => `- ${perm.has ? emojis.checkmark : emojis.crossmark} \`${perm.name}\``)
       .join('\n');
-    const retryContent = 'Please review the permissions and try enabling auto-publishing again.';
 
-    const errorContainer = new ContainerBuilder()
-      .addTextDisplayComponents(textDisplay => textDisplay.setContent(title))
+    const errorContainer = buildReply({
+      title: `${emojis.warning} Missing Permissions`,
+      body: [
+        `Bot requires the following permissions in <#${channel.id}> channel to enable auto-publishing:`,
+        permissionsList,
+      ],
+    })
       .addSeparatorComponents(separator => separator)
-      .addTextDisplayComponents(textDisplay => textDisplay.setContent(content))
-      .addTextDisplayComponents(textDisplay => textDisplay.setContent(permissionsList))
-      .addSeparatorComponents(separator => separator)
-      .addTextDisplayComponents(textDisplay => textDisplay.setContent(retryContent));
+      .addTextDisplayComponents(textDisplay =>
+        textDisplay.setContent(
+          'Please review the permissions and try enabling auto-publishing again.'
+        )
+      );
 
-    await interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [errorContainer],
-    });
+    await interaction.editReply(replyPayload(errorContainer));
     return;
   }
 
@@ -65,16 +63,14 @@ export async function chatInputEnable(
 
     if (!response.ok) {
       if (response.status === 409) {
-        const infoContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(
-            `${emojis.info} Auto-publishing is already enabled in <#${channel.id}> channel.`
+        return interaction.editReply(
+          replyPayload(
+            buildReply({
+              title: `${emojis.info} Already enabled`,
+              body: `Auto-publishing is already enabled in <#${channel.id}> channel.`,
+            })
           )
         );
-
-        return interaction.editReply({
-          flags: [MessageFlags.IsComponentsV2],
-          components: [infoContainer],
-        });
       }
 
       if (response.status === 400) {
@@ -89,45 +85,34 @@ export async function chatInputEnable(
         // Reachable despite `channel_types` on the option — that only restricts
         // the picker, so the backend re-checks server-side.
         if (code === 'NOT_ANNOUNCEMENT_CHANNEL') {
-          const typeContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-            textDisplay.setContent(
-              `${emojis.crossmark} <#${channel.id}> isn't an announcement channel. Change its type in Discord's channel settings, then try again.`
+          return interaction.editReply(
+            replyPayload(
+              buildReply({
+                title: `${emojis.crossmark} Not an announcement channel`,
+                body: `<#${channel.id}> isn't an announcement channel. Change its type in Discord's channel settings, then try again.`,
+              })
             )
           );
-
-          return interaction.editReply({
-            flags: [MessageFlags.IsComponentsV2],
-            components: [typeContainer],
-          });
         }
 
         // Always the free cap: a Premium guild is uncapped, so this rejection
         // can only ever be a free one (`LIMIT_FREE` is the sole reason code).
-        const limitContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(
-            `${emojis.crossmark} You have reached the maximum number of channels (${config.limits.freeChannelsPerGuild}) for auto-publishing.\n\n` +
-              `✨ Upgrade to **Premium** at [${links.hostname}](<${links.website}>) to unlock unlimited channels and extra features!`
+        return interaction.editReply(
+          replyPayload(
+            buildReply({
+              title: `${emojis.crossmark} Channel limit reached`,
+              body: [
+                `You have reached the maximum number of channels (${config.limits.freeChannelsPerGuild}) for auto-publishing.`,
+                `Upgrade to **Premium** at [${links.hostname}](<${links.website}>) to unlock unlimited channels and extra features!`,
+              ],
+            })
           )
         );
-
-        return interaction.editReply({
-          flags: [MessageFlags.IsComponentsV2],
-          components: [limitContainer],
-        });
       }
 
       logger.error(`Failed to enable auto-publishing: ${response.status} ${response.statusText}`);
 
-      const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent(
-          `${emojis.crossmark} Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
-        )
-      );
-
-      return interaction.editReply({
-        flags: [MessageFlags.IsComponentsV2],
-        components: [errorContainer],
-      });
+      return interaction.editReply(replyPayload(failureContainer(channel.id)));
     }
 
     // Seed publish-state for this channel so the dashboard reflects it at once
@@ -144,29 +129,17 @@ export async function chatInputEnable(
       (await Services.Channel.getGuildChannels(interaction.guildId))?.premium ?? false;
 
     const successMessage =
-      `${emojis.checkmark} Auto-publishing has been enabled in <#${channel.id}> channel!` +
+      `Auto-publishing has been enabled in <#${channel.id}> channel` +
       formatNotes([notes.rateLimit, premium ? notes.publishDelayPremium : notes.publishDelayFree]);
 
-    const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(successMessage)
+    return interaction.editReply(
+      replyPayload(
+        buildReply({ title: `${emojis.checkmark} Auto-publishing enabled!`, body: successMessage })
+      )
     );
-
-    return interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [successContainer],
-    });
   } catch (error) {
     logger.error(error, 'Failed to enable auto-publishing');
 
-    const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(
-        `${emojis.crossmark} Failed to enable auto-publishing in <#${channel.id}>. Please try again later.`
-      )
-    );
-
-    return interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [errorContainer],
-    });
+    return interaction.editReply(replyPayload(failureContainer(channel.id)));
   }
 }

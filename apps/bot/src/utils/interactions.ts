@@ -1,8 +1,8 @@
 import { capitalize } from '@ap/utils';
 import type { ChatInputCommandInteraction } from 'discord.js';
-import { ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis, links } from '../lib/constants/index.js';
 import { Services } from '../services/index.js';
+import { buildReply, replyPayload } from './reply.js';
 
 /**
  * Premium gate for a guild-scoped command. One bot serves both plans, so the
@@ -21,16 +21,14 @@ export async function handlePremiumCheck(
   const guildChannels = await Services.Channel.getGuildChannels(guildId);
   if (guildChannels?.premium) return false;
 
-  const premiumContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-    textDisplay.setContent(
-      `${emojis.warning} ${capitalize(featureName)} is a **Premium** feature.\n\nUpgrade at [${links.hostname}](<${links.website}>) to unlock ${featureName} and the rest of Premium!`
+  await interaction.editReply(
+    replyPayload(
+      buildReply({
+        title: `${emojis.warning} ${capitalize(featureName)} is a Premium feature`,
+        body: `Upgrade at [${links.hostname}](<${links.website}>) to unlock ${featureName} and the rest of Premium!`,
+      })
     )
   );
-
-  await interaction.editReply({
-    flags: [MessageFlags.IsComponentsV2],
-    components: [premiumContainer],
-  });
 
   return true;
 }

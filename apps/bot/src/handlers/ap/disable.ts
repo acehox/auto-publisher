@@ -6,13 +6,20 @@ import {
   ButtonStyle,
   type ChannelType,
   ComponentType,
-  ContainerBuilder,
   MessageFlags,
+  type Snowflake,
 } from 'discord.js';
 import { emojis, notes } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 import { formatNotes } from 'utils/notes.js';
+import { buildReply, replyPayload } from 'utils/reply.js';
+
+const disabledContainer = (channelId: Snowflake) =>
+  buildReply({
+    title: `${emojis.checkmark} Auto-publishing disabled`,
+    body: `Auto-publishing has been disabled in <#${channelId}> channel.`,
+  });
 
 export async function chatInputDisable(
   this: Subcommand,
@@ -30,27 +37,25 @@ export async function chatInputDisable(
     const channelStatus = await Services.Channel.getStatus(channel.id);
 
     if (!channelStatus?.enabled) {
-      const infoContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent(
-          `${emojis.crossmark} Auto-publishing is not enabled in <#${channel.id}> channel.`
+      return interaction.editReply(
+        replyPayload(
+          buildReply({
+            title: `${emojis.crossmark} Auto-publishing isn't enabled`,
+            body: `There is nothing to disable in <#${channel.id}> channel.`,
+          })
         )
       );
-
-      return interaction.editReply({
-        flags: [MessageFlags.IsComponentsV2],
-        components: [infoContainer],
-      });
     }
 
     {
       const filters = channelStatus.filters;
       if (filters && filters.length > 0) {
-        const warningContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(
-            `### ${emojis.warning} Disabling auto-publishing will also remove all filters set for <#${channel.id}> channel.\n\nIf you want to temporarily disable auto-publishing without removing filters, we suggest disabling \`View Channel\` permission instead.` +
-              formatNotes([notes.permissionsExtendedDisable])
-          )
-        );
+        const warningContainer = buildReply({
+          title: `${emojis.warning} This will also remove all filters`,
+          body:
+            `Disabling auto-publishing in <#${channel.id}> channel will remove every filter set for it.\n\nIf you want to temporarily disable auto-publishing without removing filters, we suggest disabling \`View Channel\` permission instead.` +
+            formatNotes([notes.permissionsExtendedDisable]),
+        });
 
         const confirmButton = new Button()
           .setCustomId('confirm_disable')
@@ -84,42 +89,29 @@ export async function chatInputDisable(
           if (confirmation.customId === 'confirm_disable') {
             await Services.Channel.disable(channel.id);
 
-            const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-              textDisplay.setContent(
-                `${emojis.checkmark} Auto-publishing has been disabled in <#${channel.id}> channel!`
-              )
-            );
-
-            return confirmation.update({
-              flags: [MessageFlags.IsComponentsV2],
-              components: [successContainer],
-            });
+            return confirmation.update(replyPayload(disabledContainer(channel.id)));
           }
 
           if (confirmation.customId === 'cancel_disable') {
-            const cancelContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-              textDisplay.setContent(
-                `${emojis.info} Action cancelled. Auto-publishing remains enabled.`
+            return confirmation.update(
+              replyPayload(
+                buildReply({
+                  title: `${emojis.info} Action cancelled`,
+                  body: `Auto-publishing remains enabled in <#${channel.id}> channel.`,
+                })
               )
             );
-
-            return confirmation.update({
-              flags: [MessageFlags.IsComponentsV2],
-              components: [cancelContainer],
-            });
           }
         } catch (error) {
           if (error instanceof Error && error.message.includes('time')) {
-            const timeoutContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-              textDisplay.setContent(
-                `${emojis.crossmark} Confirmation not received within 1 minute. Action cancelled.`
+            return interaction.editReply(
+              replyPayload(
+                buildReply({
+                  title: `${emojis.crossmark} Confirmation timed out`,
+                  body: `No confirmation was received within 1 minute, so auto-publishing remains enabled in <#${channel.id}> channel.`,
+                })
               )
             );
-
-            return interaction.editReply({
-              flags: [MessageFlags.IsComponentsV2],
-              components: [timeoutContainer],
-            });
           }
 
           throw error;
@@ -129,28 +121,17 @@ export async function chatInputDisable(
 
     await Services.Channel.disable(channel.id);
 
-    const successContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(
-        `${emojis.checkmark} Auto-publishing has been disabled in <#${channel.id}> channel!`
-      )
-    );
-
-    return interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [successContainer],
-    });
+    return interaction.editReply(replyPayload(disabledContainer(channel.id)));
   } catch (error) {
     logger.error(error, 'Failed to disable auto-publishing');
 
-    const errorContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(
-        `${emojis.crossmark} Failed to disable auto-publishing in <#${channel.id}>. Please try again later.`
+    return interaction.editReply(
+      replyPayload(
+        buildReply({
+          title: `${emojis.crossmark} Couldn't disable auto-publishing`,
+          body: `Something went wrong while disabling auto-publishing in <#${channel.id}>. Please try again later.`,
+        })
       )
     );
-
-    return interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [errorContainer],
-    });
   }
 }

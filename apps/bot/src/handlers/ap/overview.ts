@@ -5,7 +5,7 @@ import {
   ActionRowBuilder,
   type ButtonBuilder,
   ChannelType,
-  ContainerBuilder,
+  type ContainerBuilder,
   type Guild,
   type GuildMember,
   MessageFlags,
@@ -18,6 +18,7 @@ import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 import { formatNotes } from 'utils/notes.js';
 import { checkChannelPermissions } from 'utils/permissions.js';
+import { buildReply, replyPayload } from 'utils/reply.js';
 
 /**
  * Rows listed before the rest collapse into an overflow line. A hydrated app
@@ -170,6 +171,12 @@ const loadOverviewState = async (
   };
 };
 
+/** Title line and the copy that follows the separator under it. */
+interface OverviewHeader {
+  title: string;
+  body: string;
+}
+
 /**
  * Header for a guild with nothing serving, mirroring the dashboard's Welcome
  * state. The two variants exist because "enable a channel" is useless advice
@@ -177,10 +184,13 @@ const loadOverviewState = async (
  * guild counts as having them — never accuse a server of having none on
  * incomplete evidence.
  */
-const renderGetStartedHeader = (state: OverviewState): string =>
-  state.announcementChannelCount === 0
-    ? `### ${emojis.botBrand} Ready to get started?\nThis server has no announcement channels yet. Create one in Discord, then enable it with </ap enable:${state.apCommandId}>.`
-    : `### ${emojis.botBrand} Ready to get started?\nEnable an announcement channel to start auto-publishing.`;
+const renderGetStartedHeader = (state: OverviewState): OverviewHeader => ({
+  title: `${emojis.botBrand} Ready to get started?`,
+  body:
+    state.announcementChannelCount === 0
+      ? `This server has no announcement channels yet. Create one in Discord, then enable it with </ap enable:${state.apCommandId}>.`
+      : 'Enable an announcement channel to start auto-publishing.',
+});
 
 /** Only shown when there is actually a channel to enable. */
 const renderEnableHint = (state: OverviewState): string | null =>
@@ -192,13 +202,19 @@ const renderEnableHint = (state: OverviewState): string | null =>
  * Mirrors the dashboard Overview's header precedence and copy: the outage owns
  * the headline when there is one, otherwise "All good" + the count.
  */
-const renderHealthHeader = (state: OverviewState): string => {
+const renderHealthHeader = (state: OverviewState): OverviewHeader => {
   const blockedCount = state.channels.filter(c => !c.canPublish).length;
   const count = state.channels.length;
 
   return blockedCount > 0
-    ? `### ${emojis.crossmark} **${blockedCount}** channel${blockedCount !== 1 ? "s aren't" : " isn't"} publishing\nGrant the missing permissions — see the list below.`
-    : `### ${emojis.checkmark} All good\nPublishing in **${count}** channel${count !== 1 ? 's' : ''}.`;
+    ? {
+        title: `${emojis.crossmark} **${blockedCount}** channel${blockedCount !== 1 ? "s aren't" : " isn't"} publishing`,
+        body: 'Grant the missing permissions — see the list below.',
+      }
+    : {
+        title: `${emojis.checkmark} All good`,
+        body: `Publishing in **${count}** channel${count !== 1 ? 's' : ''}.`,
+      };
 };
 
 /**
@@ -280,12 +296,12 @@ const addDashboardSection = (container: ContainerBuilder, guildId: Snowflake, te
  * notes are noise for a server that hasn't enabled anything yet.
  */
 const buildEmptyContainer = (state: OverviewState): ContainerBuilder => {
-  const container = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-    textDisplay.setContent(renderGetStartedHeader(state))
-  );
+  const header = renderGetStartedHeader(state);
 
-  const hint = renderEnableHint(state);
-  if (hint) container.addTextDisplayComponents(textDisplay => textDisplay.setContent(hint));
+  const container = buildReply({
+    title: header.title,
+    body: [header.body, renderEnableHint(state)],
+  });
 
   container.addSeparatorComponents(separator => separator);
 
@@ -321,18 +337,15 @@ const buildLegacyContainer = (state: OverviewState): ContainerBuilder => {
         ? "This server doesn't have any announcement channels."
         : `Publishing in **${state.legacyPublishingCount}** of **${total}** announcement channel${total !== 1 ? 's' : ''}.`;
 
-  const container = new ContainerBuilder()
-    .addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(
-        `### ${emojis.warning} This server runs in legacy mode\nEvery announcement channel is published automatically. Legacy mode will be discontinued, and the bot may stop publishing in this server once it is retired. Migrate now to keep publishing without interruption, choose exactly which channels publish, and unlock new features.\n### Legacy mode ends on <t:${legacySunsetTimestamp}:D>`
-      )
+  const container = buildReply({
+    title: `${emojis.warning} This server runs in legacy mode`,
+    body: `Every announcement channel is published automatically. Legacy mode will be discontinued, and the bot may stop publishing in this server once it is retired. Migrate now to keep publishing without interruption, choose exactly which channels publish, and unlock new features.\n### Legacy mode ends on <t:${legacySunsetTimestamp}:D>`,
+  }).addActionRowComponents(
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      Buttons.migrateNow(state.guildId),
+      Buttons.learnWhatIsChanging
     )
-    .addActionRowComponents(
-      new ActionRowBuilder<ButtonBuilder>().addComponents(
-        Buttons.migrateNow(state.guildId),
-        Buttons.learnWhatIsChanging
-      )
-    );
+  );
 
   if (summary) {
     container
@@ -362,15 +375,12 @@ const buildLegacyContainer = (state: OverviewState): ContainerBuilder => {
 const buildOverviewContainer = (state: OverviewState): ContainerBuilder => {
   const hasChannels = state.channels.length > 0;
 
-  const container = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-    textDisplay.setContent(hasChannels ? renderHealthHeader(state) : renderGetStartedHeader(state))
-  );
+  const header = hasChannels ? renderHealthHeader(state) : renderGetStartedHeader(state);
 
-  if (hasChannels) {
-    container
-      .addSeparatorComponents(separator => separator)
-      .addTextDisplayComponents(textDisplay => textDisplay.setContent(renderChannelList(state)));
-  }
+  const container = buildReply({
+    title: header.title,
+    body: [header.body, hasChannels && renderChannelList(state)],
+  });
 
   for (const block of [renderFixBlock(state), renderPausedBlock(state)]) {
     if (!block) continue;
@@ -394,11 +404,10 @@ const buildOverviewContainer = (state: OverviewState): ContainerBuilder => {
 };
 
 const buildErrorContainer = (): ContainerBuilder =>
-  new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-    textDisplay.setContent(
-      `${emojis.crossmark} Failed to retrieve auto-publishing channels. Please try again later.`
-    )
-  );
+  buildReply({
+    title: `${emojis.crossmark} Couldn't load this server's channels`,
+    body: 'Something went wrong while retrieving auto-publishing channels. Please try again later.',
+  });
 
 export async function chatInputOverview(
   this: Subcommand,
@@ -419,16 +428,10 @@ export async function chatInputOverview(
         ? buildEmptyContainer(state)
         : buildOverviewContainer(state);
 
-    return interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [container],
-    });
+    return interaction.editReply(replyPayload(container));
   } catch (error) {
     logger.error(error, 'Failed to build auto-publishing overview');
 
-    return interaction.editReply({
-      flags: [MessageFlags.IsComponentsV2],
-      components: [buildErrorContainer()],
-    });
+    return interaction.editReply(replyPayload(buildErrorContainer()));
   }
 }
