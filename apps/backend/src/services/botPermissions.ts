@@ -1,4 +1,3 @@
-import type { Edition } from '@ap/api-types';
 import { missingPublishPermissions } from '@ap/utils';
 import type { Snowflake } from 'discord-api-types/globals';
 import {
@@ -11,7 +10,7 @@ import {
 } from 'discord-api-types/v10';
 import { Discord } from './discord.js';
 
-/** Publish capability of a bot in one channel: can it crosspost, and if not, what's missing. */
+/** Publish capability in one channel: can the bot crosspost, and if not, what's missing. */
 export type PublishEntry = { canPublish: boolean; missing: string[] };
 
 /**
@@ -69,20 +68,19 @@ const computeChannelPermissions = (
 };
 
 /**
- * `{channelId → {canPublish, missing}}` for the given channels, evaluated for
- * an edition's bot via its proxy (two REST calls: guild roles + bot member).
- * This is the REST fallback for the bot-pushed publish-state cache (ADR 0008) —
- * the bot normally supplies this data for free off its gateway cache.
+ * `{channelId → {canPublish, missing}}` for the given channels, evaluated via
+ * the proxy (two REST calls: guild roles + bot member). This is the REST
+ * fallback for the bot-pushed publish-state cache (ADR 0008) — the bot normally
+ * supplies this data for free off its gateway cache.
  */
 const getPublishMap = async (
-  edition: Edition,
   guildId: Snowflake,
   channels: APIChannel[]
 ): Promise<Record<string, PublishEntry>> => {
   const [roles, member] = await Promise.all([
-    Discord.cachedGet<APIRole[]>(edition, Routes.guildRoles(guildId)),
-    Discord.getBotUserId(edition).then(id =>
-      Discord.cachedGet<APIGuildMember>(edition, Routes.guildMember(guildId, id))
+    Discord.cachedGet<APIRole[]>(Routes.guildRoles(guildId)),
+    Discord.getBotUserId().then(id =>
+      Discord.cachedGet<APIGuildMember>(Routes.guildMember(guildId, id))
     ),
   ]);
 

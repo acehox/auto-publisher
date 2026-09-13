@@ -1,11 +1,10 @@
 import { BotPermissions } from './botPermissions.js';
 import { Channels } from './channels/index.js';
-import { Editions } from './editions.js';
 import { Entitlements } from './entitlements.js';
 import { Guilds } from './guilds.js';
-import { Handover } from './handover.js';
 import { Info } from './info.js';
 import { PaddleService } from './paddle.js';
+import { Plans } from './plans.js';
 import { PresenceHeal } from './presenceHeal.js';
 import { PublishState } from './publishState.js';
 import { Retention } from './retention.js';
@@ -15,12 +14,11 @@ import { Withdrawals } from './withdrawal.js';
 export const Services = {
   BotPermissions,
   Channels,
-  Editions,
   Entitlements,
   Guilds,
-  Handover,
   Info,
   Paddle: PaddleService,
+  Plans,
   PresenceHeal,
   PublishState,
   Retention,

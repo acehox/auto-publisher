@@ -3,9 +3,6 @@
 import {
   Check,
   Clock,
-  Crown,
-  ExternalLink,
-  Hourglass,
   Loader2,
   Megaphone,
   PauseCircle,
@@ -15,12 +12,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
 import {
-  useBotInviteUrl,
   useIsPublicInstance,
   useLegacySunsetLabel,
   useSiteConfig,
@@ -30,35 +26,34 @@ import { Card } from '@/components/ui/card';
 import type { GuildChannel } from '@/lib/api/types';
 import { links } from '@/lib/constants';
 import { useActivationPoll } from '@/lib/use-activation-poll';
-import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 
 /**
- * Guild-level banner stack, rendered inside the Overview tab (moved off the
- * dashboard shell — see ADR 0006 / CONTEXT "Overview banner stack"). Order:
- * checkout activation → misconfigured channels → premium invite → premium pending →
- * legacy migration → paused channels. Misconfigured (red) is the only current
- * outage, so it leads the warnings. Invite and pending are mutually exclusive
- * (pending implies the premium bot is present); the migration banner can stack
- * with either. Banners 1–4 are not dismissible — they nag until the state resolves. The
- * paused-channels banner is the lone dismissible exception (ADR 0009). The
- * checkout-activation banner sits at the very top and is query-param-scoped
- * (`?success=true`, set only by the post-checkout redirect to this tab); it is
- * self-resolving — it polls for the webhook-written subscription and hands off
- * to the premium-invite banner right below once active (see
- * `CheckoutActivationBanner`), so it never dead-ends on "activating…". Off this
- * tab, the sidebar's Overview attention badge is the only persistent signal,
- * kept in sync via the shared `useGuildAttention` hook.
+ * Guild-level banner stack, rendered inside the Overview tab (CONTEXT "Overview
+ * banner stack"). Order: checkout activation → misconfigured channels → legacy
+ * migration → paused channels. Misconfigured (red) is the only current outage, so
+ * it leads the warnings. The first three are not dismissible — they nag until the
+ * state resolves; the paused-channels banner is the lone dismissible exception
+ * (ADR 0009). The checkout-activation banner sits at the very top and is
+ * query-param-scoped (`?success=true`, set only by the post-checkout redirect to
+ * this tab); it is self-resolving — it polls for the webhook-written subscription
+ * and confirms once active (see `CheckoutActivationBanner`), so it never
+ * dead-ends on "activating…".
+ *
+ * Upgrading no longer moves a guild between bots, so there is no invite-the-
+ * premium-bot or waiting-to-take-over state to nag about: the subscription
+ * webhook lands and the guild's channels are un-paused in place.
+ *
+ * Off this tab, the sidebar's Overview attention badge is the only persistent
+ * signal, kept in sync via the shared `useGuildAttention` hook.
  */
 export function DashboardBanners() {
   const { guild, data } = useGuild();
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
+  const _router = useRouter();
+  const _pathname = usePathname();
   const {
     showMisconfigured,
     needsFixingCount,
-    showPremiumInvite,
-    showPremiumPending,
     showMigration,
     showPaused,
     pausedCount,
@@ -69,34 +64,18 @@ export function DashboardBanners() {
   // real subscription state, not the param. `active` = the webhook has written
   // an entitled subscription row (guild.hasSubscription, live from Postgres).
   // A self-hosted instance has no checkout, so a stray `?success=true` must not
-  // arm the card (nor its 3s poller) — the other three banners are already
-  // gated inside useGuildAttention.
+  // arm the card (nor its 3s poller) — the paused banner is already gated
+  // inside useGuildAttention.
   const isPublicInstance = useIsPublicInstance();
   const isCheckoutReturn = isPublicInstance && searchParams.get('success') === 'true';
   const active = guild.hasSubscription;
   const phase = useActivationPoll(isCheckoutReturn && !active, active);
 
-  // Once active, hand off to the real-state banners below: strip `?success=true`
-  // so a later manual refresh doesn't re-surface anything. Kept only for the
-  // rare "active but neither invite nor pending applies" confirmation (Card 2).
-  const willHandOff = isCheckoutReturn && active && (showPremiumInvite || showPremiumPending);
-  useEffect(() => {
-    if (willHandOff) router.replace(pathname, { scroll: false });
-  }, [willHandOff, pathname, router]);
-
   const showActivating = isCheckoutReturn && !active; // Card 1 (activating) / Card 3 (gaveUp)
-  const showActivatedConfirm =
-    isCheckoutReturn && active && !showPremiumInvite && !showPremiumPending; // Card 2
+  const showActivatedConfirm = isCheckoutReturn && active; // Card 2
   const showCheckoutCard = showActivating || showActivatedConfirm;
 
-  if (
-    !showCheckoutCard &&
-    !showMisconfigured &&
-    !showPremiumInvite &&
-    !showPremiumPending &&
-    !showMigration &&
-    !showPaused
-  ) {
+  if (!showCheckoutCard && !showMisconfigured && !showMigration && !showPaused) {
     return null;
   }
 
@@ -106,16 +85,12 @@ export function DashboardBanners() {
         <CheckoutActivationBanner variant={showActivatedConfirm ? 'confirmed' : phase} />
       )}
       {showMisconfigured && <MisconfiguredChannelsBanner count={needsFixingCount} />}
-      {showPremiumInvite && <PremiumInviteBanner guildId={guild.id} />}
-      {showPremiumPending && <PremiumPendingBanner guildId={guild.id} channels={data.channels} />}
       {showMigration && (
         <LegacyMigrationBanner
           guildId={guild.id}
           channels={data.channels}
           channelLimit={data.channelLimit}
           hasSubscription={guild.hasSubscription}
-          premiumBotPresent={guild.premiumBotPresent}
-          premiumPending={data.premiumPending}
         />
       )}
       {showPaused && (
@@ -133,16 +108,15 @@ export function DashboardBanners() {
  * Post-checkout activation card, top of the stack while `?success=true` is on
  * the URL. Three variants (see `DashboardBanners`):
  *   - `activating`: the poller (`useActivationPoll`) is soft-refreshing every 3s
- *     waiting for the webhook to write the subscription row. No CTA — the
- *     premium-invite banner it hands off to owns the "invite the bot" action.
+ *     waiting for the webhook to write the subscription row. No CTA — there is
+ *     nothing for the admin to do; the guild's channels un-pause on their own.
  *   - `gaveUp`: the 60s ceiling passed with no activation → calm manual-refresh
  *     fallback (amber, not red — checkout succeeded, nothing is broken).
+ *   - `confirmed`: activated → a one-time positive confirmation so the flow
+ *     never ends on a silent empty state.
  *
- * None of the three may claim a payment was taken: a trial checkout completes at $0.00,
- * so "payment received" is false for every trial signup.
- *   - `confirmed`: activated but neither invite nor pending applies (rare
- *     re-subscribe with the premium bot already present + healthy) → a one-time
- *     positive confirmation so the flow never ends on a silent empty state.
+ * None of the three may claim a payment was taken: a trial checkout completes at
+ * $0.00, so "payment received" is false for every trial signup.
  */
 function CheckoutActivationBanner({ variant }: { variant: 'activating' | 'gaveUp' | 'confirmed' }) {
   if (variant === 'gaveUp') {
@@ -318,109 +292,17 @@ function PausedChannelsBanner({
   );
 }
 
-/** Nag shown when the guild has an entitled subscription but the premium bot was never invited */
-function PremiumInviteBanner({ guildId }: { guildId: string }) {
-  const armRefreshOnReturn = useRefreshOnReturn();
-  // Locked to the subscribed guild: the premium entitlement gate makes the
-  // bot self-leave any other guild
-  const premiumInviteUrl = useBotInviteUrl('premium', guildId, { lockGuildSelect: true });
-  const { premiumBotId: premiumBotClientId } = useSiteConfig();
-  const inviteUrl = premiumBotClientId ? premiumInviteUrl : null;
-
-  return (
-    <Card className="bg-purple-500/10 border-purple-500/30 p-6">
-      <div className="flex items-start gap-4">
-        <Crown className="w-6 h-6 text-purple-400 shrink-0 mt-1" />
-        <div className="flex-1">
-          <h3 className="text-white text-lg mb-1">
-            Premium is active — invite the Premium bot to switch over
-          </h3>
-          <p className="text-slate-300 text-sm mb-4">
-            Your subscription is active. Invite the Premium bot to this server to start using it —
-            your channels and settings are kept.
-          </p>
-          {inviteUrl && (
-            <>
-              <Button className="bg-[#5865F2] hover:bg-[#4752C4] text-white" asChild>
-                <a
-                  href={inviteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => armRefreshOnReturn()}
-                >
-                  Invite Premium Bot
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </a>
-              </Button>
-              <p className="text-slate-500 text-sm mt-3">
-                Bot permissions don&apos;t transfer between apps: the free bot keeps publishing
-                until the Premium bot can publish in all your channels, then hands over and leaves
-                automatically.
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-/** Banner shown while the premium bot waits for permissions before taking over */
-function PremiumPendingBanner({
-  guildId,
-  channels,
-}: {
-  guildId: string;
-  channels: GuildChannel[];
-}) {
-  const blockedCount = channels.filter(c => c.premiumBotHasPermissions === false).length;
-
-  return (
-    <Card className="bg-purple-500/10 border-purple-500/30 p-6">
-      <div className="flex items-start gap-4">
-        <Hourglass className="w-6 h-6 text-purple-400 shrink-0 mt-1" />
-        <div className="flex-1">
-          <h3 className="text-white text-lg mb-1">Premium bot is waiting to take over</h3>
-          <p className="text-slate-300 text-sm">
-            Your subscription is active. The free bot keeps publishing until your Premium bot has
-            permission in every channel — permissions don&apos;t carry over between bots.{' '}
-            {blockedCount > 0 ? (
-              <>
-                Grant the Premium bot access to the {blockedCount} flagged channel
-                {blockedCount !== 1 ? 's' : ''} in the{' '}
-                <Link
-                  href={`/dashboard/${guildId}/channels`}
-                  className="text-blue-400 hover:underline"
-                >
-                  Channels tab
-                </Link>{' '}
-                to complete the switch.
-              </>
-            ) : (
-              'The switch completes automatically within moments.'
-            )}
-          </p>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
 // MIGRATION: Remove this banner after migration period (6 months)
 function LegacyMigrationBanner({
   guildId,
   channels,
   channelLimit,
   hasSubscription,
-  premiumBotPresent,
-  premiumPending,
 }: {
   guildId: string;
   channels: GuildChannel[];
   channelLimit: number;
   hasSubscription: boolean;
-  premiumBotPresent: boolean;
-  premiumPending: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const sunsetLabel = useLegacySunsetLabel();
@@ -465,8 +347,6 @@ function LegacyMigrationBanner({
           channels={channels}
           limit={channelLimit === 0 ? null : channelLimit}
           hasSubscription={hasSubscription}
-          premiumBotPresent={premiumBotPresent}
-          premiumPending={premiumPending}
           onClose={() => setModalOpen(false)}
         />
       )}

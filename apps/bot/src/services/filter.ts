@@ -1,4 +1,3 @@
-import { config } from '@ap/config';
 import { anyKeywordMatches } from '@ap/utils';
 import { type Filter, FilterMatchMode, FilterType } from '@ap/validations';
 import type { Message, NewsChannel } from 'discord.js';
@@ -12,16 +11,16 @@ import { Services } from './index.js';
  * match mode (all = AND, any = OR). Each condition can be negated (`negate`),
  * which replaces the old allow/block split — "block X" is a negated condition.
  * An empty list publishes everything.
+ *
+ * No plan check: filters are Premium-only, and a free guild's filtered channels
+ * are PAUSED rather than served unfiltered (ADR 0009), so they never reach the
+ * allowlist this reads. A serving channel with conditions is, by construction,
+ * a Premium guild's channel.
  * @param message Discord message
  * @param channel Announcement channel
  * @returns true if the message should be published, false otherwise
  */
 const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean> => {
-  // Skip filter check if not premium
-  if (!config.isPremiumInstance) {
-    return true;
-  }
-
   try {
     const channelStatus = await Services.Channel.getStatus(channel.id);
 

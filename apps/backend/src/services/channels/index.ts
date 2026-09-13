@@ -7,7 +7,7 @@ import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { and, asc, count, eq, gt, isNotNull, isNull, sql } from 'drizzle-orm';
 import { Discord } from 'services/discord.js';
-import { Editions } from 'services/editions.js';
+import { Plans } from 'services/plans.js';
 import { logger } from 'utils/logger.js';
 import { Filters } from './filters.js';
 import * as ChannelOps from './operations.js';
@@ -216,8 +216,7 @@ const assertAnnouncementChannelOfGuild = async (
   guildId: Snowflake,
   channelId: Snowflake
 ): Promise<void> => {
-  const edition = await Editions.getManagingEdition(guildId);
-  const announcementChannels = await Discord.getAnnouncementChannels(edition, guildId);
+  const announcementChannels = await Discord.getAnnouncementChannels(guildId);
 
   if (!announcementChannels.some(c => c.id === channelId)) {
     throw createHttpError(
@@ -241,7 +240,7 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
   // The limit counts SERVING channels only (paused rows are retained but not
   // served, ADR 0009), so both "register new" and "unpause existing" go through
   // the same cap gate.
-  const { limit, reason } = await Editions.resolveChannelLimit(guildId);
+  const limit = await Plans.channelLimit(guildId);
   const [servingCount] = await db
     .select({ count: count() })
     .from(channelTable)
@@ -259,7 +258,7 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
       throw createHttpError(
         'Guild has reached the channels limit',
         StatusCodes.BAD_REQUEST,
-        reason
+        'LIMIT_FREE'
       );
     }
     await db
@@ -276,7 +275,11 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
   }
 
   if (limit !== 0 && guildChannelsCount >= limit) {
-    throw createHttpError('Guild has reached the channels limit', StatusCodes.BAD_REQUEST, reason);
+    throw createHttpError(
+      'Guild has reached the channels limit',
+      StatusCodes.BAD_REQUEST,
+      'LIMIT_FREE'
+    );
   }
 
   let dbCreated = false;

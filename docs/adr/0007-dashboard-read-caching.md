@@ -1,5 +1,9 @@
 # ADR 0007: Dashboard read caching — in-process + Next.js, not the query layer
 
+## Status
+
+Accepted — 2026-07-15. **Amended by ADR 0013 (2026-09-09):** the caching design stands, but the cross-edition reasoning below is moot — there is one bot, so `cachedGet` takes no edition, nothing is "shared across editions", and the pending-handover cross-edition read it optimised no longer exists. `healAbsentEditions` is now `healAbsentGuild` (one guild, one bot, no entitlement gate on the heal).
+
 ## Context
 
 The dashboard "feels slow to use," worst on the **cold first load** of a guild page. Tracing both read endpoints showed the wall-clock cost is **Discord-REST-bound, not Postgres-bound**:

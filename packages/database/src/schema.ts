@@ -1,15 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import {
-  check,
-  index,
-  jsonb,
-  pgTable,
-  primaryKey,
-  text,
-  timestamp,
-  uniqueIndex,
-  uuid,
-} from 'drizzle-orm/pg-core';
+import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 export type ChannelFilter = {
   id: string;
@@ -33,29 +23,22 @@ export const guild = pgTable('guild', {
     .$onUpdateFn(() => new Date()),
 });
 
-export const guildRelations = relations(guild, ({ many }) => ({
+export const guildRelations = relations(guild, ({ many, one }) => ({
   channels: many(channel),
-  botPresences: many(botPresence),
+  botPresence: one(botPresence),
 }));
 
-// Per-edition bot membership; unrelated to Discord user presence. leftAt is a soft
-// delete so config survives a re-invite — reconciliation purges the guild once no
-// edition has an active presence for 30 days.
-export const botPresence = pgTable(
-  'bot_presence',
-  {
-    guildId: text('guild_id')
-      .notNull()
-      .references(() => guild.guildId, { onDelete: 'cascade' }),
-    edition: text('edition').$type<'free' | 'premium'>().notNull(),
-    joinedAt: timestamp('joined_at', { withTimezone: true }).notNull(),
-    leftAt: timestamp('left_at', { withTimezone: true }),
-  },
-  table => [
-    primaryKey({ columns: [table.guildId, table.edition] }),
-    check('bot_presence_edition_check', sql`${table.edition} IN ('free', 'premium')`),
-  ]
-);
+// Bot membership; unrelated to Discord user presence. leftAt is a soft delete so
+// config survives a re-invite — reconciliation purges the guild 30 days after the
+// bot left. One row per guild: there is one bot, and Free/Premium are per-guild
+// subscription tiers rather than separate applications.
+export const botPresence = pgTable('bot_presence', {
+  guildId: text('guild_id')
+    .primaryKey()
+    .references(() => guild.guildId, { onDelete: 'cascade' }),
+  joinedAt: timestamp('joined_at', { withTimezone: true }).notNull(),
+  leftAt: timestamp('left_at', { withTimezone: true }),
+});
 
 export const botPresenceRelations = relations(botPresence, ({ one }) => ({
   guild: one(guild, { fields: [botPresence.guildId], references: [guild.guildId] }),

@@ -289,8 +289,9 @@ const isEntitled = async (guildId: string): Promise<boolean> => {
 };
 
 /**
- * Not-entitled subscriptions whose guild still has the premium bot present
- * (active premium presence) — reconcile cron re-enforces revocation for these.
+ * Not-entitled subscriptions whose guild still has the bot present — the
+ * reconcile cron re-applies the downgrade for these. A guild the bot has left
+ * has nothing to trim.
  */
 const getRevokedWithBotPresent = async (): Promise<Subscription[]> => {
   try {
@@ -301,8 +302,7 @@ const getRevokedWithBotPresent = async (): Promise<Subscription[]> => {
         botPresence,
         and(
           eq(subscription.guildId, botPresence.guildId),
-          eq(botPresence.edition, 'premium'),
-          // leftAt set = premium bot already absent, nothing to revoke
+          // leftAt set = bot already gone, nothing to trim
           isNull(botPresence.leftAt)
         )
       )

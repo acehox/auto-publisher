@@ -37,27 +37,21 @@ export function usePersistentDismissal(key: string): [boolean, () => void] {
 }
 
 export interface GuildAttention {
-  /** `hasSubscription && !premiumBotPresent` — entitled but premium bot never invited */
-  showPremiumInvite: boolean;
-  /** Premium handover pending (both bots present, free still managing) */
-  showPremiumPending: boolean;
   /** MIGRATION: legacy guild (auto-publishes everything). Removed at sunset. */
   showMigration: boolean;
   /** Over the free limit with retained (paused) channels AND not dismissed */
   showPaused: boolean;
   /** Count of paused (retained) channels — drives the paused banner copy */
   pausedCount: number;
-  /** Enabled channels the managing bot currently can't publish in (migrated only) */
+  /** Enabled channels the bot currently can't publish in (migrated only) */
   needsFixingCount: number;
-  /** ≥1 enabled channel the managing bot can't publish in (migrated only) — drives the misconfigured banner */
+  /** ≥1 enabled channel the bot can't publish in (migrated only) — drives the misconfigured banner */
   showMisconfigured: boolean;
   /**
    * Attention items for the Overview sidebar badge: one per active nag banner
-   * (misconfigured channels, premium invite, premium pending, legacy migration,
-   * paused). Any number of broken channels collapse into the single misconfigured
-   * banner, so they count once regardless of how many (reversing the old
-   * per-channel tally). The positive checkout-success card and premium-handover
-   * access gaps never count.
+   * (misconfigured channels, legacy migration, paused). Any number of broken
+   * channels collapse into the single misconfigured banner, so they count once
+   * regardless of how many. The positive checkout-success card never counts.
    */
   badgeCount: number;
   /** Dismiss the paused-channels banner (episode-scoped, per-browser). */
@@ -71,19 +65,15 @@ export interface GuildAttention {
  */
 export function useGuildAttention(): GuildAttention {
   const { guild, data } = useGuild();
-  // A self-hosted instance has no billing: no entitlement, no second bot to hand
-  // over to, and no cap to pause channels against — so all three billing-derived
-  // banners are unreachable there. Gated at the source so the banner stack and
-  // the sidebar badge can't disagree. Migration is not billing; it stays.
+  // A self-hosted instance has no billing, so it never caps a guild and the
+  // paused banner is unreachable there. Gated at the source so the banner stack
+  // and the sidebar badge can't disagree. Migration is not billing; it stays.
   const isPublicInstance = useIsPublicInstance();
 
-  const showPremiumInvite = isPublicInstance && guild.hasSubscription && !guild.premiumBotPresent;
-  const showPremiumPending = isPublicInstance && data.premiumPending;
   const showMigration = !data.migrated;
 
-  // Paused-channels state: free is the managing edition (channelLimit !== 0),
-  // channels are paused, and the guild is not entitled — mutually exclusive with
-  // the premium banners (which imply entitlement). ADR 0009.
+  // Paused-channels state: the guild is on the free plan (channelLimit !== 0)
+  // and has retained channels it is no longer serving. ADR 0009.
   const pausedCount = data.channels.filter(c => c.hasSavedSetup).length;
   const overLimitPaused = data.channelLimit !== 0 && pausedCount > 0 && !guild.hasSubscription;
 
@@ -107,16 +97,9 @@ export function useGuildAttention(): GuildAttention {
   // per-channel tally. The per-channel detail + Fix lives in the channel list.
   const showMisconfigured = needsFixingCount > 0;
 
-  const badgeCount =
-    (showMisconfigured ? 1 : 0) +
-    (showPremiumInvite ? 1 : 0) +
-    (showPremiumPending ? 1 : 0) +
-    (showMigration ? 1 : 0) +
-    (showPaused ? 1 : 0);
+  const badgeCount = (showMisconfigured ? 1 : 0) + (showMigration ? 1 : 0) + (showPaused ? 1 : 0);
 
   return {
-    showPremiumInvite,
-    showPremiumPending,
     showMigration,
     showPaused,
     pausedCount,

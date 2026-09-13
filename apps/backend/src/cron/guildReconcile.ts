@@ -1,15 +1,11 @@
-import type { Edition } from '@ap/api-types';
+import { config } from '@ap/config';
 import { botPresence, channel, db, guild } from '@ap/database';
-import { Keys } from '@ap/redis';
 import { CronJob } from 'cron';
-import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { type RESTGetAPICurrentUserGuildsResult, Routes } from 'discord-api-types/v10';
-import { and, count, countDistinct, eq, gt, inArray, isNull, lt, max, sql } from 'drizzle-orm';
+import { and, count, gt, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
 import { Discord } from 'services/discord.js';
-import { Editions } from 'services/editions.js';
 import { Services } from 'services/index.js';
-import { applyJoinRails } from 'services/joinRails.js';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 import { guardMassAction, massActionCap } from 'utils/massActionGuard.js';
@@ -18,15 +14,6 @@ const PAGE_SIZE = 200;
 const BATCH_SIZE = 1000;
 const JOIN_RACE_GUARD_MS = 60 * 60 * 1000;
 const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
-
-// Only the editions this deployment actually runs. A hardcoded pair would
-// leave `allSweepsCompleted` false forever on a single-token deployment (the
-// missing edition has no token, so its sweep never completes), which silently
-// disables the join rails and the channel-limit backstop on every run.
-// Imported directly rather than through the `Services` barrel: this is read at
-// module scope, so going through the barrel would make it sensitive to import
-// ordering if a cycle is ever introduced.
-const EDITIONS: readonly Edition[] = Editions.CONFIGURED;
 
 let inFlight = false;
 
@@ -41,10 +28,10 @@ const chunk = <T>(items: T[], size: number): T[][] => {
 };
 
 /**
- * Fetch an edition bot's full guild list via its proxy. Throws on any page
- * error — the sweep must never act on a partial snapshot.
+ * Fetch the bot's full guild list via the proxy. Throws on any page error — the
+ * sweep must never act on a partial snapshot.
  */
-const fetchLiveGuildIds = async (edition: Edition): Promise<Set<Snowflake>> => {
+const fetchLiveGuildIds = async (): Promise<Set<Snowflake>> => {
   const ids = new Set<Snowflake>();
   let after: Snowflake | undefined;
 
@@ -52,7 +39,7 @@ const fetchLiveGuildIds = async (edition: Edition): Promise<Set<Snowflake>> => {
     const query = new URLSearchParams({ limit: String(PAGE_SIZE) });
     if (after) query.set('after', after);
 
-    const page = (await Discord.restFor(edition).get(Routes.userGuilds(), {
+    const page = (await Discord.rest.get(Routes.userGuilds(), {
       query,
     })) as RESTGetAPICurrentUserGuildsResult;
 
@@ -68,23 +55,16 @@ const fetchLiveGuildIds = async (edition: Edition): Promise<Set<Snowflake>> => {
 };
 
 /**
- * Per-edition sweep keeping the presence rows honest against Discord (missed
- * gateway events, DB resets): inserts unknown guilds as legacy with an active
- * presence, restores presences the bot still has, and soft-deletes presences
- * the bot lost. Makes NO leave decisions itself — those need both editions'
- * reconciled state, so they run afterwards in applyJoinRails. Returns the
- * inserted + restored guild IDs as rail candidates.
+ * Keep the presence rows honest against Discord (missed gateway events, DB
+ * resets): insert unknown guilds as legacy with an active presence, restore
+ * presences the bot still has, soft-delete presences it lost. Returns the
+ * inserted + restored guild IDs, whose channel serving is re-applied after.
  */
-const sweepEdition = async (edition: Edition): Promise<Snowflake[]> => {
-  if (!Discord.hasToken(edition)) {
-    logger.warn(`Guild reconcile: no ${edition} token configured, skipping sweep`);
-    return [];
-  }
-
+const sweepPresence = async (): Promise<Snowflake[]> => {
   const sweepStart = new Date();
 
   // Any pagination error aborts before DB writes
-  const liveIds = await fetchLiveGuildIds(edition);
+  const liveIds = await fetchLiveGuildIds();
 
   const rows = await db
     .select({
@@ -92,8 +72,7 @@ const sweepEdition = async (edition: Edition): Promise<Snowflake[]> => {
       joinedAt: botPresence.joinedAt,
       leftAt: botPresence.leftAt,
     })
-    .from(botPresence)
-    .where(eq(botPresence.edition, edition));
+    .from(botPresence);
   const knownIds = new Set(rows.map(r => r.guildId));
 
   // Unknown guilds have been running legacy since the missed guildCreate —
@@ -107,7 +86,7 @@ const sweepEdition = async (edition: Edition): Promise<Snowflake[]> => {
       .onConflictDoNothing();
     await db
       .insert(botPresence)
-      .values(batch.map(guildId => ({ guildId, edition, joinedAt: sweepStart })))
+      .values(batch.map(guildId => ({ guildId, joinedAt: sweepStart })))
       .onConflictDoNothing();
   }
 
@@ -117,10 +96,7 @@ const sweepEdition = async (edition: Edition): Promise<Snowflake[]> => {
     .filter(r => r.leftAt !== null && liveIds.has(r.guildId))
     .map(r => r.guildId);
   for (const batch of chunk(toRestore, BATCH_SIZE)) {
-    await db
-      .update(botPresence)
-      .set({ leftAt: null })
-      .where(and(inArray(botPresence.guildId, batch), eq(botPresence.edition, edition)));
+    await db.update(botPresence).set({ leftAt: null }).where(inArray(botPresence.guildId, batch));
   }
 
   // Soft-delete presences not in the live set, with rails:
@@ -134,8 +110,8 @@ const sweepEdition = async (edition: Edition): Promise<Snowflake[]> => {
     .map(r => r.guildId);
 
   const deletionsAborted = !guardMassAction({
-    key: `guild-reconcile-deletion-cap:${edition}`,
-    action: `soft-delete ${edition} presences`,
+    key: 'guild-reconcile-deletion-cap',
+    action: 'soft-delete bot presences',
     count: toSoftDelete.length,
     population: activeRows.length,
     context: "Discord's live guild list may be truncated — investigate before the next sweep.",
@@ -146,91 +122,30 @@ const sweepEdition = async (edition: Edition): Promise<Snowflake[]> => {
       await db
         .update(botPresence)
         .set({ leftAt: sweepStart })
-        .where(
-          and(
-            inArray(botPresence.guildId, batch),
-            eq(botPresence.edition, edition),
-            isNull(botPresence.leftAt)
-          )
-        );
-    }
-    // A lost presence ends any pending handover for that guild (missed
-    // guildDelete would otherwise leave the marker dangling)
-    for (const guildId of toSoftDelete) {
-      await Services.Handover.clearPending(guildId);
+        .where(and(inArray(botPresence.guildId, batch), isNull(botPresence.leftAt)));
     }
   }
 
   logger.info(
-    `Guild reconcile (${edition}) finished: ${liveIds.size} live, ${toInsert.length} inserted, ${toRestore.length} restored, ${deletionsAborted ? `0 soft-deleted (ABORTED: ${toSoftDelete.length} > cap ${massActionCap(activeRows.length)})` : `${toSoftDelete.length} soft-deleted`}`
+    `Guild reconcile finished: ${liveIds.size} live, ${toInsert.length} inserted, ${toRestore.length} restored, ${deletionsAborted ? `0 soft-deleted (ABORTED: ${toSoftDelete.length} > cap ${massActionCap(activeRows.length)})` : `${toSoftDelete.length} soft-deleted`}`
   );
 
   return [...toInsert, ...toRestore];
 };
 
 /**
- * Guilds where both editions' bots are currently active — the only state in
- * which a handover marker (or a missing one) matters.
- */
-const getDualActiveGuildIds = async (): Promise<Snowflake[]> => {
-  const rows = await db
-    .select({ guildId: botPresence.guildId })
-    .from(botPresence)
-    .where(isNull(botPresence.leftAt))
-    .groupBy(botPresence.guildId)
-    .having(eq(countDistinct(botPresence.edition), 2));
-  return rows.map(r => r.guildId);
-};
-
-/**
- * Backstop for handover markers (missed events, crashed swaps): a marker is
- * only valid while BOTH presences are active — otherwise clear it. Valid
- * pending guilds are re-evaluated, so a handover whose permission-change ping
- * was missed (bot restart, failed HTTP call) still completes within a day.
- */
-const sweepPendingMarkers = async (): Promise<void> => {
-  const redis = Data.Drivers.Redis.PremiumPending;
-  const prefix = `${Keys.PremiumPending}:`;
-  let cursor = '0';
-  let cleared = 0;
-
-  do {
-    const [next, keys] = await redis.scan(cursor, 'MATCH', `${prefix}*`, 'COUNT', 500);
-    cursor = next;
-
-    for (const markerKey of keys) {
-      const guildId = markerKey.slice(prefix.length);
-      try {
-        const active = await Services.Editions.getActiveEditions(guildId);
-        if (!active.has('free') || !active.has('premium')) {
-          await Services.Handover.clearPending(guildId);
-          cleared++;
-        } else {
-          await Services.Handover.evaluate(guildId);
-        }
-      } catch (error) {
-        logger.warn(error, `Guild reconcile: marker sweep failed for guild ${guildId}`);
-      }
-    }
-  } while (cursor !== '0');
-
-  if (cleared > 0) {
-    logger.info(`Guild reconcile: cleared ${cleared} dangling handover markers`);
-  }
-};
-
-/**
- * State-based backstop for the "free never serves >3" invariant (ADR 0009).
- * The join rails only fire on presence changes / dashboard loads, so they miss
- * guilds already over-limit at deploy time, the premium-kicked-then-free-invited
- * case, and any live trim that threw. This finds every guild with more serving
- * channels than the free cap, then trims the ones the free bot actually manages.
- * Batch-guarded: a managing-edition regression that mislabels premium-managed
- * guilds as free would try to pause a large fraction of the over-limit set, so
- * the guard aborts rather than mass-pause.
+ * State-based backstop for the free plan's channel cap (ADR 0009). The live
+ * paths only fire on a subscription change, a join or a dashboard load, so they
+ * miss guilds already over-limit at deploy time and any live trim that threw.
+ * This finds every guild serving more channels than the free cap, then trims the
+ * ones that are actually on the free plan.
+ *
+ * Batch-guarded: an entitlement regression that mislabels paying guilds as free
+ * would try to pause a large fraction of the over-limit set, so the guard aborts
+ * rather than mass-pause.
  */
 const enforceChannelLimitBackstop = async (): Promise<void> => {
-  const freeLimit = Services.Editions.channelLimitFor('free');
+  const freeLimit = config.limits.freeChannelsPerGuild;
 
   const overLimit = await db
     .select({ guildId: channel.guildId })
@@ -240,56 +155,38 @@ const enforceChannelLimitBackstop = async (): Promise<void> => {
     .having(gt(count(), freeLimit));
   if (overLimit.length === 0) return;
 
-  const freeManaged: Snowflake[] = [];
+  const free: Snowflake[] = [];
   for (const { guildId } of overLimit) {
     try {
-      if ((await Services.Editions.getManagingEdition(guildId)) === 'free') {
-        freeManaged.push(guildId);
-      }
+      if (!(await Services.Plans.isPremium(guildId))) free.push(guildId);
     } catch (error) {
-      logger.warn(error, `Channel-limit backstop: managing-edition check failed for ${guildId}`);
+      logger.warn(error, `Channel-limit backstop: plan check failed for ${guildId}`);
     }
   }
-  if (freeManaged.length === 0) return;
+  if (free.length === 0) return;
 
   const allowed = guardMassAction({
     key: 'channel-limit-backstop',
     action: 'pause over-limit channels',
-    count: freeManaged.length,
+    count: free.length,
     population: overLimit.length,
     context:
-      'A managing-edition regression could mass-pause channels — investigate before the next sweep.',
+      'An entitlement regression could mass-pause channels — investigate before the next sweep.',
   });
   if (!allowed) return;
 
-  let enforced = 0;
-  for (const guildId of freeManaged) {
-    try {
-      await Services.Editions.reconcileChannelServing(guildId);
-      enforced++;
-    } catch (error) {
-      logger.warn(error, `Channel-limit backstop: enforce failed for guild ${guildId}`);
-    }
-  }
-  logger.info(`Channel-limit backstop: enforced ${enforced} over-limit free-managed guilds`);
+  await Services.Plans.reconcileChannelServingMany(free);
+  logger.info(`Channel-limit backstop: enforced ${free.length} over-limit free guilds`);
 };
 
-/** Purge guilds whose last bot left more than 30 days ago (cascade + cache cleanup) */
+/** Purge guilds the bot left more than 30 days ago (cascade + cache cleanup) */
 const purgeAbandonedGuilds = async (): Promise<void> => {
   const purgeCutoff = new Date(Date.now() - PURGE_AFTER_MS);
 
   const toPurge = await db
     .select({ guildId: botPresence.guildId })
     .from(botPresence)
-    .groupBy(botPresence.guildId)
-    .having(
-      and(
-        sql`BOOL_OR(${botPresence.leftAt} IS NULL) = false`,
-        // ISO string, not the Date: aggregate expressions drop the column's
-        // param mapper, so a raw Date reaches the driver and throws
-        lt(max(botPresence.leftAt), purgeCutoff.toISOString())
-      )
-    );
+    .where(and(isNotNull(botPresence.leftAt), lt(botPresence.leftAt, purgeCutoff)));
 
   let purgedCount = 0;
   for (const row of toPurge) {
@@ -302,46 +199,36 @@ const purgeAbandonedGuilds = async (): Promise<void> => {
 };
 
 const reconcileGuilds = async () => {
-  const railCandidates = new Set<Snowflake>();
-  let allSweepsCompleted = true;
+  let swept: Snowflake[] = [];
+  let sweepCompleted = true;
 
-  for (const edition of EDITIONS) {
+  if (!Discord.hasToken()) {
+    logger.warn('Guild reconcile: no bot token configured, skipping sweep');
+    sweepCompleted = false;
+  } else {
     try {
-      if (!Discord.hasToken(edition)) {
-        // sweepEdition would skip anyway; track it so the rails stay off
-        allSweepsCompleted = false;
-      }
-      for (const guildId of await sweepEdition(edition)) {
-        railCandidates.add(guildId);
-      }
+      swept = await sweepPresence();
     } catch (error) {
-      allSweepsCompleted = false;
-      logger.error(error, `Guild reconcile (${edition}) failed`);
-      alerter.send(`guild-reconcile-failed:${edition}`, {
+      sweepCompleted = false;
+      logger.error(error, 'Guild reconcile sweep failed');
+      alerter.send('guild-reconcile-failed', {
         title: 'Guild reconcile sweep aborted',
-        description: `The ${edition} sweep failed before completion (pagination or DB error): ${error instanceof Error ? error.message : String(error)}. Presence rows for ${edition} were not reconciled today.`,
+        description: `The sweep failed before completion (pagination or DB error): ${error instanceof Error ? error.message : String(error)}. Presence rows were not reconciled today.`,
       });
     }
   }
 
-  // Join rails need BOTH editions reconciled — deciding a leave against the
-  // other edition's stale presence rows could evict the only working bot
-  if (allSweepsCompleted) {
-    // Dual-presence guilds are rail candidates even when untouched by the
-    // sweeps: a crashed handover can leave both bots active with no marker
-    for (const guildId of await getDualActiveGuildIds()) {
-      railCandidates.add(guildId);
-    }
-    await applyJoinRails(railCandidates);
-    // Needs reconciled presence rows to resolve managing edition correctly
+  // Both steps read the reconciled rows: acting on a half-swept snapshot could
+  // pause a paying guild's channels off a presence row that is simply stale.
+  if (sweepCompleted) {
+    await Services.Plans.reconcileChannelServingMany(swept);
     await enforceChannelLimitBackstop();
-  } else if (railCandidates.size > 0) {
+  } else if (swept.length > 0) {
     logger.warn(
-      `Guild reconcile: skipping join rails for ${railCandidates.size} guilds (a sweep did not complete)`
+      `Guild reconcile: skipping serving reconcile for ${swept.length} guilds (sweep did not complete)`
     );
   }
 
-  await sweepPendingMarkers();
   await purgeAbandonedGuilds();
 };
 

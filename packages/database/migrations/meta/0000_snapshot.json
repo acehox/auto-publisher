@@ -11,13 +11,7 @@
         "guild_id": {
           "name": "guild_id",
           "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "edition": {
-          "name": "edition",
-          "type": "text",
-          "primaryKey": false,
+          "primaryKey": true,
           "notNull": true
         },
         "joined_at": {
@@ -45,20 +39,10 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "bot_presence_guild_id_edition_pk": {
-          "name": "bot_presence_guild_id_edition_pk",
-          "columns": ["guild_id", "edition"]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {
-        "bot_presence_edition_check": {
-          "name": "bot_presence_edition_check",
-          "value": "\"bot_presence\".\"edition\" IN ('free', 'premium')"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.channel": {

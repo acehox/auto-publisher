@@ -7,9 +7,8 @@ const migratedGuildsClient = await createRedisClient(DatabaseIDs.MigratedGuilds,
 const discordAuthClient = await createRedisClient(DatabaseIDs.DiscordAuth, logger);
 const paddleWebhookDedupeClient = await createRedisClient(DatabaseIDs.PaddleWebhookDedupe, logger);
 const alertsClient = await createRedisClient(DatabaseIDs.Alerts, logger);
-const premiumPendingClient = await createRedisClient(DatabaseIDs.PremiumPending, logger);
 const publishStateClient = await createRedisClient(DatabaseIDs.PublishState, logger);
-const onboardingBoostClient = await createRedisClient(DatabaseIDs.OnboardingBoost, logger);
+const queuePriorityClient = await createRedisClient(DatabaseIDs.QueuePriority, logger);
 
 export const Redis: {
   client: RedisClient;
@@ -17,16 +16,14 @@ export const Redis: {
   DiscordAuth: RedisClient;
   PaddleWebhookDedupe: RedisClient;
   Alerts: RedisClient;
-  PremiumPending: RedisClient;
   PublishState: RedisClient;
-  OnboardingBoost: RedisClient;
+  QueuePriority: RedisClient;
 } = {
   client: channelsClient,
   MigratedGuilds: migratedGuildsClient,
   DiscordAuth: discordAuthClient,
   PaddleWebhookDedupe: paddleWebhookDedupeClient,
   Alerts: alertsClient,
-  PremiumPending: premiumPendingClient,
   PublishState: publishStateClient,
-  OnboardingBoost: onboardingBoostClient,
+  QueuePriority: queuePriorityClient,
 };

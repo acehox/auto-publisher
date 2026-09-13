@@ -34,8 +34,7 @@ const whatsNew = [
   {
     icon: Filter,
     title: 'Premium, if you want more',
-    description:
-      'Premium adds unlimited channels, message filters, and its own dedicated publishing capacity.',
+    description: 'Premium adds unlimited channels, message filters, and priority publishing.',
   },
   {
     icon: ShieldCheck,

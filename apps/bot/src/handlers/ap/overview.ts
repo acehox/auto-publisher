@@ -42,6 +42,8 @@ interface OverviewState {
   guildId: Snowflake;
   /** MIGRATION: false = legacy guild (publishes every announcement channel). */
   migrated: boolean;
+  /** Whether the guild is on Premium — decides which publish-delay note shows. */
+  premium: boolean;
   /** Registered + serving channels, broken-first. Empty for a legacy guild. */
   channels: OverviewChannel[];
   /** Retained but over the free limit (ADR 0009), in sidebar order. */
@@ -152,6 +154,7 @@ const loadOverviewState = async (
   return {
     guildId: interaction.guildId,
     migrated: guildChannels.migrated,
+    premium: guildChannels.premium,
     channels: buildOverviewChannels(guildChannels.channelIds, guild, botMember),
     pausedChannelIds: orderChannelIds(guildChannels.pausedChannelIds, guild),
     announcementChannelCount: guild ? announcementChannels.length : null,
@@ -244,9 +247,6 @@ const renderFixBlock = (state: OverviewState): string[] | null => {
  * so the user understands why they went quiet, with the path back. Trails the
  * serving channels, matching the Overview's paused rows.
  *
- * The limit reads from `freeChannelsPerGuild`, not `channelsPerGuild`: the
- * premium bot renders this too while a handover is pending, and its own cap is
- * 0 (unlimited).
  */
 const renderPausedBlock = (state: OverviewState): string[] | null => {
   const total = state.pausedChannelIds.length;
@@ -262,10 +262,10 @@ const renderPausedBlock = (state: OverviewState): string[] | null => {
   ];
 };
 
-const renderNotes = (): string =>
+const renderNotes = (premium: boolean): string =>
   formatNotes([
     notes.rateLimit,
-    config.isPremiumInstance ? notes.publishDelayPremium : notes.publishDelayFree,
+    premium ? notes.publishDelayPremium : notes.publishDelayFree,
   ]).trimStart();
 
 const addDashboardSection = (container: ContainerBuilder, guildId: Snowflake, text: string) =>
@@ -340,7 +340,9 @@ const buildLegacyContainer = (state: OverviewState): ContainerBuilder => {
       .addTextDisplayComponents(textDisplay => textDisplay.setContent(summary));
   }
 
-  container.addTextDisplayComponents(textDisplay => textDisplay.setContent(renderNotes()));
+  container.addTextDisplayComponents(textDisplay =>
+    textDisplay.setContent(renderNotes(state.premium))
+  );
 
   container.addSeparatorComponents(separator => separator);
 
@@ -378,7 +380,9 @@ const buildOverviewContainer = (state: OverviewState): ContainerBuilder => {
     }
   }
 
-  container.addTextDisplayComponents(textDisplay => textDisplay.setContent(renderNotes()));
+  container.addTextDisplayComponents(textDisplay =>
+    textDisplay.setContent(renderNotes(state.premium))
+  );
 
   container.addSeparatorComponents(separator => separator);
 

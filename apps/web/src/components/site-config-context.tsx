@@ -14,8 +14,7 @@ import type { SiteConfig } from '@/lib/site-config';
  */
 const SiteConfigContext = createContext<SiteConfig>({
   isPublicInstance: false,
-  freeBotId: '',
-  premiumBotId: '',
+  botId: '',
   freeChannelLimit: 0,
   filtersPerChannel: 0,
   legacySunsetDate: '',
@@ -53,14 +52,13 @@ export function useLegacySunsetLabel(): string {
 
 /** Bot invite URL for this deployment, or null when no client id is configured. */
 export function useBotInviteUrl(
-  edition: 'free' | 'premium',
   guildId?: string,
   options?: { lockGuildSelect?: boolean }
 ): string | null {
   const config = useSiteConfig();
   const lockGuildSelect = options?.lockGuildSelect;
   return useMemo(
-    () => getBotInviteUrl(config, edition, guildId, { lockGuildSelect }),
-    [config, edition, guildId, lockGuildSelect]
+    () => getBotInviteUrl(config, guildId, { lockGuildSelect }),
+    [config, guildId, lockGuildSelect]
   );
 }

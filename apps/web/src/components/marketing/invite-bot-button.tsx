@@ -32,7 +32,7 @@ export function InviteBotButton({
   showDashboardNudge,
 }: InviteBotButtonProps) {
   const router = useRouter();
-  const inviteUrl = useBotInviteUrl('free');
+  const inviteUrl = useBotInviteUrl();
 
   if (!inviteUrl) return null;
 

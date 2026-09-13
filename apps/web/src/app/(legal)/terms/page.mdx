@@ -17,7 +17,7 @@ These Terms are the agreement between you and {entityNameWithTranslation} ("**we
 the company identified in full in our [Legal Notice](/legal). They cover the Auto Publisher Discord
 bot, the dashboard at this website, and the commands the bot provides ("**the Service**").
 
-They apply whether you use the free edition or a paid subscription. Section 4 explains what changes
+They apply whether you use the free plan or a paid subscription. Section 4 explains what changes
 if you are a consumer, and section 5 what changes if you are a business.
 
 If you do not accept these Terms, do not add the bot to a Discord server and do not use the
@@ -52,7 +52,7 @@ Auto Publisher publishes messages posted in Discord announcement channels to the
 them, automatically, so you do not have to press "Publish" on each message.
 
 - You choose which announcement channels the bot publishes from.
-- On the paid edition you can add rules that decide which messages get published, based on the
+- On the paid plan you can add rules that decide which messages get published, based on the
   message's text, its author, mentions it contains, and similar conditions.
 - The bot reads the content of messages in the channels you have enabled in order to apply those
   rules. It does not store message content. See the [Privacy Policy](/privacy).
@@ -67,9 +67,13 @@ platform, not choices we make, and the Service cannot function without them:
 - To configure the Service for a server you need the **Manage Server** permission in that server.
 - In each channel the bot publishes from, the bot's role must have **View Channel**, **Send
   Messages** and **Manage Messages**. Without Manage Messages, Discord will not allow publishing.
-- The free edition covers up to **3 channels per server**. The paid edition removes that limit.
+- The free plan covers up to **3 channels per server**. The paid plan removes that limit.
 - **Discord permits a maximum of 10 published messages per channel per hour.** This is Discord's
   limit. Once a channel reaches it, further messages in that hour are not published.
+- Both plans are published by the same bot through the same queue. What a paid subscription adds is
+  **priority within that queue**: when there is a backlog, paid servers' messages are published
+  before free servers'. We do not promise a delivery time on either plan — Discord's own rate limits
+  decide that, and a busy period can delay any message.
 - Where a message contains a link, we wait a few seconds before publishing so that Discord can
   generate the link preview first. Followers would otherwise receive the message without it.
 
@@ -178,7 +182,7 @@ terms of that licence govern the code; these Terms govern the hosted Service we 
 
 ## 7. Subscriptions, price and renewal
 
-- Current prices and what each edition includes are shown on our [Premium page](/premium) and at
+- Current prices and what each plan includes are shown on our [Premium page](/premium) and at
   checkout, before you pay.
 - Your first subscription for a server includes a **14-day free trial**, once per server. You are not
   charged during the trial. **When it ends, payment is required** — the subscription continues at the
@@ -188,13 +192,14 @@ terms of that licence govern the code; these Terms govern the hosted Service we 
 - **Prices are set at checkout by Paddle**, which also determines the taxes shown. The amount you
   see at checkout before paying is the amount payable.
 - You can cancel at any time. Cancellation takes effect at the end of the paid period, and the paid
-  edition remains available until then. This is separate from withdrawal — see
+  plan remains available until then. This is separate from withdrawal — see
   [Refunds & Withdrawal](/refunds).
-- If a payment fails or a subscription lapses, the server returns to the free edition. Your channel
-  configuration and rules are retained, but limits of the free edition apply again, so channels above
-  the free limit stop publishing. Where the paid bot had replaced the free bot in your server, you
-  will need to invite the free bot back yourself — Discord does not allow a bot to add itself to a
-  server, so this is not something we can do on your behalf.
+- If a payment fails or a subscription lapses, the server returns to the free plan. The bot stays in
+  your server and your channel configuration and rules are kept in full, but the free plan's limits
+  apply again: channels above the free limit stop publishing, and so do channels that use publishing
+  rules, because rules are a paid feature and we pause those channels rather than publish messages
+  you chose to filter out. Paused channels are shown as such in the dashboard and resume exactly as
+  configured if you subscribe again. Nothing is deleted.
 
 ## 8. Changes to the Service and to these Terms
 
@@ -208,7 +213,7 @@ We may modify the Service, and these Terms, **only for one of the following reas
    a paid subscription provides.
 
 We will tell you in advance of any change that materially and adversely affects your use of the paid
-edition, by a notice in the dashboard or by email where we have your address, and in good time before
+plan, by a notice in the dashboard or by email where we have your address, and in good time before
 it takes effect. If you are a consumer and such a change materially and adversely affects you, you
 may end the contract free of charge within 30 days of being told, or of the change taking effect,
 whichever is later.

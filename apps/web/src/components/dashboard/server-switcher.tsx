@@ -20,17 +20,9 @@ interface GuildSwitcherProps {
   current: DiscordGuild;
 }
 
-function hasBotPresent(guild: DiscordGuild): boolean {
-  return guild.freeBotPresent || guild.premiumBotPresent;
-}
-
-/** Switchable guilds only (bot present); premium first, then alphabetical. */
+/** Switchable guilds only (bot present), alphabetical. */
 function switchableGuilds(guilds: DiscordGuild[]): DiscordGuild[] {
-  return guilds.filter(hasBotPresent).sort((a, b) => {
-    const orderDiff = (a.premiumBotPresent ? 0 : 1) - (b.premiumBotPresent ? 0 : 1);
-    if (orderDiff !== 0) return orderDiff;
-    return a.name.localeCompare(b.name);
-  });
+  return guilds.filter(guild => guild.botPresent).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function GuildAvatar({ guild, size }: { guild: DiscordGuild; size: number }) {

@@ -1,7 +1,7 @@
 name: auto-publisher-dev
 
 # Any subset can be started: `backend` alone is enough for web/checkout work,
-# `bot-free` pulls in proxy-free + backend + redis (minimal edition loop).
+# `bot` pulls in proxy + backend + redis (the full publishing loop).
 
 x-dev-watch-proxy: &dev-watch-proxy
   - action: sync+restart
@@ -48,16 +48,15 @@ x-dev-watch-bot: &dev-watch-bot
     path: ../../bun.lock
 
 services:
-  proxy-free:
+  proxy:
     extends:
       file: docker-compose.base.yml
-      service: proxy-free
+      service: proxy
     build:
       dockerfile: apps/proxy/Dockerfile.dev
     env_file:
       - ../../.env.local
     environment:
-      - APP_EDITION=free
       - NODE_ENV=development
       - LOGGER_LEVEL=debug
     depends_on:
@@ -71,68 +70,19 @@ services:
     develop:
       watch: *dev-watch-proxy
 
-  proxy-premium:
+  bot:
     extends:
       file: docker-compose.base.yml
-      service: proxy-premium
-    build:
-      dockerfile: apps/proxy/Dockerfile.dev
-    env_file:
-      - ../../.env.local
-    environment:
-      - APP_EDITION=premium
-      - NODE_ENV=development
-      - LOGGER_LEVEL=debug
-    depends_on:
-      redis:
-        condition: service_started
-    ports:
-      - 8082:8080 # Expose proxy for local debugging
-    healthcheck:
-      disable: true # Remove healthcheck for faster development startup
-    command: ["bun", "run", "start"]
-    develop:
-      watch: *dev-watch-proxy
-
-  bot-free:
-    extends:
-      file: docker-compose.base.yml
-      service: bot-free
+      service: bot
     build:
       dockerfile: apps/bot/Dockerfile.dev
     env_file:
       - ../../.env.local
     environment:
-      - APP_EDITION=free
       - NODE_ENV=development
       - LOGGER_LEVEL=debug
     depends_on:
-      proxy-free:
-        condition: service_started
-      backend:
-        condition: service_started
-      redis:
-        condition: service_started
-    healthcheck:
-      disable: true # Remove healthcheck for faster development startup
-    command: ["bun", "run", "start"]
-    develop:
-      watch: *dev-watch-bot
-
-  bot-premium:
-    extends:
-      file: docker-compose.base.yml
-      service: bot-premium
-    build:
-      dockerfile: apps/bot/Dockerfile.dev
-    env_file:
-      - ../../.env.local
-    environment:
-      - APP_EDITION=premium
-      - NODE_ENV=development
-      - LOGGER_LEVEL=debug
-    depends_on:
-      proxy-premium:
+      proxy:
         condition: service_started
       backend:
         condition: service_started

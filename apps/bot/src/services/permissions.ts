@@ -28,7 +28,7 @@ const missingPublishPermissionsFor = (channel: GuildBasedChannel): string[] => {
  * Compute + push this bot's publish-state for `channels` to the backend (ADR
  * 0008), and — on the permission-change path — clear the proxy denylist for any
  * channel whose perms were just restored. `full` marks a reconnect/join sweep so
- * the backend drops this edition's stale fields. Fire-and-forget: a failed push
+ * the backend drops the stale fields. Fire-and-forget: a failed push
  * is backstopped by the write-back REST fallback and the next sweep.
  */
 const syncChannels = async (

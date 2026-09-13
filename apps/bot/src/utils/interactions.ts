@@ -1,22 +1,29 @@
-import { config } from '@ap/config';
 import { capitalize } from '@ap/utils';
 import type { ChatInputCommandInteraction } from 'discord.js';
 import { ContainerBuilder, MessageFlags } from 'discord.js';
 import { emojis, links } from '../lib/constants/index.js';
+import { Services } from '../services/index.js';
 
 /**
- * Checks if running premium instance and replies with upgrade message if not.
- * @returns true if premium check failed (caller should return), false if premium (continue)
+ * Premium gate for a guild-scoped command. One bot serves both plans, so the
+ * answer comes from the backend per guild — nothing about this process implies
+ * it. Replies with the upgrade message and returns true when the caller should
+ * stop.
+ *
+ * A failed read is treated as NOT Premium: the alternative is opening a control
+ * whose every write the backend then rejects with 403.
  */
 export async function handlePremiumCheck(
   interaction: ChatInputCommandInteraction,
+  guildId: string,
   featureName = 'this feature'
 ): Promise<boolean> {
-  if (config.isPremiumInstance) return false;
+  const guildChannels = await Services.Channel.getGuildChannels(guildId);
+  if (guildChannels?.premium) return false;
 
   const premiumContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
     textDisplay.setContent(
-      `${emojis.warning} ${capitalize(featureName)} is only available in **Premium** edition.\n\nUpgrade at [${links.hostname}](<${links.website}>) to unlock ${featureName} and other premium features!`
+      `${emojis.warning} ${capitalize(featureName)} is a **Premium** feature.\n\nUpgrade at [${links.hostname}](<${links.website}>) to unlock ${featureName} and the rest of Premium!`
     )
   );
 

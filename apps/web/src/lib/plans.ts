@@ -5,7 +5,7 @@
 
 export const PREMIUM_PLAN_FEATURES = [
   'Unlimited channels',
-  'Dedicated publishing capacity',
+  'Priority publishing',
   'Advanced message filters',
   'Priority support',
 ];
@@ -21,8 +21,11 @@ export interface PlanComparisonRow {
 }
 
 /**
- * čl. 60 st. 2 makes the publishing row a contract term. It holds because each edition
- * runs its own proxy instance and queue, so premium never queues behind free.
+ * čl. 60 st. 2 makes the publishing row a contract term, so it has to describe what
+ * actually runs. There is ONE publishing queue; Premium is a higher tier within it
+ * (ADR 0012), which is why the row says "priority in the queue" and NOT "dedicated
+ * queue" or "dedicated capacity" — those described a second bot that no longer
+ * exists, and were never true of a shared Discord rate limit anyway.
  */
 export const planComparison = (freeChannelLimit: number): readonly PlanComparisonRow[] => [
   {
@@ -33,8 +36,8 @@ export const planComparison = (freeChannelLimit: number): readonly PlanCompariso
   {
     label: 'Auto-publishing',
     detail: "Every message in an enabled channel, published to followers within Discord's limits",
-    free: 'Shared queue',
-    premium: 'Dedicated queue',
+    free: 'Standard queue',
+    premium: 'Priority in the queue',
   },
   {
     label: 'Message filters',

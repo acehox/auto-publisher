@@ -11,10 +11,7 @@ export class GuildDeleteListener extends Listener {
   public async run(guild: Guild) {
     logger.info(`Guild deleted: ${guild.id} (${guild.name})`);
 
-    // A re-invite must start un-latched (handover may be pending again)
-    Services.Handover.onGuildDelete(guild.id);
-
-    // Soft-delete this edition's presence (config preserved for re-invite)
+    // Soft-delete the presence (config preserved for re-invite)
     await Services.Guild.remove(guild.id);
   }
 }

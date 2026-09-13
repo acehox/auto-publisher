@@ -1,8 +1,10 @@
-# ADR 0011: Self-host is a single premium-edition instance selected by an explicit variable
+# ADR 0011: Self-host is a single instance with billing off, selected by an explicit variable
 
 ## Status
 
-Accepted — 2026-08-10. Extends ADR 0006 (which established the per-edition bot/proxy topology) with a second, single-edition deployment shape.
+Accepted — 2026-08-10. **Generalised by ADR 0013 (2026-09-09): this shape is now the only shape.** The single-bot topology below is what the public instance runs too; `DEPLOYMENT_MODE` survives but gates only billing, and the edition pinning, `Editions.CONFIGURED`, the handover route and the `Edition` type it discusses are all gone. Kept for the two-latent-bugs record and the `DEPLOYMENT_MODE`-not-`NODE_ENV` reasoning, both still load-bearing.
+
+Extends ADR 0006 (which established the per-edition bot/proxy topology) with a second, single-edition deployment shape.
 
 ## Context
 
@@ -37,5 +39,5 @@ The project is source-available under PolyForm Perimeter, which permits running 
 - Self-hosting is one Discord application, four values in one `.env`, and `docker compose up -d`. Postgres and Redis ship with the stack; the Supabase CLI is a maintainer-only tool.
 - Two latent bugs in any single-token deployment are fixed as a side effect: the guild reconcile no longer disables its own join rails and channel-limit backstop when an edition has no token, and `Retention.applyRetention()` no longer sits behind a Paddle call that throws on every run.
 - Both editions of the public stack, and the self-host stack, now read exactly one env file each — Compose no longer appends the dev env file into the production render.
-- The `edition` column, the `Edition` type and the handover machinery all remain; self-host simply never produces a second edition. Nothing needs unwinding if the shapes diverge further later.
+- The `edition` column, the `Edition` type and the handover machinery all remain; self-host simply never produces a second edition. *(ADR 0013 unwound all three a month later — the shapes converged instead of diverging.)*
 - Every new billing or premium surface must be gated in two places — the backend route and the dashboard — or a self-hosted instance will render a control that cannot work.

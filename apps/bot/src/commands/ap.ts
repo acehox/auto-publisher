@@ -1,4 +1,3 @@
-import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Subcommand } from '@sapphire/plugin-subcommands';
 import { ChannelType, InteractionContextType, PermissionFlagsBits } from 'discord.js';
@@ -18,7 +17,7 @@ import {
     { name: 'enable', chatInputRun: 'chatInputEnable' },
     { name: 'disable', chatInputRun: 'chatInputDisable' },
     { name: 'overview', chatInputRun: 'chatInputOverview' },
-    ...(config.isPremiumInstance ? [{ name: 'filters', chatInputRun: 'chatInputFilters' }] : []),
+    { name: 'filters', chatInputRun: 'chatInputFilters' },
   ],
 })
 export class APCommand extends Subcommand {
@@ -59,20 +58,20 @@ export class APCommand extends Subcommand {
             .setDescription('See publishing status for every channel in this server')
         );
 
-      if (config.isPremiumInstance) {
-        command.addSubcommand(subcommand =>
-          subcommand //
-            .setName('filters')
-            .setDescription('Choose exactly which messages auto-publish from each channel')
-            .addChannelOption(option =>
-              option //
-                .setName('channel')
-                .setDescription('The announcement channel to manage conditions for')
-                .setRequired(true)
-                .addChannelTypes([ChannelType.GuildAnnouncement])
-            )
-        );
-      }
+      // Registered unconditionally: one bot serves both plans, so the command
+      // must exist for every guild and gate on the guild's own entitlement.
+      command.addSubcommand(subcommand =>
+        subcommand //
+          .setName('filters')
+          .setDescription('Choose exactly which messages auto-publish from each channel')
+          .addChannelOption(option =>
+            option //
+              .setName('channel')
+              .setDescription('The announcement channel to manage conditions for')
+              .setRequired(true)
+              .addChannelTypes([ChannelType.GuildAnnouncement])
+          )
+      );
 
       return command;
     });

@@ -78,9 +78,9 @@ export const setBotInvite = (clientId: string): void => {
 
 /**
  * Unicode fallbacks, replaced in place by `hydrateEmojis` at startup once the
- * app-owned emoji ids are resolved. A key whose name is missing from this
- * edition's app keeps its fallback, so a partial upload degrades cosmetically
- * instead of leaking raw `<:name:id>` text into replies.
+ * app-owned emoji ids are resolved. A key whose name is missing from the app
+ * keeps its fallback, so a partial upload degrades cosmetically instead of
+ * leaking raw `<:name:id>` text into replies.
  */
 export const emojis = {
   botBrand: '📢',
@@ -94,14 +94,13 @@ export const emojis = {
 };
 
 /**
- * App-emoji names, identical across all four applications (free/premium ×
- * dev/prod) — only the snowflake differs, so ids are resolved at runtime rather
- * than hardcoded per client.
+ * App-emoji names, identical across the dev and prod applications — only the
+ * snowflake differs, so ids are resolved at runtime rather than hardcoded per
+ * client.
  *
  * These must be app-owned emojis, not guild-hosted ones: a guild emoji only
- * renders for a bot that shares that guild, and the handover rails keep exactly
- * one edition in any given guild — including the support server that used to
- * host them, which left the evicted edition rendering plain text.
+ * renders for a bot that shares that guild, so a guild-hosted set rendered raw
+ * `<:name:id>` text anywhere the bot was not a member of the emoji host.
  */
 export const emojiNames: Record<keyof typeof emojis, string> = {
   botBrand: 'auto_publisher',
@@ -117,11 +116,14 @@ export const emojiNames: Record<keyof typeof emojis, string> = {
 export const notes = {
   rateLimit: 'Discord allows up to 10 messages to be published per hour per channel.',
   // No "every message will be published" — the proxy gate drops on Discord's
-  // 10/hour/channel sublimit, so the absolute was false on both editions.
+  // 10/hour/channel sublimit, so the absolute would be false on either plan.
   publishDelayFree:
-    "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium for faster publishing.",
+    "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium and your messages move to the front of the queue.",
+  // Priority publishing, NOT "dedicated capacity": there is one publishing
+  // pipeline and Premium is a queue tier within it (ADR 0012). ZZP čl. 60 st. 2
+  // makes this copy a contract term, so it has to describe what actually runs.
   publishDelayPremium:
-    'Messages are published almost instantly — Premium runs on dedicated capacity, so delays stay rare even at peak times.',
+    "Your messages are published at Premium priority — they go ahead of the free queue whenever there's a backlog.",
   permissionsExtendedDisable:
     "Don't keep permissions disabled for too long, as the bot will automatically disable channels that lack proper permissions for an extended period.",
 } as const;

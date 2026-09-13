@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-07-04. Amended by ADR 0006 — presence relocates from `guild.deletedAt` to per-edition `bot_presence` rows; the soft-delete, restore, purge, and reconciliation semantics below carry over unchanged, applied per edition.
+Accepted — 2026-07-04. Amended by ADR 0006 — presence relocates from `guild.deletedAt` to `bot_presence` rows; the soft-delete, restore, purge, and reconciliation semantics below carry over unchanged. Further amended by ADR 0013: `bot_presence` is one row per guild (pk `guild_id`, no `edition`) and the reconcile is a single sweep, so "applied per edition" no longer means anything.
 
 ## Context
 

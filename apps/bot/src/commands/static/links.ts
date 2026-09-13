@@ -25,7 +25,10 @@ export class LinksCommand extends Command {
         .setButtonAccessory(Buttons.botInvite())
     );
 
-    if (!config.isPremiumInstance) {
+    // Shown wherever Premium is sold. Deliberately not per-guild: `/links` is a
+    // static command, and a backend round trip to hide one button is not worth
+    // putting an HTTP dependency on it.
+    if (config.isPublicInstance) {
       replyContainer.addSectionComponents(section =>
         section
           .addTextDisplayComponents(textDisplay =>

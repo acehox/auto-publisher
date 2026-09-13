@@ -2,6 +2,8 @@
 
 ## Status
 
+**Partly superseded by ADR 0013 (2026-09-09).** What stands: one edition-agnostic backend, one Postgres, one Redis, and the `bot_presence` table with its soft-delete + reconciliation rails. What is withdrawn: everything per-edition — the two bots, the two proxies, `bot_presence.edition`, the backend-side entitlement gate with its leave, the premium handover and its `PremiumPending` marker, "managing edition", and the two-egress-IP rationale. The ban-isolation premise below is wrong: Discord restricts IP addresses, not tokens. Read ADR 0013 first; this file is kept for the seams it names, which are the reason the single backend is not up for reconsideration.
+
 Accepted — 2026-07-05. Amends ADR 0005 (guild presence becomes per-edition `bot_presence` rows instead of `guild.deletedAt`; soft-delete and reconciliation semantics carry over).
 
 ## Context

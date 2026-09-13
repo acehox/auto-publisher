@@ -37,21 +37,10 @@ services:
       --save 60 10000
     logging: *prod-logging
 
-  proxy-free:
+  proxy:
     env_file:
       - ../../.env
     environment:
-      - APP_EDITION=free
-      - NODE_ENV=production
-      - LOGGER_LEVEL=info
-    logging: *prod-logging
-    deploy: *proxy-resources
-
-  proxy-premium:
-    env_file:
-      - ../../.env
-    environment:
-      - APP_EDITION=premium
       - NODE_ENV=production
       - LOGGER_LEVEL=info
     logging: *prod-logging
@@ -73,21 +62,10 @@ services:
           memory: 256M
           cpus: '0.25'
 
-  bot-free:
+  bot:
     env_file:
       - ../../.env
     environment:
-      - APP_EDITION=free
-      - NODE_ENV=production
-      - LOGGER_LEVEL=info
-    logging: *prod-logging
-    deploy: *bot-resources
-
-  bot-premium:
-    env_file:
-      - ../../.env
-    environment:
-      - APP_EDITION=premium
       - NODE_ENV=production
       - LOGGER_LEVEL=info
     logging: *prod-logging

@@ -10,34 +10,19 @@ export enum DatabaseIDs {
   // 7 retired (was LegacyGuildPerms) — legacy canPublish maps now recompute from
   // the backend's in-memory Discord read cache (ADR 0007)
   Alerts = 8,
-  CrosspostQueuePremium = 9,
-  SublimitCounterPremium = 10,
-  BlockedChannelsPremium = 11,
-  // Premium handover markers (backend-owned; premium bot reads on its hot path)
-  PremiumPending = 12,
-  // Per-guild publish-state hash (backend-owned; the bots push, dashboard + gate read)
+  // 9, 10, 11 retired — were the premium proxy's queue/sublimit/denylist triple
+  // back when each edition ran its own bot, proxy and token.
+  // 12 retired (was PremiumPending) — the premium handover marker; there is one
+  // bot now, so nothing ever idles waiting to take a guild over.
+  // Per-guild publish-state hash (backend-owned; the bot pushes, dashboard + gate read)
   PublishState = 13,
-  // Onboarding boost budget: remaining priority publishes for a newly-joined
-  // guild. Shared, NOT per-edition — the budget must follow a guild through a
-  // premium handover, and a per-edition key would hand the premium bot a fresh
-  // 10 after takeover. Backend seeds it (registerNewGuild); both proxies read
-  // at enqueue and decrement on a boosted publish.
-  OnboardingBoost = 14,
+  // Per-guild queue-priority state, backend-written and proxy-read at enqueue:
+  // the onboarding boost budget (`boost:{guildId}`, remaining priority
+  // publishes, 90d TTL) and the Premium marker (`premium:{guildId}`, no TTL).
+  // One DB because they answer the same question — which tier does this guild's
+  // next crosspost enter at — and the proxy reads both on the same hot path.
+  QueuePriority = 14,
 }
-
-/** Proxy-owned logical DBs, keyed by the proxy's edition */
-export const ProxyDatabaseIDs = {
-  free: {
-    crosspostQueue: DatabaseIDs.CrosspostQueue,
-    sublimitCounter: DatabaseIDs.SublimitCounter,
-    blockedChannels: DatabaseIDs.BlockedChannels,
-  },
-  premium: {
-    crosspostQueue: DatabaseIDs.CrosspostQueuePremium,
-    sublimitCounter: DatabaseIDs.SublimitCounterPremium,
-    blockedChannels: DatabaseIDs.BlockedChannelsPremium,
-  },
-} as const;
 
 export enum Keys {
   Channel = 'channel',
@@ -47,7 +32,9 @@ export enum Keys {
   MigratedGuild = 'migrated_guild',
   PaddleEvent = 'paddle_event',
   Alert = 'alert',
-  PremiumPending = 'premium_pending',
   PublishState = 'publish_state',
   Boost = 'boost',
+  // Presence = the guild is entitled to Premium. Written by
+  // `Plans.reconcileChannelServing`, the one place entitlement is resolved.
+  PremiumGuild = 'premium',
 }

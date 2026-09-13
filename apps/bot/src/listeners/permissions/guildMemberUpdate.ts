@@ -25,8 +25,5 @@ export class GuildMemberUpdateListener extends Listener {
       full: false,
       clearBlocked: true,
     });
-
-    // Premium + handover pending: the changed roles may unblock the swap
-    await Services.Handover.pingIfPending(newMember.guild.id);
   }
 }

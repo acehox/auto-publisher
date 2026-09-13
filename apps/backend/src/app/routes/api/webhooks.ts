@@ -134,7 +134,9 @@ async function handleSubscriptionEvent(sub: PaddleSubscriptionState): Promise<vo
 
   if (skipped) return;
 
-  // Entitled → not-entitled: premium bot leaves the guild immediately
+  // Entitlement changed either way — the guild's channels move to match its
+  // plan. On an upgrade this is the whole activation path: nothing joins the
+  // guild any more, so no join event will do it instead.
   await Services.Entitlements.enforceTransition(previous, current);
 }
 

@@ -2,12 +2,10 @@ import 'server-only';
 import { config, env, isPublicInstance } from '@ap/config';
 
 export type SiteConfig = {
-  /** False for a self-hosted copy: no billing, no upgrade paths, one bot. */
+  /** False for a self-hosted copy: no billing, no upgrade paths. */
   isPublicInstance: boolean;
-  /** Self-host: the single application's id, which is also the OAuth client. */
-  freeBotId: string;
-  /** Public instance only — empty when self-hosted (there is no second bot). */
-  premiumBotId: string;
+  /** Application id of the bot users are invited to. */
+  botId: string;
   /**
    * The free plan's channel cap from `@ap/config`. Rides this context because the
    * components that render it are client components and `@ap/config` is server-only.
@@ -41,15 +39,15 @@ export type SiteConfig = {
 /**
  * Resolve deployment config on the server, once per render.
  *
- * A self-hosted instance runs ONE Discord application: the same client id logs
- * the admin in and is the bot they invite. The public instance authenticates
- * with one application but invites two others, which is why the pair exists.
+ * `botId` falls back to `DISCORD_CLIENT_ID`, which is the whole story for a
+ * self-host: one application logs the admin in and is the bot they invite. The
+ * public instance sets `DISCORD_BOT_ID` separately because its bot is the
+ * long-lived application the existing servers already have.
  */
 export function getSiteConfig(): SiteConfig {
   return {
     isPublicInstance,
-    freeBotId: isPublicInstance ? env.DISCORD_FREE_BOT_ID : env.DISCORD_CLIENT_ID,
-    premiumBotId: isPublicInstance ? env.DISCORD_PREMIUM_BOT_ID : '',
+    botId: env.DISCORD_BOT_ID || env.DISCORD_CLIENT_ID,
     freeChannelLimit: config.limits.freeChannelsPerGuild,
     filtersPerChannel: config.limits.filtersPerChannel,
     legacySunsetDate: config.legacySunsetDate,

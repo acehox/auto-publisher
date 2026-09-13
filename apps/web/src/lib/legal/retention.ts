@@ -15,7 +15,7 @@
  * Scope rule: anything we obtain from Discord and then keep gets an entry, whether or
  * not it identifies a person, because Discord's ToS covers all API Data. State we
  * derive ourselves does not — the proxy's sublimit counters and blocked-channel
- * denylist, the migration and handover markers, none of which holds a user identifier.
+ * denylist, and the migration markers — none of which holds a user identifier.
  * They are deliberately absent rather than accidentally missing.
  */
 export const retention = {

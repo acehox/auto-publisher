@@ -13,9 +13,9 @@ type EmojiKey = keyof typeof emojis;
  * they replaced the guild-hosted set — see `emojiNames`.
  *
  * A name absent from the app is warned about rather than thrown on: the missing
- * key keeps its fallback and the rest still render. Since the four apps are
- * uploaded by hand, this warning is the only guard against a name drifting
- * between editions.
+ * key keeps its fallback and the rest still render. Since the emoji set is
+ * uploaded by hand per application, this warning is the only guard against a
+ * name drifting between the dev and production apps.
  */
 export const hydrateEmojis = async (client: Client<true>): Promise<void> => {
   const fetched = await client.application.emojis.fetch();

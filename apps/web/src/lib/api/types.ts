@@ -3,7 +3,6 @@ export type {
   ChannelLimitReason,
   CheckoutResponse,
   DiscordGuild,
-  Edition,
   FilterMatchMode,
   FilterType,
   GuildChannel,

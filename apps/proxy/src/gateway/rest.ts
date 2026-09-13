@@ -21,8 +21,9 @@ export const createRest = (token: string): REST => {
     retries: 0,
   }).setToken(token);
 
-  // Pin the outbound source IP so each edition's proxy keeps its own egress
-  // IP (per-edition Cloudflare ban isolation). Unset = default route (dev).
+  // Pin the outbound source IP. Discord's invalid-request ceiling is per IP,
+  // so this is the address the host rotates if the shed ever trips for real.
+  // Unset = default route (dev).
   if (config.egressLocalAddress) {
     // undici's BuildOptions type demands port although it is optional at runtime
     const connect = { localAddress: config.egressLocalAddress } as buildConnector.BuildOptions;

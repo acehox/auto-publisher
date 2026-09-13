@@ -5,25 +5,27 @@ import { useIsPublicInstance } from '@/components/site-config-context';
 
 /**
  * Copy explaining that publishing may be delayed. Free callers get the delay
- * note plus a soft Premium upsell; entitled callers get the minimal-delay
- * message. Neither promises delivery: the proxy gate drops on Discord's
- * 10/hour/channel sublimit. Mirrors `notes.publishDelayFree` in the bot.
+ * note plus a soft Premium upsell; entitled callers get the priority message.
+ * Neither promises delivery: the proxy gate drops on Discord's 10/hour/channel
+ * sublimit. Mirrors `notes.publishDelay*` in the bot.
  *
- * Keyed on `hasSubscription`, not live premium-bot presence: an entitled guild
- * whose Premium bot hasn't taken over yet is still served by the free bot and
- * so still sees free-bot delays. Keeping this simple is deliberate — the
- * pending-handover window is transient.
+ * Says "priority", not "dedicated capacity": there is one publishing queue and
+ * Premium is a tier within it (ADR 0012). čl. 60 st. 2 makes this a contract
+ * term, so it has to describe what actually runs.
+ *
+ * `hasSubscription` is the whole of the condition — an entitled guild is served
+ * at Premium priority the moment the webhook lands.
  */
 export function publishDelayCopy(hasSubscription: boolean): string {
   return hasSubscription
-    ? 'Messages are published almost instantly — Premium runs on dedicated capacity, so delays stay rare even at peak times.'
-    : "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium for faster publishing.";
+    ? "Your messages are published at Premium priority — they go ahead of the free queue whenever there's a backlog."
+    : "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium and your messages move to the front of the queue.";
 }
 
 /**
  * Which copy this deployment shows. A self-hosted instance has no billing and
- * no shared free-tier queue to be throttled behind, so it always reads as
- * entitled — otherwise the note would upsell a plan that doesn't exist.
+ * no free tier to be queued behind, so it always reads as entitled — otherwise
+ * the note would upsell a plan that doesn't exist.
  */
 export function usePublishDelayEntitled(hasSubscription: boolean): boolean {
   const isPublicInstance = useIsPublicInstance();

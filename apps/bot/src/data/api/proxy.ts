@@ -1,7 +1,7 @@
 import { config } from '@ap/config';
 import { RequestMethod, type Snowflake } from 'discord.js';
 
-// This edition's proxy (per-edition services in the shared compose stack)
+// The proxy: every Discord call and every crosspost enqueue goes through it
 const baseUrl = config.proxyUrl;
 const FETCH_TIMEOUT_MS = 5_000;
 

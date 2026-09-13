@@ -49,15 +49,17 @@ export class HelpCommand extends Command {
         )
       );
 
-    if (config.isPremiumInstance) {
+    const filtersLine = `${emojis.filter}  Use </ap filters:${apCommandId}> to choose which messages get published in a channel.`;
+
+    // The heading is the only difference: a self-hosted copy has one plan, so
+    // calling its own features "Premium" would just be confusing.
+    if (config.isPublicInstance) {
       replyContainer
         .addSeparatorComponents(separator => separator)
         .addTextDisplayComponents(textDisplay => textDisplay.setContent('### Premium features:'))
-        .addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent(
-            `${emojis.filter}  Use </ap filters:${apCommandId}> to choose which messages get published in a channel.`
-          )
-        );
+        .addTextDisplayComponents(textDisplay => textDisplay.setContent(filtersLine));
+    } else {
+      replyContainer.addTextDisplayComponents(textDisplay => textDisplay.setContent(filtersLine));
     }
 
     replyContainer

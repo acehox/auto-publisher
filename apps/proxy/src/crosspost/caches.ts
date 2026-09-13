@@ -129,18 +129,24 @@ export const createBlockedCache = (redis: RedisClient): BlockedCache => {
 };
 
 /**
- * Remaining priority publishes for a newly-joined guild. The backend seeds the
- * key (`registerNewGuild` only); the proxy reads it at enqueue to pick a queue
- * priority and decrements it on a boosted publish. Key presence IS the boost
- * state, so exhaustion deletes rather than leaving a zero behind.
+ * The two per-guild signals that pick a crosspost's queue tier, both
+ * backend-written and read here at enqueue (Redis DB `QueuePriority`):
+ *
+ * - the onboarding boost budget — remaining priority publishes for a
+ *   newly-joined guild, seeded by `registerNewGuild` only. Key presence IS the
+ *   boost state, so exhaustion deletes rather than leaving a zero behind.
+ * - the Premium marker — presence means the guild is entitled, written by the
+ *   backend's `Plans.reconcileChannelServing`.
  */
-export type BoostBudget = {
+export type QueuePriorityState = {
   isBoosted(guildId: string): Promise<boolean>;
+  isPremium(guildId: string): Promise<boolean>;
   consume(guildId: string): Promise<void>;
 };
 
-export const createBoostBudget = (redis: RedisClient): BoostBudget => {
+export const createQueuePriorityState = (redis: RedisClient): QueuePriorityState => {
   const key = (guildId: string) => `${Keys.Boost}:${guildId}`;
+  const premiumKey = (guildId: string) => `${Keys.PremiumGuild}:${guildId}`;
 
   return {
     // Fails CLOSED, unlike the gate caches above: a Redis blip that fell open
@@ -152,6 +158,17 @@ export const createBoostBudget = (redis: RedisClient): BoostBudget => {
         guildId,
       });
       return value !== null && Number(value) > 0;
+    },
+    // Fails CLOSED for the same reason: a Redis blip that fell open would
+    // promote the whole base to the Premium tier, which is what the tier is
+    // meant to distinguish. A paying guild losing priority for one message
+    // during an outage is the cheaper error.
+    isPremium: async guildId => {
+      const value = await withTimeout(redis.get(premiumKey(guildId)), null, {
+        op: 'premium.get',
+        guildId,
+      });
+      return value !== null;
     },
     consume: async guildId => {
       try {

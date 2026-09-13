@@ -1,21 +1,17 @@
 'use client';
 
-import { Filter as FilterIcon, Hash, Loader2, Lock, Plus, RotateCcw, Save } from 'lucide-react';
+import { Filter as FilterIcon, Hash, Loader2, Plus, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import {
-  ChannelLimitCta,
-  channelLimitReasonFromGuild,
-} from '@/components/dashboard/channel-limit-upsell';
 import { ConditionRow } from '@/components/dashboard/condition-row';
 import {
   DEFAULT_MATCH_MODE,
   filterValueError,
   MATCH_MODE_OPTIONS,
 } from '@/components/dashboard/filter-meta';
-import { useIsPublicInstance, useSiteConfig } from '@/components/site-config-context';
+import { useSiteConfig } from '@/components/site-config-context';
 import {
   Accordion,
   AccordionContent,
@@ -34,11 +30,6 @@ import { cn } from '@/lib/utils';
 interface FilterManagerProps {
   guildId: string;
   channels: GuildChannel[];
-  /** Premium bot present AND actively managing (handover complete). */
-  isActive: boolean;
-  hasSubscription: boolean;
-  premiumBotPresent: boolean;
-  premiumPending: boolean;
 }
 
 /** Map a channel's stored conditions into the editable builder shape. */
@@ -71,13 +62,11 @@ function serializeRule(matchMode: FilterMatchMode, conditions: FilterInput[]): s
 function ChannelRuleEditor({
   guildId,
   channel,
-  isActive,
   roles,
   rolesById,
 }: {
   guildId: string;
   channel: GuildChannel;
-  isActive: boolean;
   roles: GuildRole[];
   rolesById: Record<string, GuildRole>;
 }) {
@@ -135,7 +124,7 @@ function ChannelRuleEditor({
       return;
     }
     if (result.code === 'PREMIUM_INACTIVE') {
-      toast.error('The Premium bot is not active for this server yet.');
+      toast.error('Premium is not active for this server.');
       return;
     }
     toast.error("Couldn't save filters", { description: 'Please try again.' });
@@ -171,7 +160,6 @@ function ChannelRuleEditor({
                 options={MATCH_MODE_OPTIONS}
                 value={matchMode}
                 onChange={setMatchMode}
-                disabled={!isActive}
                 size="sm"
               />
               <span className="text-sm text-slate-300">of these conditions match:</span>
@@ -197,7 +185,6 @@ function ChannelRuleEditor({
               condition={condition}
               roles={roles}
               rolesById={rolesById}
-              disabled={!isActive}
               onChange={next => updateCondition(index, next)}
               onRemove={() => removeCondition(index)}
             />
@@ -205,50 +192,39 @@ function ChannelRuleEditor({
         </div>
       )}
 
-      {isActive && (
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-          <button
-            type="button"
-            onClick={addCondition}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-400 transition-colors hover:text-blue-300"
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+        <button
+          type="button"
+          onClick={addCondition}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-400 transition-colors hover:text-blue-300"
+        >
+          <Plus className="h-4 w-4" />
+          Add condition
+        </button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={revert}
+            disabled={!dirty || saving}
+            className="text-slate-400 hover:text-white"
           >
-            <Plus className="h-4 w-4" />
-            Add condition
-          </button>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={revert}
-              disabled={!dirty || saving}
-              className="text-slate-400 hover:text-white"
-            >
-              <RotateCcw className="h-4 w-4" />
-              Revert
-            </Button>
-            <Button size="sm" onClick={save} disabled={!dirty || saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Save changes
-            </Button>
-          </div>
+            <RotateCcw className="h-4 w-4" />
+            Revert
+          </Button>
+          <Button size="sm" onClick={save} disabled={!dirty || saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            Save changes
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
-export function FilterManager({
-  guildId,
-  channels,
-  isActive,
-  hasSubscription,
-  premiumBotPresent,
-  premiumPending,
-}: FilterManagerProps) {
-  // A self-hosted instance has no billing, so there is no Premium bot to invite
-  // and nothing to unlock — the lock card would name a plan that doesn't exist.
-  // Belt-and-braces: the page already forces isActive there.
-  const isPublicInstance = useIsPublicInstance();
+export function FilterManager({ guildId, channels }: FilterManagerProps) {
+  // Always editable: the page renders this only for an entitled guild (or any
+  // guild on a self-host), and the backend re-checks with PREMIUM_INACTIVE.
   const [roles, setRoles] = useState<GuildRole[]>([]);
 
   const rolesById = useMemo(() => Object.fromEntries(roles.map(role => [role.id, role])), [roles]);
@@ -286,33 +262,8 @@ export function FilterManager({
       ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [requestedChannelId]);
 
-  const lockReason = channelLimitReasonFromGuild({
-    hasSubscription,
-    premiumBotPresent,
-    premiumPending,
-  });
-
   return (
     <div className="space-y-6">
-      {!isActive && isPublicInstance && (
-        <Card className="flex flex-col gap-4 border-purple-500/30 bg-purple-500/10 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <Lock className="mt-0.5 h-5 w-5 shrink-0 text-purple-400" />
-            <div>
-              <p className="font-medium text-white">Filter editing is locked</p>
-              <p className="text-sm text-slate-400">
-                {lockReason === 'LIMIT_PREMIUM_PENDING'
-                  ? 'Your Premium bot is activating. Grant it publish permission so it can take over — then filters become editable and start applying.'
-                  : 'Invite your Premium bot to this server to edit filters. Existing filters are shown below and apply once the Premium bot is active.'}
-              </p>
-            </div>
-          </div>
-          <div className="shrink-0">
-            <ChannelLimitCta reason={lockReason} guildId={guildId} />
-          </div>
-        </Card>
-      )}
-
       {enabledChannels.length === 0 ? (
         <Card className="border-slate-800 bg-slate-900/50 p-12 text-center">
           <FilterIcon className="mx-auto mb-4 h-16 w-16 text-slate-600" />
@@ -357,7 +308,6 @@ export function FilterManager({
                     <ChannelRuleEditor
                       guildId={guildId}
                       channel={channel}
-                      isActive={isActive}
                       roles={roles}
                       rolesById={rolesById}
                     />

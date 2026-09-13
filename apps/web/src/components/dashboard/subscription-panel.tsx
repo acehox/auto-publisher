@@ -6,7 +6,6 @@ import {
   Check,
   Crown,
   ExternalLink,
-  Hourglass,
   Loader2,
   Lock,
   PauseCircle,
@@ -16,10 +15,6 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import {
-  ChannelLimitCta,
-  channelLimitReasonFromGuild,
-} from '@/components/dashboard/channel-limit-upsell';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { shouldOfferWithdrawal, WithdrawalPanel } from '@/components/dashboard/withdrawal-panel';
@@ -122,12 +117,7 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
           column. */}
       {entitledSubscription ? (
         <div className="max-w-2xl">
-          <ActiveSubscription
-            guildId={guildId}
-            subscription={entitledSubscription}
-            detail={detail}
-            failed={failed}
-          />
+          <ActiveSubscription subscription={entitledSubscription} detail={detail} failed={failed} />
         </div>
       ) : (
         <FreeSubscription guildId={guildId} guildName={guildName} />
@@ -145,34 +135,18 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
   );
 }
 
+// Paid IS working: one bot serves both plans, so an entitled subscription
+// un-pauses the guild's channels in place — nothing has to be invited or handed
+// over first, which is why this card no longer has an "activating" state.
 function ActiveSubscription({
-  guildId,
   subscription,
   detail,
   failed,
 }: {
-  guildId: string;
   subscription: SubscriptionData;
   detail: SubscriptionDetail | null;
   failed: boolean;
 }) {
-  const { guild, data } = useGuild();
-  // Paid and working are different facts. Entitlement comes from Paddle, but
-  // publishing only switches over once the Premium bot is in the guild AND the
-  // handover has completed — so deriving this from subscription status alone told
-  // entitled-but-not-yet-active servers that everything was unlocked. The
-  // handover banners are mounted on Overview only, which left this page as the
-  // one surface that could assert it with nothing to contradict it.
-  const premiumActive = guild.premiumBotPresent && !data.premiumPending;
-  // hasSubscription is true by construction here — this component only renders
-  // for entitled statuses — so the shared mapper resolves to invite-vs-permissions.
-  const handoverReason = premiumActive
-    ? null
-    : channelLimitReasonFromGuild({
-        hasSubscription: true,
-        premiumBotPresent: guild.premiumBotPresent,
-        premiumPending: data.premiumPending,
-      });
   const pastDue = subscription.status === 'past_due';
   const cancelScheduled = subscription.scheduledChange?.action === 'cancel';
 
@@ -202,13 +176,7 @@ function ActiveSubscription({
                   </Badge>
                 )}
               </div>
-              <p className="text-slate-400">
-                {premiumActive
-                  ? 'All premium features active'
-                  : guild.premiumBotPresent
-                    ? 'Activating — not publishing from this server yet'
-                    : 'The Premium bot is not in this server yet'}
-              </p>
+              <p className="text-slate-400">All premium features active</p>
             </div>
           </div>
         </div>
@@ -221,29 +189,6 @@ function ActiveSubscription({
               <p className="text-slate-300 text-sm">
                 Update your payment method to keep Premium. Publishing continues in the meantime.
               </p>
-            </div>
-          </div>
-        )}
-
-        {handoverReason && (
-          <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 mb-6 flex items-start gap-3">
-            {handoverReason === 'LIMIT_PREMIUM_PENDING' ? (
-              <Hourglass className="w-5 h-5 text-purple-300 shrink-0 mt-0.5" />
-            ) : (
-              <Crown className="w-5 h-5 text-purple-300 shrink-0 mt-0.5" />
-            )}
-            <div className="flex-1">
-              <p className="text-white text-sm mb-1">
-                {handoverReason === 'LIMIT_PREMIUM_PENDING'
-                  ? 'Premium is activating'
-                  : 'Invite the Premium bot to switch over'}
-              </p>
-              <p className="text-slate-300 text-sm mb-3">
-                {handoverReason === 'LIMIT_PREMIUM_PENDING'
-                  ? "The Premium bot is in this server but can't take over until it can publish in every enabled channel. Grant it publish permission to finish the switch."
-                  : "Your subscription is active, but the Premium bot isn't in this server yet — the free bot is still publishing, and Premium features stay off until it takes over. Your channels and settings are kept."}
-              </p>
-              <ChannelLimitCta reason={handoverReason} guildId={guildId} />
             </div>
           </div>
         )}
@@ -291,14 +236,10 @@ function ActiveSubscription({
           );
         })()}
 
-        {/* Muted while the handover is incomplete — green ticks sitting above a
-            notice that says Premium features are off would contradict it. */}
         <ul className="space-y-3 mb-6">
           {premiumBenefits.map(benefit => (
             <li key={benefit} className="flex items-center gap-3 text-slate-300">
-              <Check
-                className={`w-5 h-5 shrink-0 ${premiumActive ? 'text-green-400' : 'text-slate-600'}`}
-              />
+              <Check className="w-5 h-5 shrink-0 text-green-400" />
               {benefit}
             </li>
           ))}
@@ -391,8 +332,8 @@ function ActiveSubscription({
 /**
  * Live channel usage for a migrated free guild — the one fact on this page that
  * is about THIS server rather than about the plans, and the reason the cap is
- * worth paying to remove. Reads `data.channelLimit` (authoritative for the
- * managing edition) rather than the FREE_CHANNEL_LIMIT display constant.
+ * worth paying to remove. Reads `data.channelLimit` (the guild's own resolved
+ * cap) rather than the FREE_CHANNEL_LIMIT display constant.
  *
  * Paused channels are surfaced here because the paused banner's CTA lands on
  * this page (ADR 0009): without the echo, the setup that banner promised is
@@ -610,8 +551,6 @@ function FreeSubscription({ guildId, guildName }: { guildId: string; guildName: 
           channels={data.channels}
           limit={data.channelLimit === 0 ? null : data.channelLimit}
           hasSubscription={guild.hasSubscription}
-          premiumBotPresent={guild.premiumBotPresent}
-          premiumPending={data.premiumPending}
           onClose={() => setMigrateOpen(false)}
         />
       )}

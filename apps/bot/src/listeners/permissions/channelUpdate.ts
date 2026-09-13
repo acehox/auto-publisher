@@ -22,8 +22,8 @@ export class ChannelUpdateListener extends Listener {
       await Services.Channel.invalidateGuildCache(newChannel.guildId);
     }
 
-    // Permission + handover work is only meaningful while it IS an announcement
-    // channel; a demotion has nothing left to sync.
+    // Permission work is only meaningful while it IS an announcement channel;
+    // a demotion has nothing left to sync.
     if (newChannel.type !== ChannelType.GuildAnnouncement) return;
 
     // The changed overwrites affect only this channel — incremental push.
@@ -31,7 +31,5 @@ export class ChannelUpdateListener extends Listener {
       full: false,
       clearBlocked: true,
     });
-    // Premium + handover pending: the changed overwrites may unblock the swap
-    await Services.Handover.pingIfPending(newChannel.guildId);
   }
 }

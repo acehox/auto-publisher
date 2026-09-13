@@ -12,7 +12,7 @@ Premium subscriptions need a payment provider. With a direct payment processor (
 
 Use Paddle (Paddle Billing) as merchant of record. Paddle is the seller: it computes and remits taxes, issues customer invoices, and owns refund/chargeback compliance. The company invoices Paddle in aggregate from payout statements — no per-transaction invoicing pipeline exists in this codebase.
 
-Integration lives entirely in `apps/backend` (premium edition only):
+Integration lives entirely in `apps/backend` (public instance only):
 
 - **Postgres is the source of truth** for subscription state (`subscription`, `paddle_customer` tables), updated by Paddle webhooks; Redis holds only webhook idempotency keys and derived caches.
 - **Checkout**: backend creates the Paddle transaction (server-set `custom_data: {discord_guild_id, discord_user_id}`, customer reuse, duplicate-subscription guard); web opens a Paddle.js overlay with the transaction ID.

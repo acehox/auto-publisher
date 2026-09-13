@@ -11,16 +11,17 @@ import { useSubscriptionDetail } from '@/lib/use-subscription-detail';
 
 /**
  * Shown in place of the dashboard on `BOT_NOT_PRESENT` (409) — guild viewable, no
- * bot in it, and only a fresh OAuth authorization restores one. Never invite the
- * premium bot here: the join rails make it leave without a live entitlement.
+ * bot in it, and only a fresh OAuth authorization restores one. Losing Premium no
+ * longer empties a guild (nothing leaves on a downgrade), so this is now only ever
+ * a kick or a missed join.
  *
- * It carries the statutory withdrawal control (ZZP čl. 81.a / CRD Art 11a) because it
- * replaces every guild tab, the subscription one included, and losing Premium is what
- * empties a guild of bots — so a day-3 canceller would otherwise lose the control for
- * the remaining 11 days of a window st. 2 requires throughout.
+ * It still carries the statutory withdrawal control (ZZP čl. 81.a / CRD Art 11a):
+ * it replaces every guild tab, the subscription one included, so a consumer whose
+ * bot was kicked on day 3 would otherwise lose the control for the remaining 11
+ * days of a window st. 2 requires throughout.
  */
 export function BotAbsentCard({ guildId }: { guildId: string }) {
-  const inviteUrl = useBotInviteUrl('free', guildId, { lockGuildSelect: true });
+  const inviteUrl = useBotInviteUrl(guildId, { lockGuildSelect: true });
   const armRefreshOnReturn = useRefreshOnReturn();
   // Self-host has no billing routes, so asking would only 404.
   const isPublicInstance = useIsPublicInstance();

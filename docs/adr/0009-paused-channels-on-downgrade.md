@@ -2,7 +2,12 @@
 
 ## Status
 
-Accepted — 2026-07-12.
+Accepted — 2026-07-12. **Amended by ADR 0013 (2026-09-09).** Everything about *what* pausing is — `pausedAt`, disable-never-delete, no picker UX, no time-based cleanup — stands unchanged. Two things changed, both because there is now one bot:
+
+- **The trigger is billing, not a bot join.** The free-join rail this ADR chose over the Paddle path no longer exists: nothing joins or leaves on a plan change. `Plans.reconcileChannelServing` runs on the subscription webhook in **both** directions, plus the nightly backstop, a join and a dashboard self-heal. The "revocation moment is not when the invariant breaks" reasoning below was true of a two-bot handover and is now simply wrong — revocation is exactly the moment.
+- **Filtered channels are paused too, at any count.** Filters are Premium-only and there is no longer a premium instance whose absence stops them running, so a downgraded guild's filtered channels would otherwise start publishing precisely what an admin filtered out. Paused is recoverable; a wrong publish is not.
+
+Read this file for the retention design; read ADR 0013 for when it fires.
 
 ## Context
 

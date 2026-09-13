@@ -7,8 +7,13 @@ export const Guild: Router = (() => {
   const router = express.Router({ mergeParams: true });
 
   /**
-   * Get a guild's auto-publishing state for `/ap overview`: serving channel
-   * IDs, paused ones, and whether the guild is migrated.
+   * Get a guild's auto-publishing state for the bot's slash commands: serving
+   * channel IDs, paused ones, whether the guild is migrated, and whether it is
+   * on Premium.
+   *
+   * `premium` is here rather than on its own endpoint because every command that
+   * needs it (`/ap filters`, `/ap overview`, `/ap enable`) already calls this —
+   * the bot itself never knows a guild's plan, since one bot serves both.
    */
   router.get('/channels', validateRequest(GuildReqSchema), async (req, res) => {
     const { guildId } = req.params;
@@ -16,17 +21,18 @@ export const Guild: Router = (() => {
     try {
       // channelIds = serving; pausedChannelIds = retained-but-paused (ADR 0009),
       // surfaced separately by /ap overview.
-      const [channelIds, pausedChannelIds, guildRow] = await Promise.all([
+      const [channelIds, pausedChannelIds, guildRow, premium] = await Promise.all([
         Services.Guilds.getChannels(guildId),
         Services.Guilds.getPausedChannels(guildId),
         Services.Guilds.find(guildId),
+        Services.Plans.isPremium(guildId),
       ]);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt
         // NULL. A legacy guild has no channel rows, so without this the bot
         // can't tell "publishes everything" from "publishes nothing".
-        data: { channelIds, pausedChannelIds, migrated: !!guildRow?.migratedAt },
+        data: { channelIds, pausedChannelIds, migrated: !!guildRow?.migratedAt, premium },
         message: 'Channels retrieved successfully',
       } as APIResponse);
     } catch (error) {
@@ -35,17 +41,15 @@ export const Guild: Router = (() => {
   });
 
   /**
-   * Bot kicked/left the guild (guildDelete): soft-deletes the edition's
-   * presence — config and cache are preserved so a re-invite restores
-   * everything. Hard delete happens via the reconciliation purge 30 days
-   * after the last bot left.
+   * Bot kicked/left the guild (guildDelete): soft-deletes the presence — config
+   * and cache are preserved so a re-invite restores everything. Hard delete
+   * happens via the reconciliation purge 30 days later.
    */
   router.delete('/', validateRequest(GuildDeleteReqSchema), async (req, res) => {
     const { guildId } = req.params;
-    const { edition } = req.body;
 
     try {
-      await Services.Guilds.softDelete(guildId, edition);
+      await Services.Guilds.softDelete(guildId);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true },
@@ -58,17 +62,16 @@ export const Guild: Router = (() => {
 
   /**
    * Bot joined or was re-invited to the guild (guildCreate): upsert the guild
-   * row, activate the edition's presence, prune channel config for channels
-   * deleted while no bot was watching (missed channelDelete events), rebuild
-   * the derived cache, and run the join orchestration (entitlement gate /
-   * premium handover / free leave while premium manages).
+   * row, activate the presence, prune channel config for channels deleted while
+   * the bot was away (missed channelDelete events), rebuild the derived cache,
+   * and apply the guild's plan to its channels.
    */
   router.post('/new', validateRequest(GuildRegisterReqSchema), async (req, res) => {
     const { guildId } = req.params;
-    const { edition, announcementChannelIds } = req.body;
+    const { announcementChannelIds } = req.body;
 
     try {
-      await Services.Guilds.registerNewGuild(guildId, edition, announcementChannelIds);
+      await Services.Guilds.registerNewGuild(guildId, announcementChannelIds);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true },

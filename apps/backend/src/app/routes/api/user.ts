@@ -1,6 +1,5 @@
 import { botPresence, db, guild, subscription } from '@ap/database';
 import { type APIResponse, fetchUserGuilds, StatusCodes, sendErrorResponse } from '@ap/express';
-import { Keys } from '@ap/redis';
 import { Data } from 'data/index.js';
 import { and, inArray, isNull } from 'drizzle-orm';
 import express, { type Request, type Response, type Router } from 'express';
@@ -14,8 +13,8 @@ export const User: Router = (() => {
 
   /**
    * GET /api/user/guilds
-   * Returns guilds where user has MANAGE_GUILD, with per-edition bot presence,
-   * subscription status, and pending-handover state (one Discord fetch total)
+   * Returns guilds where user has MANAGE_GUILD, with bot presence and
+   * subscription status (one Discord fetch total)
    */
   router.get('/guilds', async (req: Request, res: Response) => {
     const token = req.discordAccessToken;
@@ -77,7 +76,7 @@ export const User: Router = (() => {
       // MIGRATION: the guild-migration query is removed after migration period.
       const [presences, guildRows, subscriptions] = await Promise.all([
         db
-          .select({ guildId: botPresence.guildId, edition: botPresence.edition })
+          .select({ guildId: botPresence.guildId })
           .from(botPresence)
           .where(and(inArray(botPresence.guildId, guildIds), isNull(botPresence.leftAt))),
         db
@@ -90,10 +89,7 @@ export const User: Router = (() => {
           .where(inArray(subscription.guildId, guildIds)),
       ]);
 
-      const freeGuildIds = new Set(presences.filter(p => p.edition === 'free').map(p => p.guildId));
-      const premiumGuildIds = new Set(
-        presences.filter(p => p.edition === 'premium').map(p => p.guildId)
-      );
+      const presentGuildIds = new Set(presences.map(p => p.guildId));
       const migratedGuildIds = new Set(
         guildRows.filter(g => g.migratedAt !== null).map(g => g.guildId)
       );
@@ -108,26 +104,12 @@ export const User: Router = (() => {
       // (GET /api/guild/:guildId), scoped to the one guild being opened rather
       // than a fan-out over every managed guild here (ADR 0007, 2026-07-15).
 
-      // Pending handover markers — only possible where both bots are present
-      const bothPresentIds = guildIds.filter(id => freeGuildIds.has(id) && premiumGuildIds.has(id));
-      const pendingGuildIds = new Set<string>();
-      if (bothPresentIds.length > 0) {
-        const markers = await Data.Drivers.Redis.PremiumPending.mget(
-          bothPresentIds.map(id => `${Keys.PremiumPending}:${id}`)
-        );
-        bothPresentIds.forEach((id, index) => {
-          if (markers[index] !== null) pendingGuildIds.add(id);
-        });
-      }
-
       const result = managedGuilds.map(g => ({
         id: g.id,
         name: g.name,
         icon: g.icon,
         permissions: g.permissions,
-        freeBotPresent: freeGuildIds.has(g.id),
-        premiumBotPresent: premiumGuildIds.has(g.id),
-        premiumPending: pendingGuildIds.has(g.id),
+        botPresent: presentGuildIds.has(g.id),
         migrated: migratedGuildIds.has(g.id),
         hasSubscription: subscribedGuildIds.has(g.id),
       }));

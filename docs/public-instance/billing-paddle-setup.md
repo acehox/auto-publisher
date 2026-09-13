@@ -108,10 +108,10 @@ Point the notification destination at `https://<tunnel-host>/webhooks/paddle`. R
 
 ### Environment
 
-In `.env.local` (premium instance):
+In `.env.local`:
 
 ```
-APP_EDITION = "premium"
+DEPLOYMENT_MODE = "public"
 PADDLE_ENVIRONMENT = "sandbox"
 PADDLE_API_KEY = "pdl_sdbx_apikey_..."
 PADDLE_WEBHOOK_SECRET = "pdl_ntfset_..."
@@ -145,7 +145,7 @@ PADDLE_CLIENT_TOKEN = "test_..."              # client-side token; runtime, not 
    - Withdrawing during a trial reports "nothing to refund" rather than a pending refund
      (`refundStatus: 'none'`, row `refund_outcome = no_completed_transaction`) — there is no
      completed transaction to reverse, and the acknowledgement email's wording covers both cases.
-5. Cancel from the portal → dashboard shows "Access Until" (scheduled change). To test revocation without waiting for the period end, cancel the subscription immediately from the Paddle dashboard (Subscriptions → cancel → "immediately") — `subscription.canceled` arrives and the premium bot leaves the guild. Paddle's notification **simulator** (Developer tools → Notifications) can also send synthetic events, but simulated payloads carry no real `custom_data`, so prefer real sandbox subscriptions for end-to-end tests.
+5. Cancel from the portal → dashboard shows "Access Until" (scheduled change). To test revocation without waiting for the period end, cancel the subscription immediately from the Paddle dashboard (Subscriptions → cancel → "immediately") — `subscription.canceled` arrives and the guild's channels are trimmed to the free shape (nothing leaves the guild; ADR 0013). Paddle's notification **simulator** (Developer tools → Notifications) can also send synthetic events, but simulated payloads carry no real `custom_data`, so prefer real sandbox subscriptions for end-to-end tests.
 6. Replay/duplicate deliveries are ignored (Redis `paddle_event:{id}` dedupe) — safe to use the dashboard's "resend" button while testing.
 
 ## 2. Production setup
@@ -195,10 +195,10 @@ PADDLE_CLIENT_TOKEN = "live_..."              # client-side token; runtime, not 
 
 ## Operational notes
 
-- **Self-hosted instances** skip all of this: no Paddle client, no webhook route, no billing crons, no withdrawal flow (`DEPLOYMENT_MODE` unset or `self-host`). The backend is edition-agnostic and always configures Paddle on the public instance — both editions' bots share it (ADR 0006).
+- **Self-hosted instances** skip all of this: no Paddle client, no webhook route, no billing crons, no withdrawal flow (`DEPLOYMENT_MODE` unset or `self-host`). There is one backend, and it configures Paddle whenever `DEPLOYMENT_MODE=public` (ADR 0006 + 0013).
 - **Missed webhooks**: the daily reconcile cron corrects Postgres from the Paddle API and enforces revocations; nothing needs manual replay.
 - **Re-subscribing**: a new Paddle subscription for the same guild replaces the local row (stale events from the old subscription are ignored). It also checks out at the **plain** price — the replaced row is what makes the guild trial-ineligible, and it is never deleted on cancellation, only overwritten. The only thing that restores eligibility is retention hard-deleting the row after the 11-year accounting window (`services/retention.ts`), which is not a limit worth engineering around.
 - **Free trial**: 14 days, card required, one per guild ever, regardless of which user buys. Cardless was rejected — no card means unlimited trials. The trial is not offered on the free plan's own terms: it exists so that a consumer exercising the statutory withdrawal inside the window has had nothing charged, which turns a full refund into a $0 event.
 - **Turning the trial off** is clearing either trial price id — but that is only 90% of the job. Every trial claim in the _app_ is gated on `premiumTrialEnabled` and disappears with it; the claims in `apps/web/src/app/(legal)/{terms,refunds}/page.mdx` are **static prose and are not**. Leaving them up would promise a trial nobody gets, and under ZZP čl. 60 st. 2 pre-contractual information becomes part of the contract, so we would be bound to it. Pulling the trial therefore means: clear the two price ids, remove the trial paragraphs from those two pages, and bump `LEGAL_DOCUMENTS_VERSION`. Same in reverse when switching it on.
-- **Kick/guild delete does not cancel billing** by design — the subscription row has no FK to `guild`; re-inviting the premium bot restores service instantly. Customers cancel via the portal.
+- **Kick/guild delete does not cancel billing** by design — the subscription row has no FK to `guild`; re-inviting the bot restores service instantly. Customers cancel via the portal.
 - **Refunds** are issued from the Paddle dashboard; the resulting `subscription.canceled` webhook revokes access automatically. An **approved** full refund or a chargeback also stamps `subscription.last_refund_at` (via the adjustment events) and logs Paddle's retained fee at `info`. Partial refunds and credits deliberately do not: they are goodwill or proration, not a contract unwound. `last_refund_at` is the one column on `subscription` that is not mirrored Paddle state, so it survives a re-subscribe — see the comment on it in `packages/database/src/schema.ts`. **Nothing reads it yet**: it exists so that a re-purchase gate, if one is ever needed, can be designed against real data rather than a guess. Don't remove it as unused.

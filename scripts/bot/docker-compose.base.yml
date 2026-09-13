@@ -1,18 +1,20 @@
-# Shared service topology for the two-edition public stack. Self-hosting uses
+# Shared service topology for the public (commercial) stack. Self-hosting uses
 # the standalone docker-compose.yml at the repo root instead.
+#
+# Same topology as self-host — one bot, one proxy, one backend. The only thing
+# `DEPLOYMENT_MODE=public` adds is billing, so these files differ from the root
+# compose only in dev tooling, resource limits and the mail catcher.
 #
 # NOTE: no `env_file` here on purpose. Compose APPENDS env_file lists across
 # `-f` layers, so declaring it in this base made every prod service load the
 # dev env file first and silently inherit any value prod did not re-declare.
 # Each overlay (dev/, prod/) declares its own.
 services:
-  proxy-free: &proxy-base
+  proxy:
     build:
       context: ../..
       dockerfile: apps/proxy/Dockerfile
     restart: unless-stopped
-    environment:
-      - APP_EDITION=free
     networks:
       - ap-network
     depends_on:
@@ -25,34 +27,15 @@ services:
       retries: 3
       start_period: 30s
 
-  proxy-premium:
-    <<: *proxy-base
-    environment:
-      - APP_EDITION=premium
-
-  bot-free: &bot-base
+  bot:
     build:
       context: ../..
       dockerfile: apps/bot/Dockerfile
     restart: unless-stopped
-    environment:
-      - APP_EDITION=free
     networks:
       - ap-network
     depends_on:
-      proxy-free:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  bot-premium:
-    <<: *bot-base
-    environment:
-      - APP_EDITION=premium
-    depends_on:
-      proxy-premium:
+      proxy:
         condition: service_healthy
       backend:
         condition: service_healthy

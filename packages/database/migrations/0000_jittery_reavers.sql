@@ -1,10 +1,7 @@
 CREATE TABLE "bot_presence" (
-	"guild_id" text NOT NULL,
-	"edition" text NOT NULL,
+	"guild_id" text PRIMARY KEY NOT NULL,
 	"joined_at" timestamp with time zone NOT NULL,
-	"left_at" timestamp with time zone,
-	CONSTRAINT "bot_presence_guild_id_edition_pk" PRIMARY KEY("guild_id","edition"),
-	CONSTRAINT "bot_presence_edition_check" CHECK ("bot_presence"."edition" IN ('free', 'premium'))
+	"left_at" timestamp with time zone
 );
 --> statement-breakpoint
 CREATE TABLE "channel" (

@@ -4,7 +4,7 @@ import { Routes, type Snowflake } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import { Redis } from 'ioredis';
 import { logger } from '../logger.js';
-import type { BlockedCache, BoostBudget, SublimitCounter } from './caches.js';
+import type { BlockedCache, QueuePriorityState, SublimitCounter } from './caches.js';
 import { type CrosspostOutcome, classify } from './classifier.js';
 import type { Gate } from './gate.js';
 
@@ -17,6 +17,17 @@ const SNOWFLAKE_PATTERN = /^\d{17,19}$/;
 /**
  * Queue tiers. Lower is higher priority; BullMQ's valid range is 1..2_097_152.
  *
+ * One queue, one token, one REST client — the tiers are the whole of "priority
+ * publishing". Two queues on one token would be actively harmful: discord.js
+ * tracks the 50 req/s global limit client-side PER REST instance, so two
+ * instances each think they have a full 50 and manufacture the 429s the split
+ * was meant to avoid.
+ *
+ * `BOOSTED` deliberately outranks paying guilds. The budget is 10 publishes per
+ * newly-joined guild, so it costs Premium nothing measurable, and it is the one
+ * lever on the first-impression window that decides whether a server keeps the
+ * bot at all.
+ *
  * INVARIANT: every `queue.add` MUST pass an explicit priority. BullMQ serves
  * un-prioritized jobs BEFORE prioritized ones — `fetchNextJob.lua` RPOPLPUSHes
  * from the `wait` list and only falls back to the prioritized sorted set when
@@ -24,7 +35,7 @@ const SNOWFLAKE_PATTERN = /^\d{17,19}$/;
  * would starve the boosted tier behind a backlog that at peak never drains,
  * making the boost strictly worse than plain FIFO. See ADR 0012.
  */
-const PRIORITY = { BOOSTED: 1, NORMAL: 10 } as const;
+const PRIORITY = { BOOSTED: 1, PREMIUM: 5, NORMAL: 10 } as const;
 
 export type CrosspostJobData = {
   guildId: Snowflake;
@@ -54,9 +65,8 @@ export const createCrosspostQueue = (deps: {
   rest: REST;
   gate: Gate;
   caches: { blocked: BlockedCache; sublimit: SublimitCounter };
-  boostBudget: BoostBudget;
+  queuePriority: QueuePriorityState;
   redisUri: string;
-  /** This edition's BullMQ logical DB */
   queueDatabaseId: number;
   concurrency: number;
 }): CrosspostQueueModule => {
@@ -157,7 +167,7 @@ export const createCrosspostQueue = (deps: {
       // system, which is real memory inside the allkeys-lru budget and would
       // evict keys that matter.
       if (job.opts.priority === PRIORITY.BOOSTED) {
-        await deps.boostBudget.consume(job.data.guildId);
+        await deps.queuePriority.consume(job.data.guildId);
       }
       logger.debug({ event: 'crosspost.success', channelId, messageId });
     } catch (error) {
@@ -226,9 +236,13 @@ export const createCrosspostQueue = (deps: {
       return;
     }
 
-    const priority = (await deps.boostBudget.isBoosted(guildId))
-      ? PRIORITY.BOOSTED
-      : PRIORITY.NORMAL;
+    // Boost first: it outranks Premium by design, and a boosted guild that is
+    // also Premium must consume its budget rather than silently keep it.
+    const [boosted, premium] = await Promise.all([
+      deps.queuePriority.isBoosted(guildId),
+      deps.queuePriority.isPremium(guildId),
+    ]);
+    const priority = boosted ? PRIORITY.BOOSTED : premium ? PRIORITY.PREMIUM : PRIORITY.NORMAL;
 
     await queue.add(
       'crosspost',
@@ -237,7 +251,7 @@ export const createCrosspostQueue = (deps: {
     );
 
     // Boosted enqueues log at `info` so the feature is measurable in prod
-    // (bounded: 10 per new guild). The normal tier stays at `debug` — an info
+    // (bounded: 10 per new guild). Premium and normal stay at `debug` — an info
     // line per message would be thousands an hour at peak.
     if (priority === PRIORITY.BOOSTED) {
       logger.info({ event: 'crosspost.enqueued.boosted', guildId, channelId, messageId, priority });

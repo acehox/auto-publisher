@@ -11,7 +11,7 @@ const SWEEP_CONCURRENCY = 10;
 
 /**
  * Seed the publish-state cache (ADR 0008) for every guild this shard owns.
- * `full` replaces this edition's stale fields (self-heals channels deleted
+ * `full` replaces stale fields (self-heals channels deleted
  * while the bot was offline). Fire-and-forget; failures fall back to the
  * backend's write-back REST path.
  */

@@ -11,8 +11,6 @@ export default function ChannelsPage() {
       guildId={guild.id}
       channels={data.channels}
       hasSubscription={guild.hasSubscription}
-      premiumBotPresent={guild.premiumBotPresent}
-      premiumPending={data.premiumPending}
       channelLimit={data.channelLimit}
       migrated={data.migrated}
     />

@@ -56,11 +56,11 @@ export async function chatInputFilters(
 ): Promise<void> {
   await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-  // Check for premium instance
-  if (await handlePremiumCheck(interaction, 'filtering')) return;
-
   // This is handled by the GuildOnly precondition
   if (!interaction.inGuild()) return;
+
+  // Filters are Premium, resolved per guild — the bot has no plan of its own
+  if (await handlePremiumCheck(interaction, interaction.guildId, 'filtering')) return;
 
   // Get option values
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);

@@ -7,10 +7,7 @@ import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { ChannelEnableGuideModal } from '@/components/dashboard/channel-enable-guide';
 import { ChannelFixButton, channelStatusStyle } from '@/components/dashboard/channel-fix';
-import {
-  ChannelLimitModal,
-  channelLimitReasonFromGuild,
-} from '@/components/dashboard/channel-limit-upsell';
+import { ChannelLimitModal } from '@/components/dashboard/channel-limit-upsell';
 import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
 import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
 import { useIsPublicInstance } from '@/components/site-config-context';
@@ -25,9 +22,7 @@ interface ChannelConfigProps {
   guildId: string;
   channels: GuildChannel[];
   hasSubscription: boolean;
-  premiumBotPresent: boolean;
-  premiumPending: boolean;
-  /** Max enabled channels for the guild's managing edition; 0 = unlimited */
+  /** Max enabled channels for the guild's plan; 0 = unlimited (Premium) */
   channelLimit: number;
   /** MIGRATION: false = legacy guild. Removed at sunset. */
   migrated: boolean;
@@ -129,8 +124,6 @@ export function ChannelConfig({
   guildId,
   channels,
   hasSubscription,
-  premiumBotPresent,
-  premiumPending,
   channelLimit,
   migrated,
 }: ChannelConfigProps) {
@@ -196,12 +189,9 @@ export function ChannelConfig({
           return;
         }
         // Cap hit: show the reason-appropriate upsell instead of a hard failure.
-        // Prefer the backend's code; fall back to the client mirror if absent.
-        // enable only ever fails with a channel-limit code (or none).
-        setLimitReason(
-          (result.code as ChannelLimitReason | undefined) ??
-            channelLimitReasonFromGuild({ hasSubscription, premiumBotPresent, premiumPending })
-        );
+        // Prefer the backend's code; there is only one cap reason, so an absent
+        // code on an enable failure means the same thing.
+        setLimitReason((result.code as ChannelLimitReason | undefined) ?? 'LIMIT_FREE');
       } finally {
         setPendingChannelId(null);
       }

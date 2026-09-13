@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-08-11.
+Accepted — 2026-08-11. **Extended by ADR 0013 (2026-09-09):** a third tier, `PREMIUM = 5`, sits between `BOOSTED = 1` and `NORMAL = 10`, and the DB is renamed `QueuePriority` (still 14) because it now also holds the `premium:{guildId}` marker. The invariant below — every `queue.add` passes an explicit priority — is unchanged and is what makes a third tier safe to add. Boost still outranks paying guilds, deliberately: 10 publishes per new guild costs Premium nothing measurable.
 
 ## Context
 
@@ -25,7 +25,7 @@ Budget is counted in **publishes, not wall-clock**. A timer can expire while the
 - **Seeding in `services/joinRails.ts`.** Rejected: the nightly reconcile sweep and the dashboard presence self-heal both run through `joinRails` for guilds that never left, so seeding there would re-arm a large slice of the base repeatedly and flatten the tier back into FIFO. `registerNewGuild` has exactly one production call site — the `POST /guild/:id/new` the bot sends on `guildCreate` — which is why it is the correct and only seed point.
 - **Seeding in `Channels.add`.** Rejected: combined with delete-on-exhaustion it lets a guild farm repeat boosts by disabling and re-enabling channels. The 90-day TTL already covers guilds that join and set up late.
 - **"Absent key = boosted."** Rejected: on ship day no guild has a key, so the entire base would go to priority 1 at once and actual new guilds would gain nothing.
-- **Per-edition DBs (`ProxyDatabaseIDs`).** Rejected: the budget must follow a guild through a premium handover; a per-edition key would restart the budget under the new edition's key after takeover.
+- **Per-edition DBs (`ProxyDatabaseIDs`).** Rejected: the budget must follow a guild through a premium handover; a per-edition key would restart the budget under the new edition's key after takeover. (Moot since ADR 0013 — there is one proxy and one triple. The DB is now named `QueuePriority` and also carries the Premium marker.)
 
 ## Consequences
 
@@ -36,7 +36,7 @@ Budget is counted in **publishes, not wall-clock**. A timer can expire while the
 - **Adding priorities silently zeroed every queue-depth read**, in lines the change never touched. BullMQ's `'waiting'` job type expands to `wait` + `paused` (`sanitizeJobTypes`) and never covers `prioritized`. Before this decision every job sat in `wait`; after it, every job sits in `prioritized`, so `getWaitingCount()` and `getJobCounts('waiting', …)` both read a permanent `0`. That silently removed the only bound on queue growth (the 10k `QUEUE_HIGH_WATER` shed could never fire) and blanked the depth in `/info` and `/admin info`. Fixed by reading both states and summing for the gate, while keeping them **separate** in `stats()` so the invariant above is a watchable number: `waiting != 0` means some `queue.add` lost its explicit priority. `/admin info` renders an extra `Unprioritized` line only when that happens.
 - Guilds that joined **before** this ships get no boost. Accepted; self-heals as new guilds arrive.
 - A guild that joins, never publishes, and stays joined holds ~100 bytes for 90 days. Bounded by unexhausted joins in that window.
-- Seeding uses plain `SET`, so a re-invite — and a premium bot joining on upgrade — re-arms the budget. Both are real join events, bounded at 10 publishes each. The seed therefore runs **after** the edition orchestration settles and is skipped when that orchestration ejects the bot that just joined: a free bot bounced because premium already manages the guild is not a join event, and seeding it would hand the *premium* bot a fresh budget in a guild that was never uncovered and has no new admin evaluating it. A premium bot that joins without entitlement never reaches the seed at all (the gate returns first), so repeat invites cannot farm boosts without paying.
+- Seeding uses plain `SET`, so a re-invite re-arms the budget — a real join event, bounded at 10 publishes. (Before ADR 0013 this paragraph also had to reason about a premium bot joining on upgrade and about ejecting a bounced free bot; neither happens now, so the seed is unconditional on the one join path.)
 - No Postgres migration; existing guilds are unaffected (no key → `NORMAL`).
 
 ## Related

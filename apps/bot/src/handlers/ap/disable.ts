@@ -1,4 +1,3 @@
-import { config } from '@ap/config';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import {
   ActionRowBuilder,
@@ -43,7 +42,7 @@ export async function chatInputDisable(
       });
     }
 
-    if (config.isPremiumInstance) {
+    {
       const filters = channelStatus.filters;
       if (filters && filters.length > 0) {
         const warningContainer = new ContainerBuilder().addTextDisplayComponents(textDisplay =>

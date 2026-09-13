@@ -3,7 +3,6 @@
 import {
   Check,
   CheckCircle2,
-  Crown,
   type LucideIcon,
   Megaphone,
   PauseCircle,
@@ -70,13 +69,9 @@ function StatusHeader({ icon: Icon, iconColor, title, subtitle }: HeaderState) {
   );
 }
 
-// Overview sort key: broken (red) first, then premium-gap (yellow), then healthy
-// (green). Mirrors channelFixVariant's precedence — canPublish is the live outage,
-// premiumBotHasPermissions the latent handover gap.
+// Overview sort key: broken (red) first, then healthy (green).
 function statusRank(channel: GuildChannel): number {
-  if (channel.canPublish === false) return 0;
-  if (channel.premiumBotHasPermissions === false) return 1;
-  return 2;
+  return channel.canPublish === false ? 0 : 1;
 }
 
 function MigratedStatus({
@@ -88,7 +83,7 @@ function MigratedStatus({
   channels: GuildChannel[];
   hasSubscription: boolean;
 }) {
-  const { needsFixingCount, showPremiumPending } = useGuildAttention();
+  const { needsFixingCount } = useGuildAttention();
 
   const enabled = channels.filter(c => c.enabled).sort((a, b) => statusRank(a) - statusRank(b));
   const paused = channels.filter(c => c.hasSavedSetup);
@@ -125,19 +120,12 @@ function MigratedStatus({
                 : `${needsFixingCount} channels aren't publishing`,
             subtitle: 'Grant the missing permissions — see the list below.',
           }
-        : showPremiumPending
-          ? {
-              icon: Crown,
-              iconColor: 'text-purple-400',
-              title: 'Complete your Premium setup',
-              subtitle: 'Grant your Premium bot permission in the highlighted channels.',
-            }
-          : {
-              icon: CheckCircle2,
-              iconColor: 'text-green-500',
-              title: 'All good',
-              subtitle: `Publishing in ${enabled.length} channel${enabled.length !== 1 ? 's' : ''}`,
-            };
+        : {
+            icon: CheckCircle2,
+            iconColor: 'text-green-500',
+            title: 'All good',
+            subtitle: `Publishing in ${enabled.length} channel${enabled.length !== 1 ? 's' : ''}`,
+          };
 
   return (
     <div className="space-y-6">
@@ -151,7 +139,7 @@ function MigratedStatus({
       {enabled.length === 0 && paused.length === 0 ? null : (
         <div className="space-y-3">
           {/* Status order — the Overview is an attention surface, so it regroups
-              by health (broken → premium-gap → healthy) rather than mirroring the
+              by health (broken → healthy) rather than mirroring the
               Channels tab's sidebar order. Sidebar order is preserved within each
               status group (stable sort over the pre-sorted array). The row color
               signals status; canPublish === false is the only "broken" state
@@ -173,8 +161,7 @@ function MigratedStatus({
   );
 }
 
-// Publishing row — green when healthy, yellow when the premium bot can't take
-// over yet (still publishing via the free bot, but a latent problem to fix). Card
+// Publishing row — green when healthy, red when the bot can't publish here. Card
 // color is shared with the Channels tab so a channel reads the same on both.
 function PublishingRow({ channel }: { channel: GuildChannel }) {
   const style = channelStatusStyle(channel);

@@ -79,8 +79,8 @@ explicitly.
 
 | What | Why | Legal basis | Kept for |
 | --- | --- | --- | --- |
-| Server ID, channel IDs, whether the server has completed channel setup | To know where the bot should publish | Contract (Art 6(1)(b)) | Until you remove the channel or the bot. If the bot is removed from a server, we delete the server's configuration **{retention.guildAfterBotRemoved}** after the last of our bots leaves |
-| Which of our bots is present in a server, and when it joined or left | To run the free and paid editions correctly and hand over between them | Contract (Art 6(1)(b)) | As above |
+| Server ID, channel IDs, whether the server has completed channel setup | To know where the bot should publish | Contract (Art 6(1)(b)) | Until you remove the channel or the bot. If the bot is removed from a server, we delete the server's configuration **{retention.guildAfterBotRemoved}** after the bot leaves |
+| Whether the bot is present in a server, and when it joined or left | To know which servers we serve, and to keep your configuration while it is away | Contract (Art 6(1)(b)) | As above |
 | **Publishing rules you create** | To decide which messages get published | Contract (Art 6(1)(b)) | Until you delete the rule or the channel |
 | The bot's own permissions per channel | To warn you when a channel cannot publish | Contract (Art 6(1)(b)) | {retention.publishState} |
 

@@ -3,8 +3,8 @@ import { Info } from 'lucide-react';
 /**
  * Informational note about Discord's per-channel crosspost cap. Purely
  * educational — we surface no live counter (the SublimitCounter lives in the
- * per-edition proxy and is never plumbed to the web). Shared by the Overview
- * status section and the Channels tab.
+ * proxy and is never plumbed to the web). Shared by the Overview status section
+ * and the Channels tab.
  */
 export function PublishLimitNote() {
   return (

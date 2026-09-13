@@ -6,7 +6,6 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Edition } from '@ap/api-types';
 import { loggerLevels } from '@ap/logger';
 import { config as loadDotenv } from 'dotenv';
 import { cleanEnv, num, str } from 'envalid';
@@ -57,37 +56,30 @@ export const env = cleanEnv(process.env, {
   /**
    * Which deployment this is.
    *
-   * `self-host` (the default) is a single bot that serves every guild with the
-   * full feature set and no billing. `public` is the two-edition commercial
-   * service. Deliberately NOT derived from `NODE_ENV`: a self-hoster must be
-   * able to run `NODE_ENV=production` — which they should, for log levels and
-   * optimized builds — without silently switching on billing and the
-   * dual-edition topology. Defaulting to `self-host` also means a production
-   * env that fails to mount errors on a missing token rather than quietly
-   * degrading the public bot into an unlimited-free instance.
+   * Both modes run the same topology — one bot, one proxy, one backend. The
+   * only difference is billing: `public` (the commercial service) sells
+   * Premium through Paddle and carries the statutory withdrawal surface;
+   * `self-host` (the default) gives every guild the full feature set for free
+   * and never instantiates any of it.
+   *
+   * Deliberately NOT derived from `NODE_ENV`: a self-hoster must be able to run
+   * `NODE_ENV=production` — which they should, for log levels and optimized
+   * builds — without silently switching on billing.
    */
   DEPLOYMENT_MODE: str({ default: 'self-host', choices: ['self-host', 'public'] }),
 
-  // --- Self-host: the single bot ------------------------------------------
-  // Only read when DEPLOYMENT_MODE is `self-host`. The public instance never
-  // consults these, which is what preserves the invariant that a stale env
-  // file cannot make both editions share one Discord application.
+  // --- The bot -------------------------------------------------------------
   DISCORD_BOT_TOKEN: str({ default: '' }),
   PROXY_URL: str({ default: 'http://proxy:8080' }),
 
-  // --- Public instance: per-edition bots + proxies -------------------------
-  // `APP_EDITION` is set per compose service and is public-only; self-host
-  // pins the edition to `premium` below and never reads this.
-  APP_EDITION: str({ default: 'free', choices: ['free', 'premium'] }),
-  DISCORD_BOT_TOKEN_FREE: str({ default: '' }),
-  DISCORD_BOT_TOKEN_PREMIUM: str({ default: '' }),
-  PROXY_URL_FREE: str({ default: 'http://proxy-free:8080' }),
-  PROXY_URL_PREMIUM: str({ default: 'http://proxy-premium:8080' }),
-
-  // Proxy: outbound source IPs for Discord traffic (per-edition Cloudflare ban
-  // isolation); empty = default route
-  EGRESS_LOCAL_ADDRESS_FREE: str({ default: '' }),
-  EGRESS_LOCAL_ADDRESS_PREMIUM: str({ default: '' }),
+  /**
+   * Outbound source IP for Discord traffic; empty = default route.
+   *
+   * Discord restricts IP addresses, not tokens, so this is the only real lever
+   * on the 10k-invalid-requests/10min Cloudflare ceiling. Pinning it keeps the
+   * stack's Discord egress on a known address the host can rotate.
+   */
+  EGRESS_LOCAL_ADDRESS: str({ default: '' }),
 
   // Backend
   DATABASE_URL: str({ default: 'postgresql://postgres:postgres@localhost:54322/postgres' }),
@@ -107,16 +99,19 @@ export const env = cleanEnv(process.env, {
   // --- Web dashboard -------------------------------------------------------
   // Required by the web app only; validated at its point of use so that a
   // misconfigured dashboard cannot stop the bot from publishing.
-  //
-  // Self-host uses ONE Discord application for everything, so
-  // `DISCORD_CLIENT_ID` is both the OAuth client and the bot being invited.
-  // The public instance logs in with one application but invites two others,
-  // hence the extra pair below.
   AUTH_SECRET: str({ default: '' }),
   DISCORD_CLIENT_ID: str({ default: '' }),
   DISCORD_CLIENT_SECRET: str({ default: '' }),
-  DISCORD_FREE_BOT_ID: str({ default: '' }),
-  DISCORD_PREMIUM_BOT_ID: str({ default: '' }),
+  /**
+   * Application id of the bot users are invited to.
+   *
+   * Defaults to `DISCORD_CLIENT_ID`, which is the whole story for a self-host:
+   * one Discord application is the OAuth client and the bot. Set it only when
+   * the dashboard logs in with a different application than the bot — the
+   * public instance does, because its bot is the long-lived application the
+   * existing servers already have and re-inviting them is not an option.
+   */
+  DISCORD_BOT_ID: str({ default: '' }),
   WEB_APP_ORIGIN: str({ default: 'http://localhost:3100' }),
   /** Backend base URL the dashboard calls server-side (never from the browser). */
   BACKEND_URL: str({ default: 'http://backend:8080' }),
@@ -154,7 +149,7 @@ export const env = cleanEnv(process.env, {
   SMTP_FROM: str({ default: 'Auto Publisher <support@auto-publisher.gg>' }),
 });
 
-/** True for the two-edition commercial deployment, false for a self-hosted copy. */
+/** True for the commercial deployment (billing on), false for a self-hosted copy. */
 export const isPublicInstance = env.DEPLOYMENT_MODE === 'public';
 
 /**
@@ -191,14 +186,7 @@ const SCOPED_KEYS = {
     'SMTP_USER',
     'SMTP_PASSWORD',
   ],
-  dashboard: [
-    'AUTH_SECRET',
-    'DISCORD_CLIENT_ID',
-    'DISCORD_CLIENT_SECRET',
-    'DISCORD_FREE_BOT_ID',
-    'DISCORD_PREMIUM_BOT_ID',
-    'PADDLE_CLIENT_TOKEN',
-  ],
+  dashboard: ['AUTH_SECRET', 'DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET', 'PADDLE_CLIENT_TOKEN'],
 } as const satisfies Record<keyof EnvScope, readonly string[]>;
 
 /**
@@ -211,15 +199,12 @@ const SCOPED_KEYS = {
  * `getSiteConfig()` runs during prerender — so the backend asserts the `dashboard`
  * scope on its behalf, both reading one env file.
  *
- * Deliberately no "you set a variable this mode ignores" errors — each mode
- * reads only its own keys, so a stray leftover is inert. That also lets a
- * maintainer flip `DEPLOYMENT_MODE` on an existing env file to exercise the
- * self-host path without maintaining a second one.
+ * Deliberately no "you set a variable this mode ignores" errors — a stray
+ * leftover is inert, which lets a maintainer flip `DEPLOYMENT_MODE` on an
+ * existing env file to exercise the self-host path without a second one.
  */
 export const assertRequiredEnv = (scope: EnvScope = {}): void => {
-  const required: string[] = isPublicInstance
-    ? ['DISCORD_BOT_TOKEN_FREE', 'DISCORD_BOT_TOKEN_PREMIUM']
-    : ['DISCORD_BOT_TOKEN'];
+  const required: string[] = ['DISCORD_BOT_TOKEN'];
 
   if (isPublicInstance) {
     if (scope.billing) required.push(...SCOPED_KEYS.billing);
@@ -257,68 +242,32 @@ export const assertRequiredEnv = (scope: EnvScope = {}): void => {
   );
 };
 
-/**
- * The edition this process runs as.
- *
- * A self-hosted instance is a single bot with no billing, so it runs as
- * `premium` unconditionally: that is what the backend's existing per-guild
- * logic already resolves to when no free bot is present, giving unlimited
- * channels and filters with no special-casing and no third edition literal.
- * `APP_EDITION` is therefore public-instance only.
- */
-const EDITION: Edition = isPublicInstance ? (env.APP_EDITION as Edition) : 'premium';
-const IS_PREMIUM = EDITION === 'premium';
-
 /** The free plan's channel cap. Every other app reads it from here. */
 const FREE_CHANNELS_PER_GUILD = 3;
 
 /**
  * Application configuration.
- * Edition-derived values apply to the per-edition apps (bot, proxy) only —
- * the backend is edition-agnostic and derives limits per guild.
+ *
+ * One bot serves every guild. Free and Premium are subscription tiers resolved
+ * per guild by the backend, never a property of the running process — so
+ * nothing here branches on a plan.
  */
 export const config = {
   /**
-   * Whether this is the public two-edition commercial deployment. False for a
-   * self-hosted copy, which has no billing, no handover and one bot.
+   * Whether this is the commercial deployment. False for a self-hosted copy,
+   * which has no billing and gives every guild the full feature set.
    */
   isPublicInstance,
+  /** The bot's token. */
+  discordToken: env.DISCORD_BOT_TOKEN,
+  /** The proxy base URL every Discord call is routed through. */
+  proxyUrl: env.PROXY_URL,
   /**
-   * This process's edition. Always `premium` when self-hosted.
+   * Outbound source IP for Discord traffic; empty = default route. Discord's
+   * invalid-request ceiling is per IP, so this is what the host rotates if the
+   * proxy's self-shed ever trips for real.
    */
-  edition: EDITION,
-  /**
-   * Check if the application is running in premium edition
-   */
-  isPremiumInstance: IS_PREMIUM,
-  /**
-   * This edition's bot token. Self-host reads the singular variable; the
-   * public instance never consults it, which is what keeps a stale env file
-   * from making both editions share one Discord application.
-   */
-  discordToken: isPublicInstance
-    ? IS_PREMIUM
-      ? env.DISCORD_BOT_TOKEN_PREMIUM
-      : env.DISCORD_BOT_TOKEN_FREE
-    : env.DISCORD_BOT_TOKEN,
-  /**
-   * This edition's proxy base URL
-   */
-  proxyUrl: isPublicInstance
-    ? IS_PREMIUM
-      ? env.PROXY_URL_PREMIUM
-      : env.PROXY_URL_FREE
-    : env.PROXY_URL,
-  /**
-   * This edition's outbound source IP for Discord traffic; empty = default
-   * route. Per-edition Cloudflare ban isolation is a public-instance concern —
-   * a self-host has one bot and one IP.
-   */
-  egressLocalAddress: isPublicInstance
-    ? IS_PREMIUM
-      ? env.EGRESS_LOCAL_ADDRESS_PREMIUM
-      : env.EGRESS_LOCAL_ADDRESS_FREE
-    : '',
+  egressLocalAddress: env.EGRESS_LOCAL_ADDRESS,
   /**
    * MIGRATION: the date legacy mode stops working, as `YYYY-MM-DD` (UTC).
    *
@@ -337,18 +286,8 @@ export const config = {
    * Application limits
    */
   limits: {
-    /**
-     * The free plan's channel cap. Edition-independent on purpose: copy that
-     * names the free limit ("over the free limit of 3", "capped at 3 channels")
-     * is rendered by the premium bot too — while a handover is pending it can
-     * see paused channels and free-limit rejections for a guild the free bot
-     * still manages. Reading `channelsPerGuild` there would print 0.
-     */
+    /** The free plan's channel cap; Premium is unlimited. */
     freeChannelsPerGuild: FREE_CHANNELS_PER_GUILD,
-    /**
-     * Maximum channels this edition serves per guild; 0 means unlimited
-     */
-    channelsPerGuild: IS_PREMIUM ? 0 : FREE_CHANNELS_PER_GUILD,
     /**
      * Maximum filter conditions per channel (not surfaced in UI; over-limit shows a toast)
      */

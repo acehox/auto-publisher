@@ -40,4 +40,4 @@ export const legalEffectiveDates: Record<string, string | null> = {
  * failure mode without adding any evidential weight. The gate that matters is the
  * server requiring acceptance at all.
  */
-export const LEGAL_DOCUMENTS_VERSION = '2026-08-16';
+export const LEGAL_DOCUMENTS_VERSION = '2026-09-09';

@@ -3,31 +3,21 @@ import type { FilterMatchMode, FilterType } from '@ap/validations';
 /** Re-exported so the web can depend on @ap/api-types alone. */
 export type { FilterMatchMode, FilterType };
 
-/** App edition identifier */
-export type Edition = 'free' | 'premium';
-
 /**
  * Why a channel enable/migrate was rejected for hitting the per-guild cap.
- * The cap is enforced against the managing edition (the bot actually
- * publishing), so an entitled guild whose premium bot isn't serving yet is
- * still capped — the reason directs the user to the right resolution.
- * - `LIMIT_FREE` — no entitled subscription; upsell to buy Premium.
- * - `LIMIT_PREMIUM_INVITE` — entitled but the premium bot was never invited.
- * - `LIMIT_PREMIUM_PENDING` — entitled, premium bot present but handover pending
- *   (needs publish permissions before it takes over).
+ * One member, kept as a named type so both clients branch on the error `code`
+ * rather than assuming every 400 is a limit hit.
  */
-export type ChannelLimitReason = 'LIMIT_FREE' | 'LIMIT_PREMIUM_INVITE' | 'LIMIT_PREMIUM_PENDING';
+export type ChannelLimitReason = 'LIMIT_FREE';
 
-/** Guild entry from GET /api/user/guilds (per-edition bot presence) */
+/** Guild entry from GET /api/user/guilds */
 export interface DiscordGuild {
   id: string;
   name: string;
   icon: string | null;
   permissions: string;
-  freeBotPresent: boolean;
-  premiumBotPresent: boolean;
-  /** Premium handover pending: both bots present, free bot still managing */
-  premiumPending: boolean;
+  /** Whether the bot is currently in the guild. */
+  botPresent: boolean;
   /** MIGRATION: false = legacy guild (auto-publishes everything). Removed at sunset. */
   migrated: boolean;
   hasSubscription: boolean;
@@ -60,13 +50,11 @@ export interface GuildChannel {
   filters: ChannelFilterRule[];
   filterMode: FilterMatchMode;
   /**
-   * Whether the guild's MANAGING bot can currently crosspost here (from the
-   * publish-state cache, ADR 0008). Present on every channel of the dashboard
-   * aggregate; also drives legacy migrate-modal preselection.
+   * Whether the bot can currently crosspost here (from the publish-state cache,
+   * ADR 0008). Present on every channel of the dashboard aggregate; also drives
+   * legacy migrate-modal preselection.
    */
   canPublish?: boolean;
-  /** Present while a premium handover is pending — false = "Premium bot needs access" badge */
-  premiumBotHasPermissions?: boolean;
   /**
    * True for a disabled channel whose config is retained because it was paused
    * by the over-limit trim (ADR 0009) — drives the muted "Saved setup" tag.
@@ -166,9 +154,7 @@ export interface WithdrawalResult {
 export interface GuildDashboardData {
   /** MIGRATION: false = legacy guild (auto-publishes everything). Removed at sunset. */
   migrated: boolean;
-  /** Premium handover pending: premium bot idle until its permissions pass everywhere */
-  premiumPending: boolean;
-  /** Max enabled channels for the guild's managing edition; 0 = unlimited */
+  /** Max enabled channels for the guild's plan; 0 = unlimited (Premium) */
   channelLimit: number;
   /**
    * Whether an upgrade started now would carry the 14-day free trial: the guild has never

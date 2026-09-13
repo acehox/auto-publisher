@@ -1,12 +1,9 @@
-import { env } from '@ap/config';
 import { secToMs, sleep } from '@ap/utils';
 import type { CreateFilter, FilterMatchMode } from '@ap/validations';
 import { RequestMethod, type Snowflake } from 'discord.js';
 import { logger } from 'utils/logger.js';
 
 const baseUrl = 'http://backend:8080';
-// The single backend tracks presence per edition — every guild lifecycle call carries ours
-const edition = env.APP_EDITION;
 
 const request = async (path: string, init?: RequestInit): Promise<Response> => {
   const response = await fetch(`${baseUrl}${path}`, init);
@@ -73,38 +70,25 @@ const getGuildChannels = async (guildId: Snowflake) => {
 const deleteGuild = async (guildId: Snowflake) => {
   return lifecycleRequest(`/guild/${guildId}`, {
     method: RequestMethod.Delete,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ edition }),
   });
 };
 
-// Register guild on join/re-invite: upsert guild row, activate this edition's
-// presence, prune config for channels deleted while the bot was away, rebuild
-// derived cache; the backend runs the join orchestration (entitlement gate,
-// premium handover, free leave while premium manages)
+// Register guild on join/re-invite: upsert guild row, activate presence, prune
+// config for channels deleted while the bot was away, rebuild derived cache,
+// and apply the guild's plan to its channels
 const registerNewGuild = async (guildId: Snowflake, announcementChannelIds: Snowflake[]) => {
   return lifecycleRequest(`/guild/${guildId}/new`, {
     method: RequestMethod.Post,
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ edition, announcementChannelIds }),
+    body: JSON.stringify({ announcementChannelIds }),
   });
 };
 
-// Permission-change ping while a premium handover is pending — the backend
-// re-evaluates the premium bot's effective permissions and swaps when all pass
-const pingHandoverEvaluate = async (guildId: Snowflake) => {
-  return request(`/internal/handover/${guildId}/evaluate`, {
-    method: RequestMethod.Post,
-  });
-};
-
-// Publish-state push (ADR 0008): this edition's per-channel crosspost capability
-// computed off the gateway cache. `full` (a reconnect/join sweep) lets the
-// backend drop this edition's stale fields; incremental pushes only upsert.
+// Publish-state push (ADR 0008): per-channel crosspost capability computed off
+// the gateway cache. `full` (a reconnect/join sweep) lets the backend drop stale
+// fields; incremental pushes only upsert.
 const pushChannelPermissions = async (
   guildId: Snowflake,
   channels: { channelId: Snowflake; canPublish: boolean; missing: string[] }[],
@@ -115,7 +99,7 @@ const pushChannelPermissions = async (
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ edition, full, channels }),
+    body: JSON.stringify({ full, channels }),
   });
 };
 
@@ -130,7 +114,7 @@ const invalidateGuildChannels = async (guildId: Snowflake) => {
 
 // Role-list cache invalidation: a role was created/updated/deleted, so the
 // backend's cached role list (backing the dashboard's mention-filter picker) is
-// stale. Premium bot only (filters are premium-only).
+// stale.
 const invalidateGuildRoles = async (guildId: Snowflake) => {
   return request(`/internal/guild/${guildId}/roles/invalidate`, {
     method: RequestMethod.Post,
@@ -193,7 +177,6 @@ export const Backend = {
   getGuildChannels,
   deleteGuild,
   registerNewGuild,
-  pingHandoverEvaluate,
   pushChannelPermissions,
   invalidateGuildChannels,
   invalidateGuildRoles,

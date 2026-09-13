@@ -1,4 +1,4 @@
-import type { Edition, WithdrawalState } from '@ap/api-types';
+import type { WithdrawalState } from '@ap/api-types';
 import { isPublicInstance } from '@ap/config';
 import type { Subscription } from '@ap/database';
 import {
@@ -27,18 +27,16 @@ import {
 } from 'utils/validations.js';
 
 /**
- * Guard shared by every filter-write route. Filters are a Premium feature that
- * only takes effect while the Premium bot is actively managing the guild
- * (managing edition = premium ⇒ premium bot present AND handover complete), so
- * editing them otherwise is a no-op the dashboard already locks. Enforced here
- * too — the UI lock is not a real gate. The `PREMIUM_INACTIVE` code lets the
- * client distinguish this from a generic 403.
+ * Guard shared by every filter-write route. Filters are a Premium feature, and
+ * a free guild's filtered channels are paused rather than published unfiltered
+ * (ADR 0009) — so editing them there is a no-op the dashboard already locks.
+ * Enforced here too: the UI lock is not a real gate. The `PREMIUM_INACTIVE`
+ * code lets the client distinguish this from a generic 403.
  */
 const assertPremiumActive = async (guildId: string): Promise<void> => {
-  const managingEdition = await Services.Editions.getManagingEdition(guildId);
-  if (managingEdition !== 'premium') {
+  if (!(await Services.Plans.isPremium(guildId))) {
     throw createHttpError(
-      'Premium bot is not active for this guild',
+      'Premium is not active for this guild',
       StatusCodes.FORBIDDEN,
       'PREMIUM_INACTIVE'
     );
@@ -68,8 +66,7 @@ const requireOwnedServingChannel = async (guildId: string, channelId: string): P
  */
 const fetchGuildName = async (guildId: string): Promise<string | null> => {
   try {
-    const managingEdition = await Services.Editions.getManagingEdition(guildId);
-    const guild = await Discord.cachedGet<APIGuild>(managingEdition, Routes.guild(guildId));
+    const guild = await Discord.cachedGet<APIGuild>(Routes.guild(guildId));
     return guild.name ?? null;
   } catch (error) {
     logger.debug(error, `Could not resolve guild name for ${guildId}`);
@@ -151,33 +148,20 @@ export const GuildApi: Router = (() => {
       // Self-heal before reading presence-derived state — the invite-return
       // lands here, and re-authorizing an already-present bot fires no gateway
       // event, so a missing row would otherwise stick until the nightly
-      // reconcile. Premium is entitlement-gated: a non-entitled guild's only
-      // "present" outcome is the revocation leave (owned by the nightly
-      // reconcile), so skip the premium member-fetch there (ADR 0007). Fetch
-      // the subscription up front so the gate can read entitlement.
-      const [activeEditions, sub] = await Promise.all([
-        Services.Editions.getActiveEditions(guildId),
+      // reconcile (ADR 0007).
+      const [present, sub] = await Promise.all([
+        Services.Guilds.isBotPresent(guildId),
         Services.Subscriptions.getByGuildId(guildId),
       ]);
-      const entitled = !!sub && isEntitledStatus(sub.status);
-      // Only editions this deployment runs. The premium entitlement skip is a
-      // public-instance rule (a non-entitled guild's only "present" outcome is
-      // the revocation leave); self-hosted, premium IS the single bot, so
-      // skipping it would leave every missed join unhealed and 409 the page.
-      const absentEditions = Services.Editions.CONFIGURED.filter(
-        e => !activeEditions.has(e) && (!isPublicInstance || e !== 'premium' || entitled)
-      );
-      const { healed, inconclusive } =
-        absentEditions.length > 0
-          ? await Services.PresenceHeal.healAbsentEditions(guildId, absentEditions)
-          : { healed: new Set<Edition>(), inconclusive: false };
+      const { healed, inconclusive } = present
+        ? { healed: false, inconclusive: false }
+        : await Services.PresenceHeal.healAbsentGuild(guildId);
 
-      // Botless guild (no bot present, even after the self-heal). Fail with a
+      // Botless guild (bot not present, even after the self-heal). Fail with a
       // distinct 409 rather than the generic 500 a downstream Discord 404 would
-      // produce, so the web can tell "permanent, redirect to the server list
-      // (which owns the invite CTA)" from a transient 5xx it should retry in
-      // place. Effective presence = pre-heal active editions plus any restored.
-      if (activeEditions.size === 0 && healed.size === 0) {
+      // produce, so the web can tell "permanent, stay and offer the invite"
+      // from a transient 5xx it should retry in place.
+      if (!present && !healed) {
         // ...but only when Discord actually SAID the bot is absent. An
         // unresolved check (outage, proxy failure) must not render as the
         // permanent "bot isn't in your server" redirect — 503 lands in the
@@ -192,45 +176,26 @@ export const GuildApi: Router = (() => {
         throw createHttpError('Bot is not in this guild', StatusCodes.CONFLICT, 'BOT_NOT_PRESENT');
       }
 
-      const managingEdition = await Services.Editions.getManagingEdition(guildId);
-
-      const [channelRecords, announcementChannels, guildRow, premiumPending] = await Promise.all([
+      const [channelRecords, announcementChannels, guildRow, channelLimit] = await Promise.all([
         Services.Guilds.getChannelRecords(guildId),
-        Discord.getAnnouncementChannels(managingEdition, guildId),
+        Discord.getAnnouncementChannels(guildId),
         Services.Guilds.find(guildId),
-        Services.Handover.isPending(guildId),
+        Services.Plans.channelLimit(guildId),
       ]);
 
       // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt NULL
       const migrated = !!guildRow?.migratedAt;
 
-      // Two evaluations, run concurrently, both served from the bot-pushed
-      // publish-state cache (ADR 0008) with a REST write-back fallback:
-      // - managingMap: the managing bot's publish capability per channel (drives
-      //   the "Publishing / Not publishing" indicator + migrate-modal preselection)
-      // - premiumBlockedIds (pending handover only): channels the premium bot
-      //   cannot publish in yet where the free bot can — the "Premium bot needs
-      //   access" nudge. A handover eval failure (e.g. a dangling marker after
-      //   the premium bot was kicked) only omits that badge — never breaks the
-      //   whole dashboard.
-      const [managingMap, premiumBlockedIds] = await Promise.all([
-        Services.PublishState.getEditionMap(guildId, managingEdition, announcementChannels),
-        (async (): Promise<Set<string> | null> => {
-          if (!premiumPending) return null;
-          try {
-            return new Set(await Services.Handover.getBlockedChannelIds(guildId));
-          } catch (error) {
-            logger.warn(error, `Blocked-channel evaluation failed for guild ${guildId}`);
-            return null;
-          }
-        })(),
-      ]);
+      // Publish capability per channel, served from the bot-pushed publish-state
+      // cache (ADR 0008) with a REST write-back fallback. Drives the
+      // "Publishing / Not publishing" indicator + migrate-modal preselection.
+      const publishMap = await Services.PublishState.getMap(guildId, announcementChannels);
 
       const enabledMap = new Map(channelRecords.map(ch => [ch.channelId, ch]));
 
       const channels = announcementChannels.map(c => {
         const record = enabledMap.get(c.id);
-        const publish = managingMap[c.id];
+        const publish = publishMap[c.id];
         // Serving = a row exists AND is not paused (ADR 0009). A paused row is a
         // disabled channel with retained config → surfaced via hasSavedSetup.
         const serving = !!record && !record.pausedAt;
@@ -242,7 +207,6 @@ export const GuildApi: Router = (() => {
           filters: record?.filters ?? [],
           filterMode: record?.filterMode ?? 'all',
           canPublish: publish?.canPublish ?? false,
-          ...(premiumBlockedIds ? { premiumBotHasPermissions: !premiumBlockedIds.has(c.id) } : {}),
           ...(record?.pausedAt ? { hasSavedSetup: true } : {}),
         };
       });
@@ -252,8 +216,7 @@ export const GuildApi: Router = (() => {
         data: {
           guildId,
           migrated,
-          premiumPending,
-          channelLimit: Services.Editions.channelLimitFor(managingEdition),
+          channelLimit,
           // The fact the pre-contractual trial disclosure is built from, so it comes from
           // the checkout's own predicate rather than being re-derived client-side.
           trialAvailable: Services.Subscriptions.isTrialAvailable(sub),
@@ -369,14 +332,13 @@ export const GuildApi: Router = (() => {
    * GET /api/guild/:guildId/roles
    * Guild roles for the mention-filter role picker (excludes @everyone), highest
    * first. Served from the shared route-keyed read cache (5-min TTL), which the
-   * premium bot busts on role create/update/delete.
+   * bot busts on role create/update/delete.
    */
   router.get('/roles', validateRequest(GuildReqSchema), async (req, res) => {
     const { guildId } = req.params;
 
     try {
-      const managingEdition = await Services.Editions.getManagingEdition(guildId);
-      const roles = await Discord.cachedGet<APIRole[]>(managingEdition, Routes.guildRoles(guildId));
+      const roles = await Discord.cachedGet<APIRole[]>(Routes.guildRoles(guildId));
 
       const data = roles
         .filter(role => role.id !== guildId)

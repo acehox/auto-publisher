@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — 2026-07-12.
+Accepted — 2026-07-12. **Amended by ADR 0013 (2026-09-09):** the push design stands. The handover gate that was its second reader is gone, so the dashboard is the only consumer, and the hash fields are keyed by `channelId` alone rather than `{channelId}:{edition}`.
 
 ## Context
 

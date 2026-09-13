@@ -107,10 +107,13 @@ const getStatus = async (channelId: Snowflake) => {
 
 /**
  * Get a guild's auto-publishing state: serving channel IDs, paused ones
- * (retained but over the free limit, ADR 0009), and whether the guild is
- * migrated.
+ * (retained but over the free limit, ADR 0009), whether the guild is migrated,
+ * and whether it is on Premium.
+ *
+ * `premium` is the bot's ONLY source for a guild's plan — one bot serves both,
+ * so nothing about the running process implies it.
  * @param guildId The guild ID
- * @returns { channelIds, pausedChannelIds, migrated }, or null if request fails
+ * @returns { channelIds, pausedChannelIds, migrated, premium }, or null if request fails
  */
 const getGuildChannels = async (guildId: Snowflake) => {
   try {
@@ -125,12 +128,20 @@ const getGuildChannels = async (guildId: Snowflake) => {
 
     const result = (await response.json()) as {
       status: number;
-      data: { channelIds: string[]; pausedChannelIds?: string[]; migrated?: boolean };
+      data: {
+        channelIds: string[];
+        pausedChannelIds?: string[];
+        migrated?: boolean;
+        premium?: boolean;
+      };
       message: string;
     };
     return {
       channelIds: result.data.channelIds,
       pausedChannelIds: result.data.pausedChannelIds ?? [],
+      // Defaults false: claiming Premium a guild does not have would offer
+      // controls whose every write the backend then rejects with 403.
+      premium: result.data.premium ?? false,
       // MIGRATION: default true so a backend that predates the field degrades
       // to the allowlist view rather than claiming a migrated guild is legacy
       // ("every announcement channel is published automatically" is the most

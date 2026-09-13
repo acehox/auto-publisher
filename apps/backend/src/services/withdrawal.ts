@@ -110,8 +110,8 @@ const composeStatement = (
  * it read "AS SUBMITTED" over lines the dialog never showed.
  *
  * `uključujući` is a floor, not a ceiling (st. 5 closes its list with `samo`; this one
- * does not), which is what permits the operational section — keep it, a consumer whose
- * premium bot just left needs to know to re-invite the free one.
+ * does not), which is what permits the operational section — keep it: a consumer needs
+ * to know which of their channels stop publishing and that the setup is retained.
  */
 const composeAcknowledgement = (record: Withdrawal): { subject: string; text: string } => ({
   subject: 'Confirmation of receipt — withdrawal from contract (potvrda o primitku raskida)',
@@ -133,15 +133,18 @@ const composeAcknowledgement = (record: Withdrawal): { subject: string; text: st
     '',
     'WHAT HAPPENS NEXT',
     '',
-    // Not "returns to the free edition": the premium bot leaves and Discord has no
-    // way for a bot to re-add itself, so the server may be left with none.
-    'Your Premium subscription ends now. Your channel configuration and publishing rules are',
-    'kept, so nothing needs setting up again.',
+    // The bot stays in the server — nothing leaves on a downgrade. What changes is
+    // which channels it serves, so that is what this has to name. Vague wording
+    // ("returns to the free plan") would leave an admin unable to tell which of
+    // their channels went quiet.
+    'Your Premium subscription ends now. The bot stays in your server and your channel',
+    'configuration and publishing rules are kept in full — nothing needs setting up again.',
     '',
-    'One step is needed from you: if the Premium bot had replaced the free bot in your server,',
-    'you will need to invite the free bot back before publishing resumes. Discord does not let',
-    'a bot add itself to a server, so we cannot do this for you. The invite link is on your',
-    'dashboard.',
+    'Your server returns to the free plan, so some channels stop publishing: any beyond the',
+    'free limit of three, and any that use publishing rules (rules are a Premium feature, and',
+    'we pause those channels rather than publish messages you chose to filter out). They are',
+    'listed as paused on your dashboard and resume exactly as configured if you subscribe',
+    'again. Nothing is deleted.',
     '',
     // Conditional on purpose: composed BEFORE the refund runs (st. 6 owes the
     // acknowledgement without delay, so it cannot wait on Paddle), and the retry sweep has

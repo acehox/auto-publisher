@@ -8,14 +8,11 @@ import { useIsPublicInstance } from '@/components/site-config-context';
 export default function FiltersPage() {
   const { guild, data } = useGuild();
   // A self-hosted instance has no billing: filters are part of the base feature
-  // set, so the tab is always unlocked and always editable.
+  // set, so the tab is always unlocked. On the public instance an entitled
+  // subscription is the whole gate — one bot serves both plans, so there is no
+  // second condition to satisfy. Enforced server-side too (PREMIUM_INACTIVE).
   const isPublicInstance = useIsPublicInstance();
-  const isPremium = !isPublicInstance || guild.premiumBotPresent || guild.hasSubscription;
-
-  // Filters only take effect while the Premium bot is actively managing the
-  // guild (present AND handover complete); otherwise the manager renders
-  // read-only with a nudge. Enforced server-side too (PREMIUM_INACTIVE).
-  const isActive = !isPublicInstance || (guild.premiumBotPresent && !guild.premiumPending);
+  const isPremium = !isPublicInstance || guild.hasSubscription;
 
   // Header is rendered at the page level so the "Channel Filters" title shows
   // in both the free (upsell) and premium (manager) states, mirroring the
@@ -30,14 +27,7 @@ export default function FiltersPage() {
       </div>
 
       {isPremium ? (
-        <FilterManager
-          guildId={guild.id}
-          channels={data.channels}
-          isActive={isActive}
-          hasSubscription={guild.hasSubscription}
-          premiumBotPresent={guild.premiumBotPresent}
-          premiumPending={guild.premiumPending}
-        />
+        <FilterManager guildId={guild.id} channels={data.channels} />
       ) : (
         // Left-aligned max-w-2xl to match the Subscription page's entitled card:
         // the upsell now carries a rule-editor preview, which a max-w-md column

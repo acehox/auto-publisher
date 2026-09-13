@@ -15,18 +15,13 @@ import { getBotInviteUrl } from '@/lib/invite';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
 
 function hasBotPresent(guild: DiscordGuild): boolean {
-  return guild.freeBotPresent || guild.premiumBotPresent;
+  return guild.botPresent;
 }
 
-function guildSortOrder(guild: DiscordGuild): number {
-  if (guild.premiumBotPresent) return 0;
-  if (guild.freeBotPresent) return 1;
-  return 2;
-}
-
+/** Guilds the bot is in first, then alphabetically within each group. */
 function sortGuilds(guilds: DiscordGuild[]): DiscordGuild[] {
   return [...guilds].sort((a, b) => {
-    const orderDiff = guildSortOrder(a) - guildSortOrder(b);
+    const orderDiff = Number(b.botPresent) - Number(a.botPresent);
     if (orderDiff !== 0) return orderDiff;
     return a.name.localeCompare(b.name);
   });
@@ -155,11 +150,7 @@ export function ServerSelector() {
                 );
 
                 if (botAbsent) {
-                  const inviteUrl = getBotInviteUrl(
-                    siteConfig,
-                    guild.hasSubscription ? 'premium' : 'free',
-                    guild.id
-                  );
+                  const inviteUrl = getBotInviteUrl(siteConfig, guild.id);
                   if (!inviteUrl) {
                     return (
                       <div key={guild.id} className="block">

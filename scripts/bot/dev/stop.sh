@@ -6,24 +6,6 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../utils/common.sh"
 
-# Optional edition arg: stop only that edition's bot + proxy, leaving the
-# backend, Redis, and Supabase running (the other edition keeps working)
-EDITION="$1"
-
-if [ -n "$EDITION" ]; then
-  if [ "$EDITION" != "free" ] && [ "$EDITION" != "premium" ]; then
-    echo "❌ Unknown argument: $EDITION (expected 'free' or 'premium')"
-    exit 1
-  fi
-
-  echo "🛑 Stopping $EDITION edition services..."
-  is_docker_running
-  docker compose $BOT_COMPOSE_FILES_DEV stop "bot-$EDITION" "proxy-$EDITION"
-  echo "✅ Stopped bot-$EDITION and proxy-$EDITION (backend, redis, and Supabase keep running)"
-  echo "🚀 To start again: bun run dev:start:$EDITION"
-  exit 0
-fi
-
 echo "🛑 Stopping development environment..."
 
 is_docker_running

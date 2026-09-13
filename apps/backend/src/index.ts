@@ -77,9 +77,8 @@ const server = app.listen('8080', async () => {
   logger.info(`Server (${NODE_ENV}) running on port http://localhost:8080`);
 });
 
-// Start guild presence reconcile cron (every configured edition, 03:30 —
-// before subscription reconcile so its bot-present backstop reads fresh
-// presence)
+// Start guild presence reconcile cron (03:30 — before subscription reconcile
+// so its bot-present backstop reads fresh presence)
 startGuildReconcile();
 
 // Billing crons are public-instance only. A self-hosted copy has no

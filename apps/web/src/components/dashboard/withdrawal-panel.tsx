@@ -236,9 +236,9 @@ function WithdrawalReceipt({ result }: { result: WithdrawalResult }) {
         </p>
         <p className="text-slate-300">{refundSentence(result.refundStatus)}</p>
         <p className="text-slate-400">
-          If the Premium bot had replaced the free bot in this server, invite the free bot back to
-          resume publishing — Discord does not let a bot add itself. Your channels and rules are
-          kept.
+          The bot stays in this server. It returns to the free plan, so channels beyond the free
+          limit and channels using publishing rules are paused — they are kept exactly as configured
+          and resume if you subscribe again. Nothing is deleted.
         </p>
       </div>
     </>

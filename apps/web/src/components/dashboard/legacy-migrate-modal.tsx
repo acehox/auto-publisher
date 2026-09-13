@@ -4,7 +4,6 @@ import { Check, Loader2, Megaphone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { channelLimitReasonFromGuild } from '@/components/dashboard/channel-limit-upsell';
 import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
 import { useIsPublicInstance, useLegacySunsetLabel } from '@/components/site-config-context';
 import { Badge } from '@/components/ui/badge';
@@ -28,25 +27,15 @@ interface LegacyMigrateModalProps {
   /** Max selectable channels, or null for unlimited (premium) */
   limit: number | null;
   hasSubscription: boolean;
-  premiumBotPresent: boolean;
-  premiumPending: boolean;
   onClose: () => void;
 }
 
-/** Over-limit guidance, branched to match why the guild is still capped. */
-function overSelectedMessage(
-  limit: number,
-  flags: { hasSubscription: boolean; premiumBotPresent: boolean; premiumPending: boolean }
-): string {
-  const reason = channelLimitReasonFromGuild(flags);
-  if (reason === 'LIMIT_PREMIUM_INVITE') {
-    return `You're on Premium, but the Premium bot isn't in this server yet — the free bot covers ${limit} channels until it takes over. Invite the Premium bot (see the banner above) to unlock unlimited channels, or deselect some.`;
-  }
-  if (reason === 'LIMIT_PREMIUM_PENDING') {
-    return `Premium is activating — the free bot covers ${limit} channels until the Premium bot can publish everywhere. Grant it permission in the Channels tab to unlock unlimited channels, or deselect some.`;
-  }
-  // No "upgrade now" here: on a legacy/unsubscribed guild the upgrade is gated
-  // behind finishing migration, so the CTA is "migrate now, upgrade right after".
+/**
+ * Over-limit guidance. No "upgrade now" here: on a legacy guild the upgrade is
+ * gated behind finishing migration, so the CTA is "migrate now, upgrade right
+ * after". An entitled guild is never capped, so it never sees this.
+ */
+function overSelectedMessage(limit: number): string {
   return `You can enable up to ${limit} channels now. Deselect some to migrate — right after, you can upgrade to Premium to add unlimited channels.`;
 }
 
@@ -55,14 +44,11 @@ export function LegacyMigrateModal({
   channels,
   limit,
   hasSubscription,
-  premiumBotPresent,
-  premiumPending,
   onClose,
 }: LegacyMigrateModalProps) {
   const router = useRouter();
   // A self-hosted instance has no billing, so it never caps a guild (`limit` is
-  // null) and every branch of overSelectedMessage would name a plan or a second
-  // bot that doesn't exist there.
+  // null) and this copy would name a plan that doesn't exist there.
   const isPublicInstance = useIsPublicInstance();
   const sunsetLabel = useLegacySunsetLabel();
   const [isPending, startTransition] = useTransition();
@@ -186,9 +172,7 @@ export function LegacyMigrateModal({
         <div className="p-6 pt-4 space-y-3">
           <PublishDelayNote hasSubscription={hasSubscription} />
           {overSelected && limit !== null && isPublicInstance && (
-            <p className="text-amber-400 text-sm">
-              {overSelectedMessage(limit, { hasSubscription, premiumBotPresent, premiumPending })}
-            </p>
+            <p className="text-amber-400 text-sm">{overSelectedMessage(limit)}</p>
           )}
           {error && <p className="text-red-400 text-sm">Migration failed. Please try again.</p>}
           <div className="flex justify-end gap-3">

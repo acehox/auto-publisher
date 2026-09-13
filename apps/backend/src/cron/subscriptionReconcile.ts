@@ -9,7 +9,8 @@ import { guardMassAction } from 'utils/massActionGuard.js';
  *
  * Backstop for missed webhooks — Paddle owns period-end cancellation, so no local
  * expiry scanning is needed. Entitlement transitions detected here are enforced the
- * same way as webhook-driven ones (premium bot leaves the guild).
+ * same way as webhook-driven ones (the guild's channels are trimmed to the free
+ * shape; nothing leaves the guild).
  *
  * Reconcile keeps rows accurate; retention makes them go away. Flipping a row to
  * `canceled` leaves the subscriber's Discord user id sitting there indefinitely, which
@@ -22,6 +23,7 @@ export const isSubscriptionReconcileInFlight = () => inFlight;
 const reconcileSubscriptions = async () => {
   let processed = 0;
   let changed = 0;
+  let granted = 0;
   const toRevoke = new Set<string>();
 
   for await (const paddleSub of Services.Paddle.listAllSubscriptions()) {
@@ -39,10 +41,20 @@ const reconcileSubscriptions = async () => {
       );
     }
 
-    // Collect rather than leave inline — counting revocations across the whole
-    // pass lets the circuit breaker below catch a Paddle mass-cancel snapshot
-    // before a single bot leaves.
-    if (Services.Entitlements.isRevocation(previous, current)) toRevoke.add(current.guildId);
+    // Revocations are COLLECTED — counting them across the whole pass lets the
+    // circuit breaker below catch a Paddle mass-cancel snapshot before a single
+    // guild is trimmed. Grants are applied inline and unguarded: restoring a
+    // guild's own paused channels is never destructive, and delaying it would
+    // leave a guild that paid mid-outage silently capped until tomorrow.
+    // `guildId` read up front: the two predicates are type guards, so chaining
+    // them narrows `current` to `never` in the second branch.
+    const { guildId } = current;
+    if (Services.Entitlements.isRevocation(previous, current)) {
+      toRevoke.add(guildId);
+    } else if (Services.Entitlements.isGrant(previous, current)) {
+      granted++;
+      await Services.Entitlements.apply(guildId);
+    }
   }
 
   // Backstop for missed/failed revocations: bot still present in a guild whose
@@ -51,16 +63,16 @@ const reconcileSubscriptions = async () => {
     toRevoke.add(sub.guildId);
   }
 
-  // Only guilds the premium bot is actually in can be left; scope the count and
-  // the cap's population to premium presence so normal churn of already-departed
-  // lapses can't trip (or dodge) the breaker.
-  const present = await Services.Editions.filterPresent([...toRevoke], 'premium');
-  const population = await Services.Editions.countPresent('premium');
+  // Only guilds the bot is in have channels to trim; scope the count and the
+  // cap's population to presence so normal churn of long-abandoned guilds can't
+  // trip (or dodge) the breaker.
+  const present = await Services.Guilds.filterPresent([...toRevoke]);
+  const population = await Services.Guilds.countPresent();
 
   let revoked = 0;
   const allowed = guardMassAction({
     key: 'subscription-reconcile-revocation-cap',
-    action: 'revoke premium access',
+    action: 'downgrade guilds to the free plan',
     count: present.length,
     population,
     context:
@@ -69,8 +81,8 @@ const reconcileSubscriptions = async () => {
 
   if (allowed) {
     for (const guildId of present) {
-      logger.info(`Reconcile: enforcing revocation for guild ${guildId}`);
-      await Services.Entitlements.revokePremiumAccess(guildId);
+      logger.info(`Reconcile: enforcing downgrade for guild ${guildId}`);
+      await Services.Entitlements.apply(guildId);
       revoked++;
     }
   }
@@ -80,7 +92,7 @@ const reconcileSubscriptions = async () => {
   await Services.Retention.applyRetention();
 
   logger.info(
-    `Subscription reconcile finished: ${processed} checked, ${changed} corrected, ${revoked} revoked`
+    `Subscription reconcile finished: ${processed} checked, ${changed} corrected, ${granted} upgraded, ${revoked} downgraded`
   );
 };
 
