@@ -179,6 +179,16 @@ export function ChannelConfig({
           router.refresh();
           return;
         }
+        // Already registered — enabled from `/ap enable` or another tab while
+        // this list was open. Carries no `code`, so without this branch it fell
+        // into the cap fallback below and rendered as "channel limit reached".
+        if (result.status === 409) {
+          toast.info('Channel already enabled', {
+            description: 'It was enabled elsewhere. Refreshing the channel list.',
+          });
+          router.refresh();
+          return;
+        }
         // Demoted since this list rendered — a stale list, not a cap hit. Must
         // precede the cap branch below, which treats any code as a limit reason.
         if (result.code === 'NOT_ANNOUNCEMENT_CHANNEL') {
@@ -189,9 +199,13 @@ export function ChannelConfig({
           return;
         }
         // Cap hit: show the reason-appropriate upsell instead of a hard failure.
-        // Prefer the backend's code; there is only one cap reason, so an absent
-        // code on an enable failure means the same thing.
-        setLimitReason((result.code as ChannelLimitReason | undefined) ?? 'LIMIT_FREE');
+        // Scoped to 400 — the route's only other statuses are handled above, and
+        // a 5xx rendered as an upsell is the bug this guard prevents.
+        if (result.status === 400) {
+          setLimitReason((result.code as ChannelLimitReason | undefined) ?? 'LIMIT_FREE');
+          return;
+        }
+        toast.error("Couldn't enable the channel", { description: 'Please try again.' });
       } finally {
         setPendingChannelId(null);
       }
