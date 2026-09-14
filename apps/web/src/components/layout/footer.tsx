@@ -38,7 +38,7 @@ export function Footer() {
             </Link>
             <p className="text-slate-400 max-w-sm">
               The most trusted Discord bot for automatically publishing announcement channel
-              messages.
+              messages.{' '}
               {/* Install count describes the public bot, not a self-hosted copy of it. */}
               {isPublicInstance && `${formatNumberFull(values.activeServers)} servers worldwide.`}
             </p>
