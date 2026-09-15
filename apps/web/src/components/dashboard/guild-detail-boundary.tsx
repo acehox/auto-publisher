@@ -14,7 +14,7 @@ import { AuthRedirect } from '@/components/auth/auth-redirect';
 import { BotAbsentCard } from './bot-absent-card';
 import { ErrorBoundary, RedirectTo } from './error-redirect-boundary';
 import { GuildErrorCard } from './guild-error-card';
-import { ChannelConfigSkeleton } from './skeletons';
+import { TabContentSkeleton } from './skeletons';
 
 // Silent auto-retry for a TRANSIENT guild-detail failure (proxy 504 / Discord
 // 5xx / connection blip) before surfacing the manual retry card. Most blips
@@ -93,7 +93,7 @@ export function GuildDetailBoundary({ guildId, children }: GuildDetailBoundaryPr
       resetKeys={[resetKey]}
       fallback={
         <RedirectTo path="/dashboard">
-          <ChannelConfigSkeleton />
+          <TabContentSkeleton />
         </RedirectTo>
       }
       authFallback={<AuthRedirect callbackUrl={`/dashboard/${guildId}`} />}
@@ -107,7 +107,7 @@ export function GuildDetailBoundary({ guildId, children }: GuildDetailBoundaryPr
         />
       }
     >
-      <Suspense fallback={<ChannelConfigSkeleton />}>{children}</Suspense>
+      <Suspense fallback={<TabContentSkeleton />}>{children}</Suspense>
     </ErrorBoundary>
   );
 }
@@ -138,6 +138,6 @@ function TransientFallback({
     setRetrying(scheduleAutoRetry());
   }, []);
 
-  if (retrying) return <ChannelConfigSkeleton />;
+  if (retrying) return <TabContentSkeleton />;
   return <GuildErrorCard onRetry={onManualRetry} isPending={retryPending} />;
 }

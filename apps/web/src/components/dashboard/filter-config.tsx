@@ -1,26 +1,19 @@
 'use client';
 
-import { Filter as FilterIcon, Hash, Loader2, Plus, RotateCcw, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Filter as FilterIcon, Loader2, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ConditionRow } from '@/components/dashboard/condition-row';
+import { EmptyState } from '@/components/dashboard/empty-state';
 import {
   DEFAULT_MATCH_MODE,
   filterValueError,
   MATCH_MODE_OPTIONS,
 } from '@/components/dashboard/filter-meta';
 import { useSiteConfig } from '@/components/site-config-context';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { getGuildRoles, setChannelFilters } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
@@ -45,19 +38,137 @@ function toInputs(channel: GuildChannel): FilterInput[] {
 function serializeRule(matchMode: FilterMatchMode, conditions: FilterInput[]): string {
   return JSON.stringify({
     matchMode,
-    conditions: conditions.map(condition => ({
-      type: condition.type,
-      negate: condition.negate,
-      values: condition.values,
-    })),
+    conditions: conditions.map(c => ({ type: c.type, negate: c.negate, values: c.values })),
   });
 }
 
 /**
- * Inline rule builder for one channel: a match-mode toggle + an editable
- * condition list, persisted on demand via explicit Save (no autosave). Local
- * state is the source of truth, so a background refresh never clobbers an edit;
- * `baseline` holds the last-saved rule to power Revert + dirty detection.
+ * List-and-detail, not an accordion: enabled channels are a list, a rule is a
+ * page. Desktop shows both; mobile drills in and back, which is what lets a
+ * condition have the full width instead of four controls squeezed onto one line.
+ */
+export function FilterManager({ guildId, channels }: FilterManagerProps) {
+  const [roles, setRoles] = useState<GuildRole[]>([]);
+  const rolesById = useMemo(() => Object.fromEntries(roles.map(role => [role.id, role])), [roles]);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Roles power the mention picker + resolve role names for display. A failure
+    // is non-fatal — the UI falls back to raw IDs.
+    getGuildRoles(guildId)
+      .then(fetched => {
+        if (!cancelled) setRoles(fetched);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [guildId]);
+
+  const enabledChannels = channels.filter(channel => channel.enabled);
+
+  // Deep link: the Channels tab's filter pill arrives with ?channel=<id>, which
+  // selects that channel — on mobile that means opening its rule directly.
+  const searchParams = useSearchParams();
+  const requested = searchParams.get('channel');
+  const deepLinked =
+    requested && enabledChannels.some(c => c.channelId === requested) ? requested : null;
+
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => deepLinked ?? enabledChannels[0]?.channelId ?? null
+  );
+  // Mobile is one pane at a time; a deep link lands straight on the rule.
+  const [mobileDetail, setMobileDetail] = useState(deepLinked !== null);
+
+  const selected = enabledChannels.find(c => c.channelId === selectedId) ?? enabledChannels[0];
+
+  if (enabledChannels.length === 0) {
+    return (
+      <EmptyState
+        icon={FilterIcon}
+        title="No channels enabled yet"
+        action={
+          <Button asChild size="sm">
+            <Link href={`/dashboard/${guildId}/channels`}>Go to Channels</Link>
+          </Button>
+        }
+      >
+        Filters apply per channel. Enable a channel first, then set its rule here.
+      </EmptyState>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
+      <div className={cn('lg:w-59 lg:shrink-0', mobileDetail && 'hidden lg:block')}>
+        <p className="px-0.5 pb-2 text-[11px] uppercase tracking-wider text-slate-400">
+          Enabled channels
+        </p>
+        <div className="space-y-1.5">
+          {enabledChannels.map(channel => {
+            const active = channel.channelId === selected?.channelId;
+            const count = channel.filters.length;
+            return (
+              <button
+                key={channel.channelId}
+                type="button"
+                onClick={() => {
+                  setSelectedId(channel.channelId);
+                  setMobileDetail(true);
+                }}
+                className={cn(
+                  'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors',
+                  active
+                    ? 'border-blue-500/40 bg-blue-500/10'
+                    : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+                )}
+              >
+                <span className="min-w-0 flex-1 truncate text-sm text-slate-100">
+                  {channel.name}
+                </span>
+                <span className="whitespace-nowrap text-xs text-slate-400">
+                  {count > 0 ? `${count} condition${count !== 1 ? 's' : ''}` : 'Publishes all'}
+                </span>
+                <ChevronRight className="size-3.5 shrink-0 text-slate-600 lg:hidden" />
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {selected && (
+        <div className={cn('min-w-0 flex-1 space-y-3', !mobileDetail && 'hidden lg:block')}>
+          <div className="flex items-center gap-2.5 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileDetail(false)}
+              className="flex cursor-pointer items-center gap-1 text-xs text-blue-400"
+            >
+              <ChevronLeft className="size-3.5" />
+              Channels
+            </button>
+            <span className="min-w-0 truncate font-semibold text-sm text-white">
+              {selected.name}
+            </span>
+          </div>
+          <ChannelRuleEditor
+            key={selected.channelId}
+            guildId={guildId}
+            channel={selected}
+            roles={roles}
+            rolesById={rolesById}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * One channel's rule: a match mode plus an editable condition list, persisted on
+ * demand via explicit Save (no autosave). Local state is the source of truth so
+ * a background refresh never clobbers an edit; `baseline` holds the last-saved
+ * rule, powering Revert and dirty detection.
  */
 function ChannelRuleEditor({
   guildId,
@@ -83,9 +194,9 @@ function ChannelRuleEditor({
   const [conditions, setConditions] = useState<FilterInput[]>(baseline.conditions);
   const [saving, setSaving] = useState(false);
 
-  // Half-built rows (no values) stay in the UI but never persist. Values that fail
-  // client-side validation stay too — flagged red in the chip input so they can be
-  // fixed — and they count as dirty so Save stays reachable; saving drops them.
+  // Half-built rows (no values) stay on screen but never persist. Values that
+  // fail validation stay too — flagged in place — and count as dirty so Save
+  // stays reachable; saving drops them.
   const populated = conditions.filter(condition => condition.values.length >= 1);
   const cleaned = conditions.map(condition => ({
     ...condition,
@@ -109,7 +220,7 @@ function ChannelRuleEditor({
       // Only now are the flagged values discarded — the user chose to save past them.
       setConditions(cleaned);
       setBaseline({ matchMode, conditions: savable });
-      toast.success('Filters saved', {
+      toast.success('Filter rule saved.', {
         description:
           invalidCount > 0
             ? `${invalidCount} invalid ${invalidCount === 1 ? 'value was' : 'values were'} removed.`
@@ -120,63 +231,46 @@ function ChannelRuleEditor({
     }
     if (signInOnAuthExpired(result.status)) return;
     if (result.code === 'FILTER_LIMIT') {
-      toast.error(`Up to ${filtersPerChannel} conditions per channel`);
+      toast.error(`Up to ${filtersPerChannel} conditions per channel.`);
       return;
     }
     if (result.code === 'PREMIUM_INACTIVE') {
       toast.error('Premium is not active for this server.');
       return;
     }
-    toast.error('Failed to save filters', { description: 'Please try again.' });
-  };
-
-  const revert = () => {
-    setMatchMode(baseline.matchMode);
-    setConditions(baseline.conditions);
+    toast.error("Couldn't save the rule. Nothing was changed.");
   };
 
   const addCondition = () => {
+    // The cap is never displayed — it surfaces only on the attempt past it.
     if (conditions.length >= filtersPerChannel) {
-      toast.error(`Up to ${filtersPerChannel} conditions per channel`);
+      toast.error(`Up to ${filtersPerChannel} conditions per channel.`);
       return;
     }
     setConditions(previous => [...previous, { type: 'keyword', negate: false, values: [] }]);
   };
 
-  const updateCondition = (index: number, next: FilterInput) =>
-    setConditions(previous => previous.map((condition, i) => (i === index ? next : condition)));
-
-  const removeCondition = (index: number) =>
-    setConditions(previous => previous.filter((_, i) => i !== index));
-
   return (
     <div className="space-y-3">
-      {conditions.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1">
-          <span className="text-sm text-slate-300">Messages will be published when</span>
-          {conditions.length > 1 ? (
-            <>
-              <SegmentedControl
-                options={MATCH_MODE_OPTIONS}
-                value={matchMode}
-                onChange={setMatchMode}
-                size="sm"
-              />
-              <span className="text-sm text-slate-300">of these conditions match:</span>
-            </>
-          ) : (
-            <span className="text-sm text-slate-300">this condition matches:</span>
-          )}
+      <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+        {/* The sentence framing is what makes the feature self-explanatory. */}
+        <div className="flex flex-wrap items-center gap-2 border-slate-800/70 border-b px-4 py-3.5">
+          <span className="text-sm text-slate-200">Publish a message when</span>
+          <SegmentedControl
+            options={MATCH_MODE_OPTIONS}
+            value={matchMode}
+            onChange={setMatchMode}
+            size="sm"
+          />
+          <span className="text-sm text-slate-200">of these match</span>
         </div>
-      )}
 
-      {conditions.length === 0 ? (
-        <p className="text-sm text-slate-500">
-          No conditions — every message in this channel publishes. Add one to filter.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {conditions.map((condition, index) => (
+        {conditions.length === 0 ? (
+          <p className="px-4 py-4 text-xs text-slate-500">
+            No conditions — every message in {channel.name} publishes. Add one to narrow it.
+          </p>
+        ) : (
+          conditions.map((condition, index) => (
             <ConditionRow
               // Index key is fine: rows are only added/removed at the ends and
               // reconcile positionally with the local array.
@@ -185,139 +279,50 @@ function ChannelRuleEditor({
               condition={condition}
               roles={roles}
               rolesById={rolesById}
-              onChange={next => updateCondition(index, next)}
-              onRemove={() => removeCondition(index)}
+              onChange={next =>
+                setConditions(previous => previous.map((c, i) => (i === index ? next : c)))
+              }
+              onRemove={() => setConditions(previous => previous.filter((_, i) => i !== index))}
             />
-          ))}
-        </div>
-      )}
+          ))
+        )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-        <button
-          type="button"
-          onClick={addCondition}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-400 transition-colors hover:text-blue-300"
-        >
-          <Plus className="h-4 w-4" />
-          Add condition
-        </button>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={revert}
-            disabled={!dirty || saving}
-            className="text-slate-400 hover:text-white"
+        <div className="px-4 py-3">
+          <button
+            type="button"
+            onClick={addCondition}
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-700 border-dashed px-3 py-1.5 text-xs text-slate-300 transition-colors hover:border-slate-600 hover:text-white"
           >
-            <RotateCcw className="h-4 w-4" />
-            Revert
-          </Button>
-          <Button size="sm" onClick={save} disabled={!dirty || saving}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save changes
-          </Button>
+            <Plus className="size-3.5" />
+            Add condition
+          </button>
         </div>
       </div>
-    </div>
-  );
-}
 
-export function FilterManager({ guildId, channels }: FilterManagerProps) {
-  // Always editable: the page renders this only for an entitled guild (or any
-  // guild on a self-host), and the backend re-checks with PREMIUM_INACTIVE.
-  const [roles, setRoles] = useState<GuildRole[]>([]);
-
-  const rolesById = useMemo(() => Object.fromEntries(roles.map(role => [role.id, role])), [roles]);
-
-  useEffect(() => {
-    let cancelled = false;
-    // Roles power the mention picker + resolve role names for display. A failure
-    // is non-fatal — the UI falls back to raw IDs.
-    getGuildRoles(guildId)
-      .then(fetched => {
-        if (!cancelled) setRoles(fetched);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [guildId]);
-
-  const enabledChannels = channels.filter(channel => channel.enabled);
-
-  // Deep-link target: the Channels page links its filter pill here with
-  // `?channel=<id>` so we open (and scroll to) that channel's accordion.
-  const searchParams = useSearchParams();
-  const requestedChannelId = searchParams.get('channel');
-  const targetChannelId =
-    requestedChannelId && enabledChannels.some(c => c.channelId === requestedChannelId)
-      ? requestedChannelId
-      : undefined;
-
-  const accordionRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!requestedChannelId) return;
-    accordionRef.current
-      ?.querySelector(`[data-channel-id="${requestedChannelId}"]`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, [requestedChannelId]);
-
-  return (
-    <div className="space-y-6">
-      {enabledChannels.length === 0 ? (
-        <Card className="border-slate-800 bg-slate-900/50 p-12 text-center">
-          <FilterIcon className="mx-auto mb-4 h-16 w-16 text-slate-600" />
-          <p className="mb-2 text-slate-400">No enabled channels yet</p>
-          <p className="text-sm text-slate-500">
-            Enable a channel on the{' '}
-            <Link href={`/dashboard/${guildId}/channels`} className="text-blue-400 hover:underline">
-              Channels
-            </Link>{' '}
-            tab, then add filters here.
-          </p>
-        </Card>
-      ) : (
-        <div ref={accordionRef}>
-          <Accordion type="single" collapsible defaultValue={targetChannelId} className="space-y-4">
-            {enabledChannels.map(channel => {
-              const conditionCount = channel.filters.length;
-              return (
-                <AccordionItem
-                  key={channel.channelId}
-                  value={channel.channelId}
-                  data-channel-id={channel.channelId}
-                  className={cn(
-                    'overflow-hidden rounded-xl border transition-colors',
-                    conditionCount > 0
-                      ? 'border-blue-500/20 bg-blue-500/4 hover:border-blue-500/40 data-[state=open]:border-blue-500/40'
-                      : 'border-slate-800 bg-slate-900/50 hover:border-slate-700 data-[state=open]:border-slate-700'
-                  )}
-                >
-                  <AccordionTrigger className="cursor-pointer px-6 py-4 hover:no-underline [&>svg]:text-slate-400">
-                    <div className="flex flex-1 items-center gap-2">
-                      <Hash className="h-5 w-5 text-blue-400" />
-                      <span className="text-lg text-white">{channel.name}</span>
-                      {conditionCount > 0 && (
-                        <Badge className="ml-auto border-slate-600 bg-slate-700/50 text-xs text-slate-400">
-                          {conditionCount} {conditionCount === 1 ? 'condition' : 'conditions'}
-                        </Badge>
-                      )}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="px-6 pb-6">
-                    <ChannelRuleEditor
-                      guildId={guildId}
-                      channel={channel}
-                      roles={roles}
-                      rolesById={rolesById}
-                    />
-                  </AccordionContent>
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
-        </div>
-      )}
+      {/* Sticky so Save is reachable from anywhere in a long rule; inert until dirty. */}
+      <div className="sticky bottom-22 z-10 flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/85 px-3.5 py-3 backdrop-blur-sm md:bottom-4">
+        <span
+          className={cn('min-w-32 flex-1 text-xs', dirty ? 'text-amber-400' : 'text-slate-500')}
+        >
+          {dirty ? 'Unsaved changes' : 'All changes saved'}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setMatchMode(baseline.matchMode);
+            setConditions(baseline.conditions);
+          }}
+          disabled={!dirty || saving}
+          className="text-slate-400 hover:text-white"
+        >
+          Revert
+        </Button>
+        <Button size="sm" onClick={save} disabled={!dirty || saving}>
+          {saving && <Loader2 className="size-4 animate-spin" />}
+          Save changes
+        </Button>
+      </div>
     </div>
   );
 }

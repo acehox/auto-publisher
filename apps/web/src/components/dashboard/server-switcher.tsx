@@ -16,10 +16,6 @@ import type { DiscordGuild } from '@/lib/api/types';
 import { guildIconUrl } from '@/lib/discord';
 import { cn } from '@/lib/utils';
 
-interface GuildSwitcherProps {
-  current: DiscordGuild;
-}
-
 /** Switchable guilds only (bot present), alphabetical. */
 function switchableGuilds(guilds: DiscordGuild[]): DiscordGuild[] {
   return guilds.filter(guild => guild.botPresent).sort((a, b) => a.name.localeCompare(b.name));
@@ -29,19 +25,13 @@ function GuildAvatar({ guild, size }: { guild: DiscordGuild; size: number }) {
   const iconUrl = guildIconUrl(guild.id, guild.icon);
   return (
     <div
-      className="bg-linear-to-br from-blue-500 to-blue-600 rounded-md flex items-center justify-center shrink-0 overflow-hidden"
+      className="flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-linear-to-br from-blue-500 to-blue-600"
       style={{ width: size, height: size }}
     >
       {iconUrl ? (
-        <Image
-          src={iconUrl}
-          alt=""
-          className="w-full h-full object-cover"
-          width={size}
-          height={size}
-        />
+        <Image src={iconUrl} alt="" className="size-full object-cover" width={size} height={size} />
       ) : (
-        <span className="text-white text-xs font-semibold">
+        <span className="font-semibold text-white text-xs">
           {guild.name.charAt(0).toUpperCase()}
         </span>
       )}
@@ -49,7 +39,15 @@ function GuildAvatar({ guild, size }: { guild: DiscordGuild; size: number }) {
   );
 }
 
-export function GuildSwitcher({ current }: GuildSwitcherProps) {
+/**
+ * The one place plan identity is stated — everything else shows only what this
+ * control cannot. "All servers" lives inside it rather than beside it: it is the
+ * control that changes servers.
+ *
+ * `compact` is the mobile shape, where the switcher IS the screen title: name
+ * plus a caret, no plan line, no bordered box.
+ */
+export function GuildSwitcher({ current, compact }: { current: DiscordGuild; compact?: boolean }) {
   const { guilds } = useGuildList();
   const items = switchableGuilds(guilds);
   // A self-hosted instance has no billing, so "premium" is not a distinction
@@ -60,45 +58,58 @@ export function GuildSwitcher({ current }: GuildSwitcherProps) {
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         className={cn(
-          'group w-full flex items-center gap-3 px-3.5 py-3 rounded-lg outline-none transition-colors',
-          'bg-slate-900/50 border border-slate-800 text-white',
-          'hover:border-slate-700 focus:outline-none focus-visible:outline-none data-[state=open]:border-blue-500/50'
+          'group flex w-full cursor-pointer items-center gap-2.5 outline-none transition-colors',
+          compact
+            ? 'text-left'
+            : 'rounded-lg border border-slate-800 bg-slate-900/40 px-2.5 py-2.5 hover:border-slate-700 data-[state=open]:border-blue-500/50'
         )}
       >
-        <GuildAvatar guild={current} size={34} />
-        <span className="flex-1 min-w-0 truncate text-left text-base font-medium">
-          {current.name}
+        <GuildAvatar guild={current} size={26} />
+        <span className="min-w-0 flex-1 text-left">
+          <span className="block truncate font-medium text-sm text-white">{current.name}</span>
+          {!compact && (
+            // MIGRATION: the Legacy line wins over the plan name — a legacy
+            // guild's plan says nothing about what it publishes. Gone at sunset.
+            <span
+              className={cn(
+                'block text-[11px]',
+                current.botPresent && !current.migrated ? 'text-amber-400' : 'text-slate-500'
+              )}
+            >
+              {current.botPresent && !current.migrated
+                ? 'Legacy'
+                : isPublicInstance
+                  ? current.hasSubscription
+                    ? 'Premium'
+                    : 'Free plan'
+                  : 'Self-hosted'}
+            </span>
+          )}
         </span>
-        {current.hasSubscription && isPublicInstance && (
-          <Crown className="w-4 h-4 text-yellow-500 shrink-0" />
-        )}
-        <ChevronDown className="w-4 h-4 text-slate-500 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
+        <ChevronDown className="size-3.5 shrink-0 text-slate-500 transition-transform group-data-[state=open]:rotate-180" />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
         align="start"
-        className="min-w-(--radix-dropdown-menu-trigger-width) max-h-96 overflow-y-auto"
+        className="max-h-96 min-w-(--radix-dropdown-menu-trigger-width) overflow-y-auto"
       >
-        {items.map(guild => {
-          const isCurrent = guild.id === current.id;
-          return (
-            <DropdownMenuItem key={guild.id} asChild>
-              <Link href={`/dashboard/${guild.id}`}>
-                <GuildAvatar guild={guild} size={22} />
-                <span className="flex-1 min-w-0 truncate">{guild.name}</span>
-                {guild.hasSubscription && isPublicInstance && (
-                  <Crown className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
-                )}
-                {isCurrent && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
-              </Link>
-            </DropdownMenuItem>
-          );
-        })}
+        {items.map(guild => (
+          <DropdownMenuItem key={guild.id} asChild>
+            <Link href={`/dashboard/${guild.id}`}>
+              <GuildAvatar guild={guild} size={22} />
+              <span className="min-w-0 flex-1 truncate">{guild.name}</span>
+              {guild.hasSubscription && isPublicInstance && (
+                <Crown className="size-3.5 shrink-0 text-yellow-500" />
+              )}
+              {guild.id === current.id && <Check className="size-3.5 shrink-0 text-blue-400" />}
+            </Link>
+          </DropdownMenuItem>
+        ))}
 
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/dashboard">
-            <LayoutGrid className="w-4 h-4 text-slate-500 shrink-0" />
+            <LayoutGrid className="size-4 shrink-0 text-slate-500" />
             <span>All servers</span>
           </Link>
         </DropdownMenuItem>

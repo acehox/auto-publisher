@@ -1,20 +1,22 @@
 'use client';
 
 import { ChannelStatus } from '@/components/dashboard/channel-status';
-import { DashboardBanners } from '@/components/dashboard/dashboard-banners';
+import { GuildNotices } from '@/components/dashboard/guild-notices';
+import { PageHeader } from '@/components/dashboard/page-header';
 
 /**
- * Guild Overview — the dashboard's attention surface and default landing tab.
- * Hosts the guild-scoped banner stack (moved off the shell) above a read-only
- * channel-status section. Its children read guild detail via useGuild(), which
- * suspends on the streamed detail promise inside the shell's content Suspense
- * (ADR 0007, 2026-07-15). See CONTEXT "Guild Overview tab".
+ * Guild Overview — the attention surface and default landing tab. One status
+ * card plus at most a couple of one-line strips; the strip below the card is
+ * the paused notice, which only moves there when the card is in error
+ * (`GuildNotices`).
  */
 export default function OverviewPage() {
   return (
-    <div className="space-y-6">
-      <DashboardBanners />
+    <div className="space-y-4">
+      <PageHeader title="Overview" />
+      <GuildNotices position="above" />
       <ChannelStatus />
+      <GuildNotices position="below" />
     </div>
   );
 }

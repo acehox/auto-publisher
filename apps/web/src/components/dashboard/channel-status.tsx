@@ -1,269 +1,157 @@
 'use client';
 
-import {
-  Check,
-  CheckCircle2,
-  type LucideIcon,
-  Megaphone,
-  PauseCircle,
-  Sparkles,
-  TriangleAlert,
-  X,
-} from 'lucide-react';
+import { Megaphone } from 'lucide-react';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
-import { ChannelFixButton, channelStatusStyle } from '@/components/dashboard/channel-fix';
+import { ChannelFixButton } from '@/components/dashboard/channel-fix';
+import { ChannelRow, ChannelStatusLabel } from '@/components/dashboard/channel-row';
+import { EmptyState } from '@/components/dashboard/empty-state';
 import { useGuild } from '@/components/dashboard/guild-context';
-import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
-import { PublishLimitNote } from '@/components/dashboard/publish-limit-note';
+import { StatusCard } from '@/components/dashboard/status-card';
 import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
-import { useLegacySunsetLabel } from '@/components/site-config-context';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import type { GuildChannel } from '@/lib/api/types';
 
 /**
- * Read-only channel status on the Overview tab. Permission-derived from the
- * publish-state cache (ADR 0008) — no publish-activity feed or rate-limit
- * counters are plumbed to the web. Acting on channels stays on the Channels tab;
- * flagged rows link there. Migrated guilds get an itemized list; legacy guilds
- * get a minimal summary (the prominent migrate banner above steers them to
- * migrate before per-channel detail). See CONTEXT "Guild Overview tab".
+ * The Overview's answer to "is it working". Read-only by contract: Overview
+ * never carries a control that changes state, Channels never carries a summary
+ * — so there is no toggle here and no ambient publishing note either (the
+ * 10/hour limit and the queue-delay note live once on Channels, and once inside
+ * the enable guide where they are decision-relevant).
+ *
+ * The card is the alert, so a broken channel needs no banner above it: severity
+ * is on the card's top edge, icon and headline, and the Fix control sits on the
+ * row that names the problem. Permission-derived from the publish-state cache
+ * (ADR 0008) — no activity feed or rate-limit counter is plumbed to the web.
  */
 export function ChannelStatus() {
   const { guild, data } = useGuild();
   return data.migrated ? (
-    <MigratedStatus
-      guildId={guild.id}
-      channels={data.channels}
-      hasSubscription={guild.hasSubscription}
-    />
+    <MigratedStatus guildId={guild.id} channels={data.channels} />
   ) : (
-    <LegacyStatus channels={data.channels} hasSubscription={guild.hasSubscription} />
+    <LegacyStatus channels={data.channels} />
   );
 }
 
-interface HeaderState {
-  icon: LucideIcon;
-  iconColor: string;
-  title: string;
-  subtitle: ReactNode;
-}
-
-/**
- * The channel-status header, driven by channel publishing health ONLY —
- * deliberately decoupled from the attention badge so an unrelated banner (paused,
- * premium-pending) never demotes it. Precedence: Welcome → Issues → Complete
- * Premium setup → All good. Paused channels never drive it (their sole purpose is
- * preserving setup for a later re-upgrade — surfaced as muted rows + the
- * dismissible banner, never a header nag). See CONTEXT "Guild Overview tab".
- */
-function StatusHeader({ icon: Icon, iconColor, title, subtitle }: HeaderState) {
-  return (
-    <div className="flex items-start gap-3">
-      <Icon className={`w-7 h-7 ${iconColor} shrink-0`} />
-      <div>
-        <h2 className="text-2xl text-white">{title}</h2>
-        <p className="text-slate-400">{subtitle}</p>
-      </div>
-    </div>
-  );
-}
-
-// Overview sort key: broken (red) first, then healthy (green).
+/** Broken (red) first, then healthy — sidebar order survives inside each group. */
 function statusRank(channel: GuildChannel): number {
   return channel.canPublish === false ? 0 : 1;
 }
 
-function MigratedStatus({
-  guildId,
-  channels,
-  hasSubscription,
-}: {
-  guildId: string;
-  channels: GuildChannel[];
-  hasSubscription: boolean;
-}) {
-  const { needsFixingCount } = useGuildAttention();
+/** One publishing row, identical on the migrated and legacy branches. */
+function PublishRow({ channel, pill }: { channel: GuildChannel; pill?: React.ReactNode }) {
+  const broken = channel.canPublish === false;
+  return (
+    <ChannelRow
+      name={channel.name}
+      tone={broken ? 'red' : 'green'}
+      sub={broken ? 'Missing permissions' : undefined}
+      pill={pill}
+      status={<ChannelStatusLabel kind={broken ? 'blocked' : 'publishing'} />}
+      actions={<ChannelFixButton channel={channel} />}
+    />
+  );
+}
 
+function MigratedStatus({ guildId, channels }: { guildId: string; channels: GuildChannel[] }) {
+  const { needsFixingCount } = useGuildAttention();
   const enabled = channels.filter(c => c.enabled).sort((a, b) => statusRank(a) - statusRank(b));
   const paused = channels.filter(c => c.hasSavedSetup);
 
-  const header: HeaderState =
-    enabled.length === 0
-      ? {
-          icon: Sparkles,
-          iconColor: 'text-blue-400',
-          title: 'Ready to get started?',
-          subtitle:
-            channels.length > 0 ? (
-              <>
-                Enable an announcement channel in the{' '}
-                <Link
-                  href={`/dashboard/${guildId}/channels`}
-                  className="text-blue-400 hover:underline"
-                >
-                  Channels tab
-                </Link>{' '}
-                to start auto-publishing.
-              </>
-            ) : (
-              'This server has no announcement channels yet. Create one in Discord, then enable it here.'
-            ),
+  if (enabled.length === 0 && paused.length === 0) {
+    return channels.length > 0 ? (
+      <EmptyState
+        icon={Megaphone}
+        title="Ready to get started"
+        action={
+          <Button asChild size="sm">
+            <Link href={`/dashboard/${guildId}/channels`}>Choose channels</Link>
+          </Button>
         }
-      : needsFixingCount > 0
-        ? {
-            icon: TriangleAlert,
-            iconColor: 'text-red-400',
-            title:
-              needsFixingCount === 1
-                ? "1 channel isn't publishing"
-                : `${needsFixingCount} channels aren't publishing`,
-            subtitle: 'Grant the missing permissions — see the list below.',
-          }
-        : {
-            icon: CheckCircle2,
-            iconColor: 'text-green-500',
-            title: 'All good',
-            subtitle: `Publishing in ${enabled.length} channel${enabled.length !== 1 ? 's' : ''}`,
-          };
+      >
+        Pick the announcement channels that should publish automatically. You can change this any
+        time.
+      </EmptyState>
+    ) : (
+      <NoAnnouncementChannels />
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <StatusHeader {...header} />
-
-      <div className="space-y-1.5">
-        <PublishLimitNote />
-        <PublishDelayNote hasSubscription={hasSubscription} />
-      </div>
-
-      {enabled.length === 0 && paused.length === 0 ? null : (
-        <div className="space-y-3">
-          {/* Status order — the Overview is an attention surface, so it regroups
-              by health (broken → healthy) rather than mirroring the
-              Channels tab's sidebar order. Sidebar order is preserved within each
-              status group (stable sort over the pre-sorted array). The row color
-              signals status; canPublish === false is the only "broken" state
-              (undefined = unknown, treated as publishing). Retained/paused config
-              trails, matching the Channels tab's Disabled column. */}
-          {enabled.map(channel =>
-            channel.canPublish === false ? (
-              <BlockedRow key={channel.channelId} channel={channel} />
-            ) : (
-              <PublishingRow key={channel.channelId} channel={channel} />
-            )
-          )}
-          {paused.map(channel => (
-            <PausedRow key={channel.channelId} channel={channel} />
-          ))}
-        </div>
-      )}
-    </div>
+    <StatusCard
+      tone={needsFixingCount > 0 ? 'red' : 'green'}
+      headline={
+        needsFixingCount > 0
+          ? needsFixingCount === 1
+            ? "1 channel isn't publishing"
+            : `${needsFixingCount} channels aren't publishing`
+          : `Publishing in ${enabled.length} channel${enabled.length !== 1 ? 's' : ''}`
+      }
+    >
+      {enabled.map(channel => (
+        <PublishRow
+          key={channel.channelId}
+          channel={channel}
+          pill={channel.filters.length > 0 ? <FilterPill count={channel.filters.length} /> : null}
+        />
+      ))}
+      {paused.map(channel => (
+        <ChannelRow
+          key={channel.channelId}
+          name={channel.name}
+          tone="yellow"
+          status={<ChannelStatusLabel kind="paused" />}
+          muted
+        />
+      ))}
+    </StatusCard>
   );
 }
 
-// Publishing row — green when healthy, red when the bot can't publish here. Card
-// color is shared with the Channels tab so a channel reads the same on both.
-function PublishingRow({ channel }: { channel: GuildChannel }) {
-  const style = channelStatusStyle(channel);
+/** Read-only echo of the Channels tab's pill; acting on filters happens there. */
+function FilterPill({ count }: { count: number }) {
   return (
-    <Card className={`${style.card} p-4`}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Megaphone className={`w-5 h-5 ${style.icon} shrink-0`} />
-          <span className="text-white text-md truncate">{channel.name}</span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="flex items-center gap-1 text-green-500/80 text-sm">
-            <Check className="w-4 h-4" />
-            Publishing
-          </span>
-          <ChannelFixButton channel={channel} />
-        </div>
-      </div>
-    </Card>
+    <span className="whitespace-nowrap rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-400">
+      {count} filter{count !== 1 ? 's' : ''}
+    </span>
   );
 }
 
-function BlockedRow({ channel }: { channel: GuildChannel }) {
-  const style = channelStatusStyle(channel);
+function NoAnnouncementChannels() {
   return (
-    <Card className={`${style.card} p-4`}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Megaphone className={`w-5 h-5 ${style.icon} shrink-0`} />
-          <span className="text-white text-md truncate">{channel.name}</span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="flex items-center gap-1 text-red-400 text-sm">
-            <X className="w-4 h-4" />
-            Not publishing
-          </span>
-          <ChannelFixButton channel={channel} />
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function PausedRow({ channel }: { channel: GuildChannel }) {
-  return (
-    <Card className="bg-slate-900/30 border-slate-800/50 p-4">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <PauseCircle className="w-5 h-5 text-slate-600 shrink-0" />
-          <span className="text-slate-400 text-md truncate">{channel.name}</span>
-        </div>
-        <span className="text-slate-500 text-sm shrink-0">Paused</span>
-      </div>
-    </Card>
+    <EmptyState icon={Megaphone} title="No announcement channels in this server">
+      In Discord, open a channel&apos;s settings and turn on &ldquo;Announcement channel&rdquo;,
+      then come back here.
+    </EmptyState>
   );
 }
 
 /**
- * MIGRATION: Legacy guilds auto-publish every announcement channel — there is no
- * allowlist to itemize. Show a minimal summary; the migrate banner above does the
- * steering. Remove with the rest of the migration UX at sunset.
+ * MIGRATION: a legacy guild has no allowlist, so every announcement channel is
+ * a publishing channel — itemized the same way, minus the paused group it cannot
+ * have. The legacy card above does the steering. Removed at sunset.
  */
-function LegacyStatus({
-  channels,
-  hasSubscription,
-}: {
-  channels: GuildChannel[];
-  hasSubscription: boolean;
-}) {
-  const publishing = channels.filter(c => c.canPublish !== false).length;
+function LegacyStatus({ channels }: { channels: GuildChannel[] }) {
   const total = channels.length;
-  const sunsetLabel = useLegacySunsetLabel();
+  if (total === 0) return <NoAnnouncementChannels />;
+
+  const broken = channels.filter(c => c.canPublish === false).length;
 
   return (
-    <div className="space-y-6">
-      <StatusHeader
-        icon={TriangleAlert}
-        iconColor="text-amber-400"
-        title="Legacy mode"
-        subtitle={
-          <>
-            Every announcement channel is published automatically. Legacy mode ends on{' '}
-            <span className="text-white font-semibold">{sunsetLabel}</span>.
-          </>
-        }
-      />
-
-      <div className="space-y-1.5">
-        <PublishLimitNote />
-        <PublishDelayNote hasSubscription={hasSubscription} />
-      </div>
-
-      <Card className="bg-slate-900/50 border-slate-800 p-6">
-        {total > 0 ? (
-          <p className="text-slate-300">
-            Publishing in <span className="text-white">{publishing}</span> of {total} announcement
-            channel{total !== 1 ? 's' : ''}.
-          </p>
-        ) : (
-          <p className="text-slate-400">This server doesn&apos;t have any announcement channels.</p>
-        )}
-      </Card>
-    </div>
+    <StatusCard
+      tone={broken > 0 ? 'red' : 'green'}
+      headline={
+        broken > 0
+          ? broken === 1
+            ? "1 channel isn't publishing"
+            : `${broken} channels aren't publishing`
+          : `Publishing in ${total} announcement channel${total !== 1 ? 's' : ''}`
+      }
+    >
+      {[...channels]
+        .sort((a, b) => statusRank(a) - statusRank(b))
+        .map(channel => (
+          <PublishRow key={channel.channelId} channel={channel} />
+        ))}
+    </StatusCard>
   );
 }

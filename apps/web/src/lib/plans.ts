@@ -51,19 +51,3 @@ export const planComparison = (freeChannelLimit: number): readonly PlanCompariso
     premium: 'Priority',
   },
 ];
-
-/** Keyed by dashboard tab segment, so a page can pass its own segment as `feature`. */
-export const PREMIUM_FEATURE_BLURBS = {
-  filters: {
-    label: 'Channel filters',
-    description: 'Control exactly which messages get published from each channel',
-    benefits: [
-      'Filter by keyword, mention, author, or webhook',
-      'Allow or block mode per rule',
-      'Combine rules with any/all matching',
-      'Manage everything from the dashboard',
-    ],
-  },
-} as const;
-
-export type PremiumFeatureKey = keyof typeof PREMIUM_FEATURE_BLURBS;

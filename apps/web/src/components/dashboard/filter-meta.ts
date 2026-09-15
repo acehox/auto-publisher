@@ -1,22 +1,6 @@
 import type { SegmentedOption } from '@/components/ui/segmented-control';
 import type { FilterMatchMode, FilterType } from '@/lib/api/types';
 
-/** Field label shown in the condition-row field dropdown. */
-export const FILTER_TYPE_LABELS: Record<FilterType, string> = {
-  keyword: 'Keyword',
-  mention: 'Mention',
-  author: 'Author',
-  webhook: 'Webhook',
-};
-
-/** Plain-English label for the value input, per filter type. */
-export const FILTER_VALUE_LABELS: Record<FilterType, string> = {
-  keyword: 'Keywords',
-  mention: 'Roles & users',
-  author: 'User IDs',
-  webhook: 'Webhook IDs',
-};
-
 /** Per-field operator option; `negate` is the stored value. */
 export interface OperatorOption {
   negate: boolean;
@@ -83,13 +67,6 @@ export const MAX_VALUES: Record<FilterType, number> = {
   author: 25,
   webhook: 25,
 };
-
-export const FILTER_TYPE_OPTIONS: SegmentedOption<FilterType>[] = [
-  { value: 'keyword', label: 'Keyword' },
-  { value: 'mention', label: 'Mention' },
-  { value: 'author', label: 'Author' },
-  { value: 'webhook', label: 'Webhook' },
-];
 
 /** All = every condition must hold (default), Any = at least one. */
 export const MATCH_MODE_OPTIONS: SegmentedOption<FilterMatchMode>[] = [

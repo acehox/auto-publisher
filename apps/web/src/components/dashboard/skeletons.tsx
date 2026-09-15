@@ -1,194 +1,61 @@
-import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
-/** Skeleton for the /dashboard server selector grid */
+/**
+ * Skeletons mirror the real row rhythm so the first paint does not move: a
+ * header line, one surface, then rows at the height the tab actually renders.
+ * The shell is interactive while these show — only the content region suspends
+ * on guild detail (ADR 0007).
+ */
+
+const bar = 'bg-slate-800';
+
+function Rows({ count, height = 'h-13' }: { count: number; height?: string }) {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: count }, (_, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length placeholder
+        <Skeleton key={index} className={`${height} w-full rounded-lg ${bar}`} />
+      ))}
+    </div>
+  );
+}
+
+/** Header + one card + rows — the shape every tab settles into. */
+export function TabContentSkeleton() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className={`h-6 w-45 rounded-md ${bar}`} />
+      <Skeleton className={`h-20 w-full rounded-xl ${bar}`} />
+      <Rows count={3} />
+    </div>
+  );
+}
+
+/** Skeleton for the /dashboard server list. */
 export function ServerSelectorSkeleton() {
   return (
-    <div className="flex-1 px-4 pt-24 pb-16">
-      <div className="max-w-md mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-4xl text-white">Select a Server</h1>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-2">
-          <ServerCardSkeleton />
-          <ServerCardSkeleton />
-          <ServerCardSkeleton />
-        </div>
-      </div>
+    <div className="mx-auto min-h-screen w-full max-w-140 flex-1 px-4 pt-24 pb-16">
+      <Skeleton className={`mb-6 h-7 w-45 rounded-md ${bar}`} />
+      <Rows count={4} height="h-15" />
     </div>
   );
 }
 
-function ServerCardSkeleton() {
-  return (
-    <Card className="bg-slate-900/50 border-slate-800 py-3 px-4">
-      <div className="flex items-center justify-between h-12">
-        <div className="flex items-center gap-4">
-          <Skeleton className="w-12 h-12 rounded-xl bg-slate-800 shrink-0" />
-          <Skeleton className="h-5 w-36 bg-slate-800" />
-        </div>
-        <Skeleton className="w-6 h-6 rounded bg-slate-800 shrink-0" />
-      </div>
-    </Card>
-  );
-}
-
-function ChannelCardSkeleton() {
-  return (
-    <Card className="bg-slate-900/50 border-slate-800 p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Skeleton className="w-5 h-5 rounded bg-slate-800" />
-          <Skeleton className="h-6 w-40 bg-slate-800" />
-          <Skeleton className="h-5 w-14 rounded-full bg-slate-800" />
-        </div>
-        <Skeleton className="h-6 w-10 rounded-full bg-slate-800" />
-      </div>
-    </Card>
-  );
-}
-
-/** Skeleton for channel configuration content */
-export function ChannelConfigSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <Skeleton className="h-8 w-64 bg-slate-800 mb-2" />
-        <Skeleton className="h-5 w-96 bg-slate-800" />
-      </div>
-      <div className="grid md:grid-cols-2 md:divide-x divide-slate-800 gap-6 md:gap-0">
-        <div className="space-y-3 md:pr-6">
-          <Skeleton className="h-4 w-20 bg-slate-800" />
-          <ChannelCardSkeleton />
-          <ChannelCardSkeleton />
-        </div>
-        <div className="space-y-3 md:pl-6">
-          <Skeleton className="h-4 w-20 bg-slate-800" />
-          <ChannelCardSkeleton />
-          <ChannelCardSkeleton />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FilterChannelSkeleton() {
-  return (
-    <Card className="bg-slate-900/50 border-slate-800 p-6">
-      <div className="mb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Skeleton className="w-5 h-5 rounded bg-slate-800" />
-          <Skeleton className="h-6 w-32 bg-slate-800" />
-          <Skeleton className="h-5 w-16 rounded-full bg-slate-800" />
-        </div>
-      </div>
-      <div className="space-y-3">
-        <div className="flex items-center justify-between py-3 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-5 w-14 rounded-full bg-slate-800" />
-            <Skeleton className="h-5 w-20 bg-slate-800" />
-          </div>
-          <Skeleton className="h-5 w-24 rounded-full bg-slate-800" />
-        </div>
-        <div className="flex items-center justify-between py-3">
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-5 w-14 rounded-full bg-slate-800" />
-            <Skeleton className="h-5 w-20 bg-slate-800" />
-          </div>
-          <Skeleton className="h-5 w-24 rounded-full bg-slate-800" />
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-/** Skeleton for filter configuration content */
-export function FilterConfigSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <Skeleton className="h-8 w-48 bg-slate-800 mb-2" />
-        <Skeleton className="h-5 w-72 bg-slate-800" />
-      </div>
-      <div className="space-y-4">
-        <FilterChannelSkeleton />
-        <FilterChannelSkeleton />
-      </div>
-    </div>
-  );
-}
-
-/**
- * Skeleton for subscription panel content. Mirrors the FREE two-column layout
- * (plan comparison left, upgrade card right) — the entitled state renders one
- * narrower card, but plan state is unknowable here (this is the route's
- * loading.tsx, so it paints before the guild aggregate resolves) and the free
- * state is both the common case and the wider one, so an entitled guild sees the
- * layout settle inward rather than a single card jump sideways and grow.
- */
-export function SubscriptionPanelSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <Skeleton className="h-8 w-32 bg-slate-800 mb-2" />
-        <Skeleton className="h-5 w-80 bg-slate-800" />
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <Card className="bg-slate-900/50 border-slate-800 p-6 space-y-4">
-          <div className="space-y-2">
-            <Skeleton className="h-6 w-48 bg-slate-800" />
-            <Skeleton className="h-4 w-64 bg-slate-800" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32 bg-slate-800" />
-            <Skeleton className="h-1.5 w-full rounded-full bg-slate-800" />
-          </div>
-          {/* Four comparison rows */}
-          <div className="space-y-3 pt-2">
-            <Skeleton className="h-4 w-full bg-slate-800" />
-            <Skeleton className="h-4 w-full bg-slate-800" />
-            <Skeleton className="h-4 w-full bg-slate-800" />
-            <Skeleton className="h-4 w-full bg-slate-800" />
-          </div>
-        </Card>
-        <Card className="bg-slate-900/50 border-slate-800 p-8">
-          <div className="text-center space-y-4">
-            <Skeleton className="w-16 h-16 rounded-xl bg-slate-800 mx-auto" />
-            <Skeleton className="h-8 w-56 bg-slate-800 mx-auto" />
-            <Skeleton className="h-5 w-64 bg-slate-800 mx-auto" />
-            <Skeleton className="h-10 w-56 bg-slate-800 mx-auto" />
-            <Skeleton className="h-12 w-40 bg-slate-800 mx-auto" />
-            <Skeleton className="h-12 w-full bg-slate-800" />
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-/** Skeleton for the guild dashboard shell (header + sidebar + content) */
+/** Shell chrome + content, for a cold load of a guild route. */
 export function GuildDashboardShellSkeleton() {
   return (
-    <div className="flex-1 px-4 pt-24 pb-16">
-      <div className="max-w-6xl mx-auto">
-        {/* Grid skeleton */}
-        <div className="grid lg:grid-cols-[250px_1fr] gap-6">
-          {/* Sidebar */}
-          <div className="space-y-2">
-            {/* Server switcher */}
-            <Skeleton className="h-15 w-full rounded-lg bg-slate-800" />
-            <div className="h-px bg-slate-800 my-6" />
-            <Skeleton className="h-11 w-full rounded-lg bg-slate-800" />
-            <Skeleton className="h-11 w-full rounded-lg bg-slate-800" />
-            <Skeleton className="h-11 w-full rounded-lg bg-slate-800" />
-            <Skeleton className="h-11 w-full rounded-lg bg-slate-800" />
+    <div className="flex min-h-screen flex-1 pt-16">
+      <aside className="hidden w-63 shrink-0 border-slate-800/70 border-r p-4 lg:block">
+        <div className="space-y-2">
+          <Skeleton className={`h-12 w-full rounded-lg ${bar}`} />
+          <div className="space-y-1 pt-2">
+            <Rows count={4} height="h-9" />
           </div>
-          {/* Content */}
-          <div>
-            <ChannelConfigSkeleton />
-          </div>
+        </div>
+      </aside>
+      <div className="min-w-0 flex-1 px-4 pt-5 pb-24 md:px-6 md:pt-6 md:pb-10">
+        <div className="mx-auto w-full max-w-190">
+          <TabContentSkeleton />
         </div>
       </div>
     </div>

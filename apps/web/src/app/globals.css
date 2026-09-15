@@ -83,6 +83,15 @@
 	--sidebar-ring: oklch(0.623 0.214 259.815);
 }
 
+/* The dashboard's mobile tab bar is fixed, so the site footer has to clear it.
+   Scoped by :has() rather than a prop because the footer is a server component
+   in the root layout and has no idea which route is rendering under it. */
+@media (max-width: 767px) {
+	body:has([data-dashboard-tabbar]) footer {
+		padding-bottom: 5rem;
+	}
+}
+
 @layer base {
 	* {
 		@apply border-border outline-ring/50;

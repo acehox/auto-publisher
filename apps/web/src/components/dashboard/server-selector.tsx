@@ -1,32 +1,38 @@
 'use client';
 
-import { ChevronRight, Crown, Plus, TriangleAlert } from 'lucide-react';
+import { ChevronRight, Crown, ServerOff } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef } from 'react';
+import { EmptyState } from '@/components/dashboard/empty-state';
+import { GuildErrorCard } from '@/components/dashboard/guild-error-card';
 import { useGuildList } from '@/components/dashboard/guild-list-context';
 import { useIsPublicInstance, useSiteConfig } from '@/components/site-config-context';
-import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import type { DiscordGuild } from '@/lib/api/types';
 import { guildIconUrl } from '@/lib/discord';
 import { getBotInviteUrl } from '@/lib/invite';
 import { useRefreshOnReturn } from '@/lib/use-refresh-on-return';
-
-function hasBotPresent(guild: DiscordGuild): boolean {
-  return guild.botPresent;
-}
+import { cn } from '@/lib/utils';
 
 /** Guilds the bot is in first, then alphabetically within each group. */
 function sortGuilds(guilds: DiscordGuild[]): DiscordGuild[] {
   return [...guilds].sort((a, b) => {
     const orderDiff = Number(b.botPresent) - Number(a.botPresent);
-    if (orderDiff !== 0) return orderDiff;
-    return a.name.localeCompare(b.name);
+    return orderDiff !== 0 ? orderDiff : a.name.localeCompare(b.name);
   });
 }
 
+/**
+ * One flat list, one row shape: icon, name, chevron. A person picking a server
+ * recognises it by its icon, not by a status line — so no groups, no channel
+ * counts, no per-row buttons. Servers without the bot are dimmed and
+ * chevron-less and lead to the Discord invite; the only qualifiers on a name are
+ * a gold crown for Premium and an amber Legacy tag with a matching left edge.
+ *
+ * No tabs and no switcher here: there is no server in scope yet.
+ */
 export function ServerSelector() {
   const { guilds, error } = useGuildList();
   const siteConfig = useSiteConfig();
@@ -34,22 +40,20 @@ export function ServerSelector() {
   // worth badging, and a hand-typed ?upgrade= must not route into the
   // subscription tab — that route 404s there.
   const isPublicInstance = useIsPublicInstance();
-  const sortedGuilds = sortGuilds(guilds);
   const armRefreshOnReturn = useRefreshOnReturn();
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Set when the user arrived via a Premium page plan CTA (/dashboard?upgrade=
-  // month|year). The flag's PRESENCE (any value) is the "wants to buy" signal:
-  // a free guild then routes straight to its subscription tab; premium guilds
-  // and plain visits land on /overview as usual. Intent-scoped on purpose — an
-  // unconditional redirect would nag every free visit onto the pay page. The
-  // VALUE is the interval they picked, forwarded so the panel preselects it.
+
+  // Set when the user arrived via a Premium page plan CTA
+  // (/dashboard?upgrade=month|year). The flag's PRESENCE is the "wants to buy"
+  // signal: a free guild then routes straight to its subscription tab.
+  // Intent-scoped on purpose — an unconditional redirect would nag every free
+  // visit onto the pay page. The VALUE is the interval, forwarded so the panel
+  // preselects it.
   const upgradeParam = searchParams.get('upgrade');
   const upgradeIntent = isPublicInstance && upgradeParam !== null;
   const upgradeInterval = upgradeParam === 'month' || upgradeParam === 'year' ? upgradeParam : null;
 
-  // Free guild + upgrade intent → subscription tab (carrying the chosen
-  // interval); otherwise the guild root, which redirects to /overview.
   const guildHref = useCallback(
     (guild: DiscordGuild): string => {
       if (upgradeIntent && !guild.hasSubscription) {
@@ -61,139 +65,141 @@ export function ServerSelector() {
     },
     [upgradeIntent, upgradeInterval]
   );
-  // Guild the user just clicked "invite" for. On return, useRefreshOnReturn
-  // re-fetches the list; once THAT guild shows a bot present, we navigate into
-  // it. We never navigate to a still-botless guild (the invite may have been
-  // cancelled, or guildCreate hasn't landed) — that would bounce with a Discord
-  // "Missing Access". If it stays absent, the user just stays on the list.
-  const pendingInviteRef = useRef<string | null>(null);
 
+  // Guild the user just clicked "invite" for. On return, useRefreshOnReturn
+  // re-fetches the list; once THAT guild shows a bot present we navigate into
+  // it. Never to a still-botless guild (the invite may have been cancelled, or
+  // guildCreate hasn't landed) — that would bounce with a Discord "Missing
+  // Access". If it stays absent the user simply stays on the list.
+  const pendingInviteRef = useRef<string | null>(null);
   useEffect(() => {
     const target = pendingInviteRef.current;
     if (!target) return;
     const invited = guilds.find(g => g.id === target);
-    if (invited && hasBotPresent(invited)) {
+    if (invited?.botPresent) {
       pendingInviteRef.current = null;
       router.push(guildHref(invited));
     }
   }, [guilds, router, guildHref]);
 
   return (
-    <div className="flex-1 px-4 pt-24 pb-16">
-      <div className="max-w-md mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-4xl text-white">Select a Server</h1>
-          </div>
-        </div>
+    <div className="mx-auto min-h-screen w-full max-w-140 flex-1 px-4 pt-24 pb-16">
+      <h1 className="mb-6 text-xl font-semibold tracking-tight text-white">Select a server</h1>
 
-        {error ? (
-          <Card className="bg-slate-900/50 border-slate-800 p-12 text-center">
-            <TriangleAlert className="w-8 h-8 text-slate-500 mx-auto mb-3" />
-            <p className="text-slate-400 mb-2">Something went wrong</p>
-            <p className="text-slate-500 text-sm">Please try again later</p>
-          </Card>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 gap-2">
-              {sortedGuilds.map(guild => {
-                const iconUrl = guildIconUrl(guild.id, guild.icon);
-                const botAbsent = !hasBotPresent(guild);
-                const content = (
-                  <Card
-                    key={guild.id}
-                    className={`py-3 px-4 transition-all group cursor-pointer ${
-                      botAbsent
-                        ? 'bg-slate-900/30 border-slate-800/50 opacity-60 hover:opacity-100 hover:border-blue-500/50 hover:bg-blue-800/10'
-                        : 'bg-slate-900/50 border-slate-800 hover:border-blue-500/50 hover:bg-blue-800/20'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-3xl shrink-0 overflow-hidden">
-                          {iconUrl ? (
-                            <Image
-                              src={iconUrl}
-                              alt=""
-                              className="w-full h-full object-cover"
-                              width={64}
-                              height={64}
-                            />
-                          ) : (
-                            <span className="text-white text-xl font-semibold">
-                              {guild.name.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-white text-lg truncate">{guild.name}</h3>
-                            {guild.hasSubscription && isPublicInstance && (
-                              <Crown className="w-5 h-5 text-yellow-500 shrink-0" />
-                            )}
-                            {/* MIGRATION: remove badge at sunset */}
-                            {hasBotPresent(guild) && !guild.migrated && (
-                              <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 shrink-0">
-                                Legacy
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      {botAbsent ? (
-                        <Plus className="w-6 h-6 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                      ) : (
-                        <ChevronRight className="w-6 h-6 text-slate-600 group-hover:text-blue-400 transition-colors shrink-0" />
+      {error ? (
+        <GuildErrorCard
+          title="Could not load your servers"
+          description="A temporary problem reaching Discord. Try again in a moment."
+        />
+      ) : guilds.length === 0 ? (
+        <EmptyState
+          icon={ServerOff}
+          title="No servers found"
+          action={
+            <Button size="sm" onClick={() => router.refresh()}>
+              Reload
+            </Button>
+          }
+        >
+          You need the Manage Server permission in a Discord server to set it up here. Ask an owner
+          to grant it, then reload.
+        </EmptyState>
+      ) : (
+        <div className="space-y-2">
+          {sortGuilds(guilds).map(guild => {
+            const iconUrl = guildIconUrl(guild.id, guild.icon);
+            const absent = !guild.botPresent;
+            // MIGRATION: the Legacy tag and its amber edge go at sunset.
+            const legacy = guild.botPresent && !guild.migrated;
+
+            const row = (
+              <div
+                className={cn(
+                  'flex items-center gap-3.5 rounded-xl border border-l-2 py-2.5 pr-3.5 pl-3 transition-colors',
+                  absent
+                    ? 'border-slate-800/60 border-l-slate-800/60 hover:border-slate-700'
+                    : legacy
+                      ? 'border-amber-500/25 border-l-amber-400 bg-amber-500/5 hover:border-amber-500/40'
+                      : 'border-slate-800 border-l-slate-800 bg-slate-900/40 hover:border-blue-500/40'
+                )}
+              >
+                <div
+                  className={cn(
+                    'flex size-9.5 shrink-0 items-center justify-center overflow-hidden rounded-xl',
+                    absent ? 'bg-slate-800/50' : 'bg-linear-to-br from-blue-500 to-blue-600'
+                  )}
+                >
+                  {iconUrl ? (
+                    <Image
+                      src={iconUrl}
+                      alt=""
+                      className="size-full object-cover"
+                      width={64}
+                      height={64}
+                    />
+                  ) : (
+                    <span
+                      className={cn(
+                        'font-semibold text-sm',
+                        absent ? 'text-slate-500' : 'text-white'
                       )}
-                    </div>
-                  </Card>
-                );
-
-                if (botAbsent) {
-                  const inviteUrl = getBotInviteUrl(siteConfig, guild.id);
-                  if (!inviteUrl) {
-                    return (
-                      <div key={guild.id} className="block">
-                        {content}
-                      </div>
-                    );
-                  }
-                  return (
-                    <a
-                      key={guild.id}
-                      href={inviteUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => {
-                        pendingInviteRef.current = guild.id;
-                        armRefreshOnReturn();
-                      }}
-                      className="block"
                     >
-                      {content}
-                    </a>
-                  );
-                }
+                      {guild.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
 
-                return (
-                  <Link key={guild.id} href={guildHref(guild)} className="block">
-                    {content}
-                  </Link>
-                );
-              })}
-            </div>
+                <span
+                  className={cn(
+                    'min-w-0 truncate font-medium text-sm',
+                    absent ? 'text-slate-500' : 'text-slate-100'
+                  )}
+                >
+                  {guild.name}
+                </span>
 
-            {guilds.length === 0 && (
-              <Card className="bg-slate-900/50 border-slate-800 p-12 text-center">
-                <p className="text-slate-400 mb-2">No servers found</p>
-                <p className="text-slate-500 text-sm">
-                  Make sure you have Manage Server permission in the servers you want to manage
-                </p>
-              </Card>
-            )}
-          </>
-        )}
-      </div>
+                {guild.hasSubscription && isPublicInstance && (
+                  <Crown className="size-4 shrink-0 text-yellow-500" />
+                )}
+                {legacy && (
+                  <span className="shrink-0 rounded border border-amber-500/45 bg-amber-500/10 px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider text-amber-400">
+                    Legacy
+                  </span>
+                )}
+
+                <span className="flex-1" />
+                {!absent && <ChevronRight className="size-4 shrink-0 text-slate-600" />}
+              </div>
+            );
+
+            if (absent) {
+              const inviteUrl = getBotInviteUrl(siteConfig, guild.id);
+              if (!inviteUrl) return <div key={guild.id}>{row}</div>;
+              return (
+                <a
+                  key={guild.id}
+                  href={inviteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    pendingInviteRef.current = guild.id;
+                    armRefreshOnReturn();
+                  }}
+                  className="block"
+                >
+                  {row}
+                </a>
+              );
+            }
+
+            return (
+              <Link key={guild.id} href={guildHref(guild)} className="block">
+                {row}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

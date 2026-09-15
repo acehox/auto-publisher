@@ -1,0 +1,206 @@
+'use client';
+
+import { Loader2, TriangleAlert } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useTransition } from 'react';
+import { useGuild } from '@/components/dashboard/guild-context';
+import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
+import { NoticeAction, NoticeStrip } from '@/components/dashboard/notice-strip';
+import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
+import {
+  useIsPublicInstance,
+  useLegacySunsetLabel,
+  useSiteConfig,
+} from '@/components/site-config-context';
+import { Button } from '@/components/ui/button';
+import type { GuildChannel } from '@/lib/api/types';
+import { links } from '@/lib/constants';
+import { useActivationPoll } from '@/lib/use-activation-poll';
+
+/**
+ * Everything the Overview can say that is NOT about a channel. The banner stack
+ * is gone: a channel problem is the status card's job, so only checkout
+ * activation, legacy mode and paused-over-limit survive here — one line each,
+ * except legacy mode, which carries a deadline and so gets a heading, a date and
+ * a button inside the same strip geometry.
+ *
+ * Priority runs top to bottom — checkout, legacy, paused — with one reordering
+ * rule: a status card in error outranks every notice, so the paused strip moves
+ * BELOW it (`position="below"`). That exists so a yellow line can never push a
+ * red one down the page. Legacy guilds never carry a red card, so paused is the
+ * only notice the rule can move.
+ *
+ * Off this tab the sidebar's Overview badge is the only persistent signal, kept
+ * in step via the shared `useGuildAttention`.
+ */
+export function GuildNotices({ position }: { position: 'above' | 'below' }) {
+  const { guild, data } = useGuild();
+  const searchParams = useSearchParams();
+  const { showMigration, showPaused, pausedCount, showMisconfigured, dismissPaused } =
+    useGuildAttention();
+
+  // Query-param-armed, but the variant is driven by real subscription state:
+  // `hasSubscription` is live from Postgres once the webhook lands. A self-hosted
+  // instance has no checkout, so a stray ?success=true must not arm the poller.
+  const isPublicInstance = useIsPublicInstance();
+  const isCheckoutReturn = isPublicInstance && searchParams.get('success') === 'true';
+  const active = guild.hasSubscription;
+  const phase = useActivationPoll(isCheckoutReturn && !active, active);
+
+  // The status card outranks strips only when it is in error; that is the sole
+  // condition that moves the paused strip below it.
+  const pausedBelow = showMisconfigured;
+  const showPausedHere = showPaused && (position === 'below') === pausedBelow;
+  const showCheckout = isCheckoutReturn && position === 'above';
+  const showLegacy = showMigration && position === 'above';
+
+  if (!showCheckout && !showLegacy && !showPausedHere) return null;
+
+  return (
+    <div className="space-y-3">
+      {showCheckout && <CheckoutStrip variant={active ? 'confirmed' : phase} />}
+      {showLegacy && (
+        <LegacyCard guildId={guild.id} channels={data.channels} channelLimit={data.channelLimit} />
+      )}
+      {showPausedHere && (
+        <PausedStrip guildId={guild.id} pausedCount={pausedCount} onDismiss={dismissPaused} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Post-checkout activation, at most once per checkout and never counted by the
+ * attention badge — it is self-resolving. None of the three may claim a payment
+ * was taken: a trial checkout completes at $0.00.
+ */
+function CheckoutStrip({ variant }: { variant: 'activating' | 'gaveUp' | 'confirmed' }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  if (variant === 'confirmed') {
+    return (
+      <NoticeStrip tone="green">
+        Premium is active. Unlimited channels and filters are unlocked.
+      </NoticeStrip>
+    );
+  }
+  if (variant === 'activating') {
+    return (
+      <NoticeStrip tone="blue" icon={Loader2} spin>
+        Activating Premium&hellip;
+      </NoticeStrip>
+    );
+  }
+  return (
+    <NoticeStrip
+      tone="amber"
+      actions={
+        <>
+          <NoticeAction onClick={() => startTransition(() => router.refresh())}>
+            {isPending ? 'Refreshing…' : 'Refresh'}
+          </NoticeAction>
+          <NoticeAction href={`mailto:${links.supportEmail}`} muted>
+            Contact support
+          </NoticeAction>
+        </>
+      }
+    >
+      This is taking longer than usual. Your payment went through.
+    </NoticeStrip>
+  );
+}
+
+// MIGRATION: delete this card, the legacy status line and the migrate modal
+// together at sunset; no other screen changes.
+//
+// The one message on the dashboard with a deadline attached, so it is the one
+// message that gets more than a line. It keeps the strip's exact geometry —
+// same padding, same amber left edge, same icon size — and spends its extra
+// weight on three things only: a heading, the date, and a filled button. A card
+// with its own amber fill read as a different design system on a page where
+// everything else is a slate surface with a coloured edge.
+function LegacyCard({
+  guildId,
+  channels,
+  channelLimit,
+}: {
+  guildId: string;
+  channels: GuildChannel[];
+  channelLimit: number;
+}) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const sunsetLabel = useLegacySunsetLabel();
+
+  return (
+    <>
+      <section className="flex items-start gap-3.5 rounded-lg border border-slate-800 border-l-2 border-l-amber-400 bg-slate-900/50 px-3.5 py-3.5">
+        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-400" />
+        <div className="min-w-42 flex-1">
+          <h2 className="font-semibold text-sm text-white">This server runs in legacy mode</h2>
+          <p className="mt-1 text-sm leading-snug text-slate-300">
+            You must migrate to keep publishing without interruption, by{' '}
+            <span className="mt-1.5 font-medium text-amber-300">{sunsetLabel}.</span>
+          </p>
+
+          <div className="mt-3 flex flex-wrap items-center gap-4">
+            <Button
+              size="sm"
+              onClick={() => setModalOpen(true)}
+              className="bg-amber-500 text-slate-950 hover:bg-amber-400"
+            >
+              Migrate now
+            </Button>
+            <Link
+              href="/migration"
+              target="_blank"
+              className="text-slate-400 text-xs transition-colors hover:text-slate-200"
+            >
+              Learn what is changing
+            </Link>
+          </div>
+        </div>
+      </section>
+      {modalOpen && (
+        <LegacyMigrateModal
+          guildId={guildId}
+          channels={channels}
+          limit={channelLimit === 0 ? null : channelLimit}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+/** The only dismissible strip, remembered per browser (ADR 0009). */
+function PausedStrip({
+  guildId,
+  pausedCount,
+  onDismiss,
+}: {
+  guildId: string;
+  pausedCount: number;
+  onDismiss: () => void;
+}) {
+  const { freeChannelLimit } = useSiteConfig();
+
+  return (
+    <NoticeStrip
+      tone="yellow"
+      onDismiss={onDismiss}
+      actions={
+        <>
+          <NoticeAction href={`/dashboard/${guildId}/subscription`}>See Premium</NoticeAction>
+          <NoticeAction href={`/dashboard/${guildId}/channels`} muted>
+            Manage channels
+          </NoticeAction>
+        </>
+      }
+    >
+      {pausedCount} more channel{pausedCount !== 1 ? 's are' : ' is'} set up but paused — the Free
+      plan publishes {freeChannelLimit}.
+    </NoticeStrip>
+  );
+}

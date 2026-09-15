@@ -1,36 +1,45 @@
 // Canonical publish permissions (PUBLISH_PERMISSION_FLAGS in @ap/utils). Always
-// list all three rather than a computed missing-subset: when ViewChannel is absent
+// all three rather than a computed missing-subset: when ViewChannel is absent
 // Discord's permission math collapses the missing set to just ViewChannel (the
-// channel is invisible), which would mislead the user into granting one perm that
-// still won't publish. "Ensure the bot has these three" is always correct.
+// channel is invisible), which would have the admin grant one permission that
+// still won't publish. "Grant these three" is always correct.
 const PUBLISH_PERMISSIONS = ['View Channel', 'Send Messages', 'Manage Messages'];
 
+const STEPS = [
+  'In Discord, select the channel → Edit Channel → Permissions.',
+  'Add Auto Publisher (or its role) and grant all three permissions:',
+  'Save. Publishing starts on the next message.',
+];
+
 /**
- * The numbered Discord steps to grant a bot publish permission in a channel.
- * Shared presentational block so the Channel Fix modal and the Channel enable
- * guide can't drift in copy (CONTEXT "Channel Fix affordance" / "Channel enable
- * guide"). Purely presentational — no state.
+ * The one set of permission instructions in the product, reached from both the
+ * enable guide and the Fix dialog so the two can never drift.
  */
-export function PermissionSteps({ channelName }: { channelName: string }) {
+export function PermissionSteps() {
   return (
-    <ol className="space-y-1 text-slate-400 text-sm list-decimal list-inside">
-      <li>
-        Locate the <span className="text-slate-200">#{channelName}</span> channel
-      </li>
-      <li>Open the channel’s settings</li>
-      <li>Go to the Permissions tab</li>
-      <li>Select the bot’s role (or add it as a member override)</li>
-      <li>
-        Enable the following permissions:
-        <ul className="ml-4">
-          {PUBLISH_PERMISSIONS.map(perm => (
-            <li key={perm} className="text-slate-200 text-sm">
-              • {perm}
-            </li>
-          ))}
-        </ul>
-      </li>
-      <li>Save your changes</li>
+    <ol className="space-y-3">
+      {STEPS.map((text, index) => (
+        <li key={text} className="flex items-start gap-3">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-slate-700 font-mono text-[11px] text-slate-300">
+            {index + 1}
+          </span>
+          <div className="min-w-0 flex-1 space-y-2">
+            <p className="text-sm leading-relaxed text-slate-200">{text}</p>
+            {index === 1 && (
+              <div className="flex flex-wrap gap-2">
+                {PUBLISH_PERMISSIONS.map(permission => (
+                  <span
+                    key={permission}
+                    className="rounded-md border border-slate-700 px-2 py-1 font-mono text-[11px] text-slate-300"
+                  >
+                    {permission}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </li>
+      ))}
     </ol>
   );
 }

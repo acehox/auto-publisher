@@ -173,10 +173,17 @@ function NavbarInner() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const isPublicInstance = useIsPublicInstance();
+  // The dashboard is an app shell, not a page in the marketing site: the bar
+  // runs the full width so it lines up with the sidebar below it, and the
+  // marketing links drop out — they are not destinations from inside a server's
+  // settings. The marketing site keeps the centred, capped bar.
+  const inDashboard = pathname.startsWith('/dashboard');
   // A self-hosted instance has no billing, so /premium 404s — don't link to it.
-  const visibleLinks = isPublicInstance
-    ? routeLinks
-    : routeLinks.filter(link => link.href !== '/premium');
+  const visibleLinks = inDashboard
+    ? []
+    : isPublicInstance
+      ? routeLinks
+      : routeLinks.filter(link => link.href !== '/premium');
 
   return (
     <motion.nav
@@ -186,7 +193,7 @@ function NavbarInner() {
       className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-lg border-b border-slate-800/50"
       style={{ paddingRight: 'var(--removed-body-scroll-bar-size, 0px)' }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className={cn('px-4 sm:px-6 lg:px-8', inDashboard ? 'w-full' : 'max-w-7xl mx-auto')}>
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-12">
             <Link href="/" className="flex items-center gap-3">
@@ -214,13 +221,16 @@ function NavbarInner() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-3">
+            <div className={cn('items-center gap-3', inDashboard ? 'flex' : 'hidden sm:flex')}>
               <NavUserDesktop />
             </div>
 
             <button
               type="button"
-              className="md:hidden p-2 text-slate-400 hover:text-white"
+              className={cn(
+                'p-2 text-slate-400 hover:text-white',
+                inDashboard ? 'hidden' : 'md:hidden'
+              )}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -229,7 +239,7 @@ function NavbarInner() {
         </div>
       </div>
 
-      {mobileMenuOpen && (
+      {mobileMenuOpen && !inDashboard && (
         <div className="md:hidden bg-slate-900/95 backdrop-blur-lg border-b border-slate-800">
           <div className="px-4 py-4 space-y-3">
             {visibleLinks.map(link => (

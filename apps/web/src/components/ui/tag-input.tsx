@@ -25,6 +25,10 @@ interface TagInputProps {
  * Values that fail `validate` are still accepted and rendered as red chips — the
  * caller drops them on save. Discarding a typo on entry loses what the user typed
  * and leaves nothing to correct.
+ *
+ * `maxItems` is enforced but never displayed: nobody adding a third keyword needs
+ * to know about the twenty-fifth, so the cap surfaces only as an error on the
+ * attempt that exceeds it.
  */
 export function TagInput({
   values,
@@ -206,11 +210,6 @@ export function TagInput({
       {(error ?? firstInvalid) && (
         <p className="mt-1 text-xs text-red-400">
           {error ?? `${firstInvalid}. Highlighted values aren't saved.`}
-        </p>
-      )}
-      {maxItems !== undefined && (
-        <p className="mt-1 text-right text-xs text-slate-500">
-          {values.length}/{maxItems}
         </p>
       )}
     </div>

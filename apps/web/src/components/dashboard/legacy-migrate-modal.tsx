@@ -1,79 +1,54 @@
 'use client';
 
-import { Check, Loader2, Megaphone } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { PublishDelayNote } from '@/components/dashboard/publish-delay-note';
-import { useIsPublicInstance, useLegacySunsetLabel } from '@/components/site-config-context';
-import { Badge } from '@/components/ui/badge';
+import { useLegacySunsetLabel } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { migrateGuild } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
 import type { GuildChannel } from '@/lib/api/types';
+import { cn } from '@/lib/utils';
 
-// MIGRATION: Remove this component after migration period (6 months)
+// MIGRATION: remove this component with the rest of the legacy UX at sunset.
 
 interface LegacyMigrateModalProps {
   guildId: string;
   channels: GuildChannel[];
   /** Max selectable channels, or null for unlimited (premium) */
   limit: number | null;
-  hasSubscription: boolean;
   onClose: () => void;
 }
 
 /**
- * Over-limit guidance. No "upgrade now" here: on a legacy guild the upgrade is
- * gated behind finishing migration, so the CTA is "migrate now, upgrade right
- * after". An entitled guild is never capped, so it never sees this.
+ * One-time setup with nothing preselected: the person chooses, up to the plan
+ * cap, and the count sits with the buttons that act on it. Permission gaps are
+ * flagged but never block the migration — they are fixed in Discord afterwards.
+ * A backdrop click cannot dismiss this; it is a deliberate action.
  */
-function overSelectedMessage(limit: number): string {
-  return `You can enable up to ${limit} channels now. Deselect some to migrate — right after, you can upgrade to Premium to add unlimited channels.`;
-}
-
-export function LegacyMigrateModal({
-  guildId,
-  channels,
-  limit,
-  hasSubscription,
-  onClose,
-}: LegacyMigrateModalProps) {
+export function LegacyMigrateModal({ guildId, channels, limit, onClose }: LegacyMigrateModalProps) {
   const router = useRouter();
-  // A self-hosted instance has no billing, so it never caps a guild (`limit` is
-  // null) and this copy would name a plan that doesn't exist there.
-  const isPublicInstance = useIsPublicInstance();
   const sunsetLabel = useLegacySunsetLabel();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
-  const publishableCount = channels.filter(c => c.canPublish).length;
-  const overLimit = limit !== null && publishableCount > limit;
-
-  // Preselect all currently-publishing channels when they fit the plan limit
-  // (migration is then a behavioral no-op); otherwise force an explicit choice
-  const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(overLimit ? [] : channels.filter(c => c.canPublish).map(c => c.channelId))
-  );
-
-  const toggleChannel = (channelId: string) => {
+  const toggleChannel = (channelId: string) =>
     setSelected(previous => {
       const next = new Set(previous);
-      if (next.has(channelId)) {
-        next.delete(channelId);
-      } else {
-        next.add(channelId);
-      }
+      if (next.has(channelId)) next.delete(channelId);
+      else next.add(channelId);
       return next;
     });
-  };
 
   const overSelected = limit !== null && selected.size > limit;
 
@@ -83,7 +58,7 @@ export function LegacyMigrateModal({
       const result = await migrateGuild(guildId, [...selected]);
       if (result.ok) {
         onClose();
-        toast.success("You're all set", { description: 'Channel setup saved.' });
+        toast.success('Channel setup saved.');
         router.refresh();
         return;
       }
@@ -102,98 +77,79 @@ export function LegacyMigrateModal({
       }}
     >
       <DialogContent
-        className="max-w-lg max-h-[85vh] flex flex-col gap-0 p-0"
-        // Migration is a deliberate action — a backdrop click must not dismiss it.
+        className="flex max-h-[85vh] flex-col"
         onInteractOutside={event => event.preventDefault()}
       >
-        <DialogHeader className="p-6 pb-4 pr-10">
-          <DialogTitle>Migrate to the new system</DialogTitle>
+        <DialogHeader>
+          <DialogTitle>Choose the channels that publish</DialogTitle>
           <DialogDescription>
-            {overLimit
-              ? `${publishableCount} channels currently auto-publish. Only ${limit} can keep publishing right now — choose which ones.`
-              : 'Channels the bot currently publishes in are preselected. Unselected channels will stop publishing.'}
+            One-time setup. Pick the channels that keep publishing — after this, each one is yours
+            to turn on and off. Legacy mode ends {sunsetLabel}.
           </DialogDescription>
-          <p className="text-slate-400 text-sm mt-2">
-            Legacy mode ends on <span className="text-white font-semibold">{sunsetLabel}</span>.
-          </p>
         </DialogHeader>
 
-        {channels.length > 0 && (
-          <div className="px-6 pb-2 flex items-center justify-between">
-            <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Channels
-            </span>
-            <span
-              className={`text-sm font-medium ${overSelected ? 'text-amber-400' : 'text-slate-300'}`}
-            >
-              {limit !== null ? `${selected.size}/${limit} selected` : `${selected.size} selected`}
-            </span>
+        {channels.length > 0 ? (
+          <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-slate-800">
+            {channels.map(channel => {
+              const checked = selected.has(channel.channelId);
+              return (
+                <button
+                  key={channel.channelId}
+                  type="button"
+                  onClick={() => toggleChannel(channel.channelId)}
+                  className="flex w-full cursor-pointer items-center gap-3 border-slate-800/70 border-b px-3 py-2.5 text-left transition-colors last:border-b-0 hover:bg-slate-800/40"
+                >
+                  <span
+                    className={cn(
+                      'flex size-4 shrink-0 items-center justify-center rounded border transition-colors',
+                      checked ? 'border-blue-500 bg-blue-500 text-white' : 'border-slate-600'
+                    )}
+                  >
+                    {checked && <Check className="size-3" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm text-slate-100">{channel.name}</span>
+                    {channel.canPublish === false && (
+                      <span className="mt-0.5 block text-[11px] text-red-300">
+                        Missing permissions — fix in Discord after this
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
           </div>
+        ) : (
+          <p className="py-4 text-center text-xs text-slate-500">
+            No announcement channels found. You can still migrate now and enable channels later.
+          </p>
         )}
 
-        <div className="px-6 space-y-2 overflow-y-auto flex-1">
-          {channels.map(channel => {
-            const checked = selected.has(channel.channelId);
-            return (
-              <button
-                key={channel.channelId}
-                type="button"
-                onClick={() => toggleChannel(channel.channelId)}
-                className={`w-full flex items-center gap-3 p-3 rounded-lg border transition-colors text-left ${
-                  checked
-                    ? 'bg-blue-500/10 border-blue-500/50'
-                    : 'bg-slate-800/50 border-slate-700 hover:border-slate-500'
-                }`}
-              >
-                <span
-                  className={`size-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
-                    checked ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-500'
-                  }`}
-                >
-                  {checked && <Check className="size-3.5" />}
-                </span>
-                <Megaphone className="w-4 h-4 text-slate-500 shrink-0" />
-                <span className="text-white truncate">{channel.name}</span>
-                {!channel.canPublish && (
-                  <Badge className="ml-auto shrink-0 bg-slate-800/50 text-slate-500 border-slate-700">
-                    Missing permissions
-                  </Badge>
-                )}
-              </button>
-            );
-          })}
-          {channels.length === 0 && (
-            <p className="text-slate-500 text-sm py-4 text-center">
-              No announcement channels found. You can still migrate now and enable channels later.
-            </p>
-          )}
-        </div>
+        {error && <p className="text-xs text-red-400">Migration failed. Please try again.</p>}
 
-        <div className="p-6 pt-4 space-y-3">
-          <PublishDelayNote hasSubscription={hasSubscription} />
-          {overSelected && limit !== null && isPublicInstance && (
-            <p className="text-amber-400 text-sm">{overSelectedMessage(limit)}</p>
-          )}
-          {error && <p className="text-red-400 text-sm">Migration failed. Please try again.</p>}
-          <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={isPending}
-              className="border-slate-700 text-slate-300"
+        <DialogFooter className="sm:items-center sm:justify-between">
+          {channels.length > 0 && (
+            <span
+              className={cn(
+                'font-mono text-xs',
+                overSelected ? 'text-yellow-400' : 'text-slate-400'
+              )}
             >
+              {limit !== null
+                ? `${selected.size} of ${limit} selected`
+                : `${selected.size} selected`}
+            </span>
+          )}
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose} disabled={isPending}>
               Cancel
             </Button>
-            <Button
-              onClick={handleConfirm}
-              disabled={isPending || overSelected}
-              className="bg-blue-600 hover:bg-blue-500 text-white"
-            >
-              {isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            <Button onClick={handleConfirm} disabled={isPending || overSelected}>
+              {isPending && <Loader2 className="size-4 animate-spin" />}
               Migrate
             </Button>
           </div>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -6,7 +6,6 @@ import {
   ChevronDown,
   type LucideIcon,
   TextAlignStart,
-  Trash2,
   User,
   Webhook,
   X,
@@ -48,8 +47,8 @@ const FIELD_OPTIONS: { value: FilterType; label: string; icon: LucideIcon }[] = 
   { value: 'webhook', label: 'Webhook', icon: Webhook },
 ];
 
-const controlClass =
-  'flex h-9 items-center rounded-md border border-slate-700 bg-slate-800/60 px-2.5 text-sm text-slate-200 outline-none transition-colors focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50';
+const selectClass =
+  'flex h-8 cursor-pointer items-center gap-2 rounded-md border border-slate-700 px-2.5 text-xs text-slate-200 outline-none transition-colors hover:border-slate-600 disabled:cursor-not-allowed disabled:opacity-50';
 
 interface ConditionRowProps {
   condition: FilterInput;
@@ -61,9 +60,12 @@ interface ConditionRowProps {
 }
 
 /**
- * One editable rule condition: field + operator (contains / doesn't contain, …)
- * + a per-field value editor. Fully controlled — edits bubble up via onChange so
- * the parent can persist the whole rule. Deleting a populated row asks first.
+ * One condition, as two stacked rows: field + operator on the first, the value
+ * editor on the second. Four controls on one line is what made this unusable on
+ * a phone; stacking gives the values the full width at every breakpoint.
+ *
+ * Fully controlled — edits bubble up so the parent persists the whole rule.
+ * Deleting a populated row asks first; an empty one goes silently.
  */
 export function ConditionRow({
   condition,
@@ -93,8 +95,6 @@ export function ConditionRow({
     onChange({ type: nextType, negate: false, values: [] });
   };
 
-  const changeOperator = (nextNegate: boolean) => onChange({ ...condition, negate: nextNegate });
-
   const toggleRole = (roleId: string) => {
     if (selectedRoleSet.has(roleId)) {
       setValues([...roleIds.filter(id => id !== roleId), ...userIds]);
@@ -113,34 +113,29 @@ export function ConditionRow({
   };
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-3">
-      <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-start lg:flex-nowrap">
+    <div className="space-y-2.5 border-slate-800/70 border-b px-4 py-3.5 last:border-b-0">
+      <div className="flex items-center gap-2">
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
               aria-label="Condition field"
               disabled={disabled}
-              className={cn(controlClass, 'w-full justify-between gap-2 md:w-44')}
+              className={selectClass}
             >
-              <span className="flex min-w-0 items-center gap-2">
-                <FieldIcon className="h-4 w-4 shrink-0 text-blue-400" />
-                <span className="truncate">{field.label}</span>
-              </span>
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+              <FieldIcon className="size-3.5 shrink-0 text-blue-400" />
+              <span className="truncate">{field.label}</span>
+              <ChevronDown className="size-3 shrink-0 opacity-60" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-40"
-          >
+          <DropdownMenuContent align="start" className="min-w-40">
             {FIELD_OPTIONS.map(option => {
               const OptionIcon = option.icon;
               return (
                 <DropdownMenuItem key={option.value} onSelect={() => changeField(option.value)}>
-                  <OptionIcon className="h-4 w-4 text-slate-400" />
+                  <OptionIcon className="size-4 text-slate-400" />
                   <span className="flex-1">{option.label}</span>
-                  {option.value === type && <Check className="h-4 w-4 text-blue-400" />}
+                  {option.value === type && <Check className="size-4 text-blue-400" />}
                 </DropdownMenuItem>
               );
             })}
@@ -153,219 +148,194 @@ export function ConditionRow({
               type="button"
               aria-label="Condition operator"
               disabled={disabled}
-              className={cn(
-                controlClass,
-                'w-full justify-between gap-2 md:flex-1 lg:w-40 lg:flex-none'
-              )}
+              className={cn(selectClass, 'text-slate-300')}
             >
               <span className="truncate">{operatorLabel(type, negate)}</span>
-              <ChevronDown className="h-4 w-4 shrink-0 opacity-60" />
+              <ChevronDown className="size-3 shrink-0 opacity-60" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="w-[var(--radix-dropdown-menu-trigger-width)] min-w-40"
-          >
+          <DropdownMenuContent align="start" className="min-w-40">
             {OPERATOR_OPTIONS[type].map(option => (
               <DropdownMenuItem
                 key={String(option.negate)}
-                onSelect={() => changeOperator(option.negate)}
+                onSelect={() => onChange({ ...condition, negate: option.negate })}
               >
                 <span className="flex-1">{option.label}</span>
-                {option.negate === negate && <Check className="h-4 w-4 text-blue-400" />}
+                {option.negate === negate && <Check className="size-4 text-blue-400" />}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="w-full min-w-0 space-y-1.5 lg:w-auto lg:flex-1">
-          {type === 'keyword' && (
-            <>
-              <TagInput
-                values={values}
-                onChange={setValues}
-                disabled={disabled}
-                maxItems={max}
-                placeholder="Type a keyword, press Enter"
-                transform={value => value.trim().toLowerCase()}
-                validate={value => filterValueError('keyword', value)}
-              />
-              <p className="text-xs text-slate-500">
-                Matches whole words.{' '}
-                {KEYWORD_WILDCARD_EXAMPLES.map((example, index) => (
-                  <span key={example.pattern}>
-                    {index > 0 && ' · '}
-                    <code className="rounded bg-slate-800 px-1 font-mono text-slate-300">
-                      {example.pattern}
-                    </code>{' '}
-                    {example.hint}
-                  </span>
-                ))}
-              </p>
-            </>
-          )}
-
-          {type === 'webhook' && (
-            <TagInput
-              values={values}
-              onChange={setValues}
-              disabled={disabled}
-              maxItems={max}
-              placeholder="Paste a webhook ID, press Enter"
-              validate={value => filterValueError('webhook', value)}
-            />
-          )}
-
-          {type === 'author' && (
-            <>
-              <TagInput
-                values={values}
-                onChange={setValues}
-                disabled={disabled}
-                maxItems={max}
-                placeholder="Paste a user ID, press Enter"
-                validate={value => filterValueError('author', value)}
-              />
-              <p className="text-xs text-slate-500">
-                Enable Developer Mode in Discord, then right-click a user → Copy User ID.
-              </p>
-            </>
-          )}
-
-          {type === 'mention' && (
-            <>
-              <DropdownMenu modal={false}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={disabled}
-                    className="w-full justify-between border-slate-700 bg-slate-800/50 font-normal text-slate-300"
-                  >
-                    {roleIds.length > 0
-                      ? `${roleIds.length} role${roleIds.length === 1 ? '' : 's'} selected`
-                      : 'Select roles'}
-                    <ChevronDown className="h-4 w-4 opacity-60" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="max-h-64 w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto"
-                >
-                  {roles.length === 0 && (
-                    <div className="px-3 py-2 text-sm text-slate-500">No roles found</div>
-                  )}
-                  {roles.map(role => {
-                    const selected = selectedRoleSet.has(role.id);
-                    const hex = roleColorHex(role.color);
-                    return (
-                      <DropdownMenuItem
-                        key={role.id}
-                        className={cn('py-1.5', selected && 'bg-slate-800/60')}
-                        onSelect={event => {
-                          event.preventDefault();
-                          toggleRole(role.id);
-                        }}
-                      >
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: hex ?? '#94a3b8' }}
-                        />
-                        <span className="flex-1 truncate">{role.name}</span>
-                        {selected && <Check className="h-4 w-4 shrink-0 text-blue-400" />}
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {roleIds.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {roleIds.map(id => {
-                    const role = rolesById[id];
-                    const hex = role ? roleColorHex(role.color) : null;
-                    return (
-                      <span
-                        key={id}
-                        className="inline-flex items-center gap-1 rounded-md bg-slate-700 px-2 py-0.5 text-sm text-slate-200"
-                      >
-                        <span
-                          className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: hex ?? '#94a3b8' }}
-                        />
-                        {role ? role.name : id}
-                        {!disabled && (
-                          <button
-                            type="button"
-                            aria-label="Remove role"
-                            onClick={() => toggleRole(id)}
-                            className="text-slate-400 hover:text-white"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        )}
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-
-              <TagInput
-                values={userIds}
-                onChange={next => setValues([...roleIds, ...next])}
-                disabled={disabled}
-                maxItems={Math.max(0, max - roleIds.length)}
-                placeholder="…or paste a user ID, press Enter"
-                validate={value => filterValueError('mention', value)}
-              />
-              <p className="text-xs text-slate-500">
-                {roleIds.length + userIds.length}/{max} mentions selected.
-              </p>
-            </>
-          )}
-        </div>
+        <div className="flex-1" />
 
         {!disabled && (
           <button
             type="button"
             aria-label="Remove condition"
             onClick={handleRemove}
-            className="mt-1 hidden shrink-0 rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-500/10 hover:text-red-400 lg:block"
+            className="cursor-pointer rounded-md p-1 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
           >
-            <Trash2 className="h-4 w-4" />
+            <X className="size-4" />
           </button>
         )}
       </div>
 
-      {!disabled && (
-        <div className="mt-2 flex justify-end lg:hidden">
-          <button
-            type="button"
-            aria-label="Remove condition"
-            onClick={handleRemove}
-            className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-red-500/10 hover:text-red-400"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            Remove condition
-          </button>
+      {type === 'keyword' && (
+        <>
+          <TagInput
+            values={values}
+            onChange={setValues}
+            disabled={disabled}
+            maxItems={max}
+            placeholder="Type a keyword…"
+            transform={value => value.trim().toLowerCase()}
+            validate={value => filterValueError('keyword', value)}
+          />
+          <p className="text-[11px] leading-relaxed text-slate-500">
+            Whole words. Use * as a wildcard:{' '}
+            {KEYWORD_WILDCARD_EXAMPLES.map((example, index) => (
+              <span key={example.pattern}>
+                {index > 0 && ', '}
+                <code className="font-mono text-slate-400">{example.pattern}</code>
+              </span>
+            ))}
+            .
+          </p>
+        </>
+      )}
+
+      {type === 'webhook' && (
+        <TagInput
+          values={values}
+          onChange={setValues}
+          disabled={disabled}
+          maxItems={max}
+          placeholder="Paste a webhook ID…"
+          validate={value => filterValueError('webhook', value)}
+        />
+      )}
+
+      {type === 'author' && (
+        <>
+          <TagInput
+            values={values}
+            onChange={setValues}
+            disabled={disabled}
+            maxItems={max}
+            placeholder="Paste a user ID…"
+            validate={value => filterValueError('author', value)}
+          />
+          <p className="text-[11px] leading-relaxed text-slate-500">
+            Enable Developer Mode in Discord, then right-click a user → Copy User ID.
+          </p>
+        </>
+      )}
+
+      {type === 'mention' && (
+        <div className="space-y-2">
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                disabled={disabled}
+                className="w-full justify-between border-slate-700 font-normal text-slate-300"
+              >
+                {roleIds.length > 0
+                  ? `${roleIds.length} role${roleIds.length === 1 ? '' : 's'} selected`
+                  : 'Pick roles…'}
+                <ChevronDown className="size-4 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              className="max-h-64 w-(--radix-dropdown-menu-trigger-width) overflow-y-auto"
+            >
+              {roles.length === 0 && (
+                <div className="px-3 py-2 text-sm text-slate-500">No roles found</div>
+              )}
+              {roles.map(role => {
+                const selected = selectedRoleSet.has(role.id);
+                return (
+                  <DropdownMenuItem
+                    key={role.id}
+                    className={cn('py-1.5', selected && 'bg-slate-800/60')}
+                    onSelect={event => {
+                      event.preventDefault();
+                      toggleRole(role.id);
+                    }}
+                  >
+                    <span
+                      className="size-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: roleColorHex(role.color) ?? '#94a3b8' }}
+                    />
+                    <span className="flex-1 truncate">{role.name}</span>
+                    {selected && <Check className="size-4 shrink-0 text-blue-400" />}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {roleIds.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {roleIds.map(id => {
+                const role = rolesById[id];
+                return (
+                  <span
+                    key={id}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-2 py-0.5 text-xs text-slate-200"
+                  >
+                    <span
+                      className="size-1.5 rounded-full"
+                      style={{ backgroundColor: (role && roleColorHex(role.color)) ?? '#94a3b8' }}
+                    />
+                    {role ? role.name : id}
+                    {!disabled && (
+                      <button
+                        type="button"
+                        aria-label="Remove role"
+                        onClick={() => toggleRole(id)}
+                        className="cursor-pointer text-slate-500 hover:text-white"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    )}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* One value list, two input affordances — roles above, raw ids here. */}
+          <TagInput
+            values={userIds}
+            onChange={next => setValues([...roleIds, ...next])}
+            disabled={disabled}
+            maxItems={Math.max(0, max - roleIds.length)}
+            placeholder="…or paste a user ID"
+            validate={value => filterValueError('mention', value)}
+          />
         </div>
       )}
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this condition?</AlertDialogTitle>
+            <AlertDialogTitle>Remove this condition?</AlertDialogTitle>
             <AlertDialogDescription>
-              This condition has {values.length} {values.length === 1 ? 'value' : 'values'}.
-              Removing it can&apos;t be undone once you save.
+              {field.label} {operatorLabel(type, negate)} {values.length}{' '}
+              {values.length === 1 ? 'value' : 'values'}. Removing it widens what the channel
+              publishes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Keep</AlertDialogCancel>
             <AlertDialogAction
               className="bg-red-600 text-white hover:bg-red-500"
               onClick={onRemove}
             >
-              Delete
+              Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
