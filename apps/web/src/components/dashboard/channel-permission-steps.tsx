@@ -6,8 +6,10 @@
 const PUBLISH_PERMISSIONS = ['View Channel', 'Send Messages', 'Manage Messages'];
 
 const STEPS = [
-  'In Discord, select the channel → Edit Channel → Permissions.',
-  'Add Auto Publisher (or its role) and grant all three permissions:',
+  'Open your Discord server.',
+  'Select the channel → Edit Channel',
+  'Open Permissions tab.',
+  'Add Auto Publisher role and grant all three permissions:',
   'Save. Publishing starts on the next message.',
 ];
 
@@ -25,7 +27,7 @@ export function PermissionSteps() {
           </span>
           <div className="min-w-0 flex-1 space-y-2">
             <p className="text-sm leading-relaxed text-slate-200">{text}</p>
-            {index === 1 && (
+            {index === 3 && (
               <div className="flex flex-wrap gap-2">
                 {PUBLISH_PERMISSIONS.map(permission => (
                   <span
