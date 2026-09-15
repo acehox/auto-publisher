@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink, Loader2 } from 'lucide-react';
+import { Check, Clock, ExternalLink, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { createCheckout } from '@/lib/api/actions';
 import type { SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
 import { guildIconUrl } from '@/lib/discord';
+import { PREMIUM_PLAN_FEATURES } from '@/lib/plans';
 import {
   formatUsd,
   PREMIUM_PRICE_MONTHLY_USD,
@@ -37,12 +38,15 @@ interface SubscriptionPanelProps {
 }
 
 const statusBadges: Record<string, { label: string; className: string }> = {
-  active: { label: 'Active', className: 'border-green-400/50 text-green-400' },
-  trialing: { label: 'Trial', className: 'border-blue-400/50 text-blue-400' },
-  past_due: { label: 'Past due', className: 'border-red-400/50 text-red-400' },
-  canceled: { label: 'Cancelled', className: 'border-slate-600 text-slate-400' },
-  paused: { label: 'Paused', className: 'border-slate-600 text-slate-400' },
+  active: { label: 'Active', className: 'border-green-500/40 bg-green-500/10 text-green-400' },
+  trialing: { label: 'Trial', className: 'border-blue-500/40 bg-blue-500/10 text-blue-300' },
+  past_due: { label: 'Past due', className: 'border-red-500/40 bg-red-500/10 text-red-400' },
+  canceled: { label: 'Cancelled', className: 'border-slate-700 bg-slate-800/60 text-slate-400' },
+  paused: { label: 'Paused', className: 'border-slate-700 bg-slate-800/60 text-slate-400' },
 };
+
+const badgeBase =
+  'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium';
 
 const intervalLabels: Record<string, string> = { month: 'Monthly', year: 'Yearly' };
 
@@ -98,8 +102,8 @@ function PremiumCard({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * The entitled state. No feature list: re-selling four Premium features to
- * someone already paying is the kind of second telling this redesign removed.
+ * The entitled state. Features come from PREMIUM_PLAN_FEATURES so this card and
+ * /premium cannot describe the same plan differently.
  */
 function BillingCard({
   subscription,
@@ -134,14 +138,13 @@ function BillingCard({
   return (
     <PremiumCard>
       <div className="flex flex-wrap items-center gap-2.5">
-        <h2 className="text-base font-semibold text-white">Premium</h2>
-        <span className={cn('rounded-full border px-2 py-0.5 text-[11px]', badge.className)}>
-          {badge.label}
-        </span>
+        <h2 className="inline-flex items-center gap-1.5 text-base font-semibold text-white">
+          <Zap className="size-4" aria-hidden="true" />
+          Premium
+        </h2>
+        <span className={cn(badgeBase, badge.className)}>{badge.label}</span>
         {intervalLabel && (
-          <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-400">
-            {intervalLabel}
-          </span>
+          <span className={cn(badgeBase, 'border-slate-700 text-slate-400')}>{intervalLabel}</span>
         )}
       </div>
 
@@ -152,21 +155,33 @@ function BillingCard({
         </NoticeStrip>
       )}
 
+      <ul className="space-y-2">
+        {PREMIUM_PLAN_FEATURES.map(feature => (
+          <li key={feature} className="flex items-center gap-2.5 text-sm text-slate-200">
+            <Check className="size-4 shrink-0 text-green-400" aria-hidden="true" />
+            {feature}
+          </li>
+        ))}
+      </ul>
+
       {dateValue && (
         <div>
-          <p className="text-[11px] uppercase tracking-wider text-slate-400">{dateLabel}</p>
-          <p className="mt-1 text-base font-medium text-white">
-            {new Date(dateValue).toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            })}
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-400">
+            <Clock className="size-4 shrink-0" aria-hidden="true" />
+            {dateLabel}:
+            <span className="font-medium text-white">
+              {new Date(dateValue).toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </span>
           </p>
           {trialing && (
-            <p className="mt-1 text-xs text-slate-400">Your free trial runs until then.</p>
+            <p className="mt-1 pl-6.5 text-xs text-slate-400">Your free trial runs until then.</p>
           )}
           {cancelScheduled && (
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 pl-6.5 text-xs text-slate-400">
               Channels keep publishing until then, and settings are kept after.
             </p>
           )}
@@ -200,7 +215,7 @@ function BillingCard({
                 href={detail.cancelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-slate-400 transition-colors hover:text-slate-200"
+                className="text-sm text-slate-400 transition-colors hover:text-slate-200"
               >
                 Cancel subscription
               </a>

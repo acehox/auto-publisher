@@ -86,13 +86,15 @@ export function WithdrawalPanel({
           this control, so it is a plain block on the page for the whole period —
           never behind a menu, and never a dialog on its own. */}
       <section className="space-y-2.5 rounded-xl border border-slate-700/70 p-4">
-        <h2 className="text-sm font-semibold text-white">Right of withdrawal</h2>
-        <p className="text-xs leading-relaxed text-slate-400">
+        {/* At the contrast floor already: 12px needs 4.5:1 on slate-950 for the
+            st. 2 "lako uočljiv", and slate-500 is 4.2:1. Do not darken. */}
+        <h2 className="text-sm font-semibold text-slate-300">Right of withdrawal</h2>
+        <p className="text-xs leading-relaxed text-slate-400/80">
           You can withdraw from this contract
           {withdrawal.windowEndsAt && (
             <>
               {' '}
-              until <span className="text-slate-200">{formatInstant(withdrawal.windowEndsAt)}</span>
+              until <span className="text-slate-400">{formatInstant(withdrawal.windowEndsAt)}</span>
             </>
           )}{' '}
           and get a full refund, no reason needed.
