@@ -3,6 +3,7 @@
 import { CircleX } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
+import { CHIP_CLASS } from '@/components/dashboard/chip';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -32,15 +33,15 @@ export function channelIsBroken(channel: GuildChannel): boolean {
  */
 export function ChannelFixButton({
   channel,
-  filled,
+  icon,
 }: {
   channel: GuildChannel;
   /**
-   * Tinted fill and a severity icon, for Channels rows — the row states each
-   * channel's state in its own right there. Overview rows sit inside a status
-   * card that already carries the severity, so they keep the outline.
+   * Severity icon, for Channels rows — the row states each channel's state in
+   * its own right there. Overview rows sit inside a status card that already
+   * carries the severity, so a second icon would be noise.
    */
-  filled?: boolean;
+  icon?: boolean;
 }) {
   return (
     <ChannelFixDialog
@@ -49,13 +50,11 @@ export function ChannelFixButton({
         <button
           type="button"
           className={cn(
-            'flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1 text-xs font-medium text-red-300 transition-colors',
-            filled
-              ? 'border-red-500/40 bg-red-500/10 hover:border-red-500/60 hover:bg-red-500/20'
-              : 'border-red-400/45 hover:bg-red-500/10'
+            CHIP_CLASS,
+            'cursor-pointer bg-red-500/10 font-medium text-red-300 hover:bg-red-500/20'
           )}
         >
-          {filled && <CircleX aria-hidden className="size-3.5" />}
+          {icon && <CircleX aria-hidden className="size-3" />}
           Fix
         </button>
       }

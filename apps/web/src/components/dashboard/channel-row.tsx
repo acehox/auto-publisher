@@ -1,6 +1,7 @@
 import { CircleCheck, CirclePause, Filter } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { CHIP_CLASS } from '@/components/dashboard/chip';
 import { StatusDot, type Tone } from '@/components/dashboard/notice-strip';
 import { channelLabel, cn } from '@/lib/utils';
 
@@ -91,7 +92,7 @@ export function ChannelFilterPill({
     <Link
       href={href}
       aria-label={`Edit ${count} filter${count !== 1 ? 's' : ''} for ${channelLabel(name)}`}
-      className="flex shrink-0 items-center gap-1 rounded-md border border-slate-700 bg-slate-800/60 px-1.5 py-0.5 text-[11px] text-slate-300 transition-colors hover:border-slate-600 hover:bg-slate-800"
+      className={cn(CHIP_CLASS, 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80')}
     >
       <Filter aria-hidden className="size-3 text-slate-400" />
       {count}

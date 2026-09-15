@@ -214,7 +214,7 @@ export function ChannelConfig({
                             name={channel.name}
                           />
                         )}
-                        <ChannelFixButton channel={channel} filled />
+                        <ChannelFixButton channel={channel} icon />
                         {toggleFor(channel, true)}
                       </>
                     }
