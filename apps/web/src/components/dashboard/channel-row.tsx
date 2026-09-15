@@ -1,3 +1,5 @@
+import { CircleCheck, CirclePause, Filter } from 'lucide-react';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { StatusDot, type Tone } from '@/components/dashboard/notice-strip';
 import { channelLabel, cn } from '@/lib/utils';
@@ -7,8 +9,9 @@ import { channelLabel, cn } from '@/lib/utils';
  * hairline-divided children of a card (the Overview status card, a Channels
  * group), which is why both tabs read as one list rather than a stack of tiles.
  * Severity is a bare dot rather than an icon — a list of identical megaphones
- * states nothing a row doesn't already say. The status label is added only where
- * nothing else on the row states it (Channels rows carry a toggle, which does).
+ * states nothing a row doesn't already say. The status label marks a serving row
+ * on both tabs; a broken one carries the Fix control instead, which names the
+ * state and acts on it, so neither tab states one failure twice.
  *
  * `name` is the bare channel name; the row applies the `#` itself.
  */
@@ -51,13 +54,47 @@ export function ChannelRow({
 }
 
 const STATUS = {
-  publishing: { label: 'Publishing', className: 'text-green-500/90' },
-  blocked: { label: 'Not publishing', className: 'text-red-400' },
-  paused: { label: 'Paused', className: 'text-yellow-400/90' },
+  publishing: { label: 'Publishing', icon: CircleCheck, className: 'text-green-500/90' },
+  paused: { label: 'Paused', icon: CirclePause, className: 'text-yellow-400/90' },
 } as const;
 
-/** Right-hand publishing state, for rows that carry no control of their own. */
-export function ChannelStatusLabel({ kind }: { kind: keyof typeof STATUS }) {
-  const { label, className } = STATUS[kind];
-  return <span className={cn('shrink-0 text-xs', className)}>{label}</span>;
+/**
+ * Right-hand publishing state. The icon is opt-in: on Overview the label sits in
+ * a card whose own icon already carries severity, so a second one is noise.
+ */
+export function ChannelStatusLabel({ kind, icon }: { kind: keyof typeof STATUS; icon?: boolean }) {
+  const { label, icon: Icon, className } = STATUS[kind];
+  return (
+    <span className={cn('flex shrink-0 items-center gap-1.5 text-xs', className)}>
+      {icon && <Icon aria-hidden className="size-3.5" />}
+      {label}
+    </span>
+  );
+}
+
+/**
+ * Filter count as a compact chip — icon plus number, because the word "filters"
+ * only repeats what the icon says. Channels only, and always a link: Overview
+ * never carries a control, so it keeps its own read-only pill.
+ */
+export function ChannelFilterPill({
+  count,
+  href,
+  name,
+}: {
+  count: number;
+  href: string;
+  /** Bare channel name, for the link's accessible label. */
+  name: string;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-label={`Edit ${count} filter${count !== 1 ? 's' : ''} for ${channelLabel(name)}`}
+      className="flex shrink-0 items-center gap-1 rounded-md border border-slate-700 bg-slate-800/60 px-1.5 py-0.5 text-[11px] text-slate-300 transition-colors hover:border-slate-600 hover:bg-slate-800"
+    >
+      <Filter aria-hidden className="size-3 text-slate-400" />
+      {count}
+    </Link>
+  );
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import { Loader2, Megaphone } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -9,7 +8,11 @@ import { ChannelEnableGuideModal } from '@/components/dashboard/channel-enable-g
 import { ChannelFixButton } from '@/components/dashboard/channel-fix';
 import { ChannelGroup } from '@/components/dashboard/channel-group';
 import { ChannelLimitModal } from '@/components/dashboard/channel-limit-upsell';
-import { ChannelRow } from '@/components/dashboard/channel-row';
+import {
+  ChannelFilterPill,
+  ChannelRow,
+  ChannelStatusLabel,
+} from '@/components/dashboard/channel-row';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { HowPublishingWorks } from '@/components/dashboard/how-publishing-works';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
@@ -200,21 +203,18 @@ export function ChannelConfig({
                     key={channel.channelId}
                     name={channel.name}
                     tone={broken ? 'red' : 'green'}
-                    pill={
-                      channel.filters.length > 0 ? (
-                        <Link
-                          href={`/dashboard/${guildId}/filters?channel=${channel.channelId}`}
-                          aria-label={`Edit filters for ${channelLabel(channel.name)}`}
-                          className="whitespace-nowrap rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[11px] text-blue-300 transition-colors hover:bg-blue-500/20"
-                        >
-                          {channel.filters.length} filter
-                          {channel.filters.length !== 1 && 's'}
-                        </Link>
-                      ) : null
-                    }
+                    // A broken row states itself through the Fix control.
+                    status={broken ? undefined : <ChannelStatusLabel icon kind="publishing" />}
                     actions={
                       <>
-                        <ChannelFixButton channel={channel} />
+                        {channel.filters.length > 0 && (
+                          <ChannelFilterPill
+                            count={channel.filters.length}
+                            href={`/dashboard/${guildId}/filters?channel=${channel.channelId}`}
+                            name={channel.name}
+                          />
+                        )}
+                        <ChannelFixButton channel={channel} filled />
                         {toggleFor(channel, true)}
                       </>
                     }

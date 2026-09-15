@@ -29,6 +29,12 @@ const routeLinks = [
   { href: links.githubRepo, label: 'GitHub', external: true },
 ];
 
+// MIGRATION: drop the migration guide with the rest of the migration UX at sunset.
+const dashboardLinks = [
+  { href: '/migration', label: 'Migration Guide', external: false },
+  { href: links.discordSupportServer, label: 'Support Server', external: true },
+];
+
 interface SessionUser {
   name?: string | null;
   username?: string | null;
@@ -175,12 +181,14 @@ function NavbarInner() {
   const isPublicInstance = useIsPublicInstance();
   // The dashboard is an app shell, not a page in the marketing site: the bar
   // runs the full width so it lines up with the sidebar below it, and the
-  // marketing links drop out — they are not destinations from inside a server's
-  // settings. The marketing site keeps the centred, capped bar.
+  // marketing links give way to the two an admin needs from inside a server's
+  // settings. The marketing site keeps the centred, capped bar. Below md the
+  // dashboard bar has no hamburger (the account menu takes that slot), so those
+  // two ride the footer there — where they already live for every other page.
   const inDashboard = pathname.startsWith('/dashboard');
   // A self-hosted instance has no billing, so /premium 404s — don't link to it.
   const visibleLinks = inDashboard
-    ? []
+    ? dashboardLinks
     : isPublicInstance
       ? routeLinks
       : routeLinks.filter(link => link.href !== '/premium');

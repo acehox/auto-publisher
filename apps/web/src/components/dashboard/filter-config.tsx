@@ -189,7 +189,7 @@ function ChannelRuleEditor({
       // Only now are the flagged values discarded — the user chose to save past them.
       setConditions(cleaned);
       setBaseline({ matchMode, conditions: savable });
-      toast.success('Filter rule saved.', {
+      toast.success('Filter saved!', {
         description:
           invalidCount > 0
             ? `${invalidCount} invalid ${invalidCount === 1 ? 'value was' : 'values were'} removed.`

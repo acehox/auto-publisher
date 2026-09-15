@@ -327,7 +327,7 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
         <p className="text-xs text-slate-300">
           {migrated
             ? `${enabled} of ${limit} channels used`
-            : `Legacy mode — ${data.channels.length} channels publish`}
+            : `Legacy mode — ${data.channels.length} channels publishing`}
         </p>
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-800">
           <div
@@ -469,13 +469,18 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
         )}
 
         <div className="space-y-2">
-          <Button className="w-full" size="lg" onClick={handleUpgrade} disabled={isPending}>
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={handleUpgrade}
+            disabled={isPending || !migrated}
+          >
             {isPending && <Loader2 className="size-4 animate-spin" />}
             {trialAvailable ? `Start ${PREMIUM_TRIAL_DAYS}-day free trial` : 'Upgrade to Premium'}
           </Button>
           {!migrated && (
             <p className="text-center text-[11px] text-red-300">
-              Set up channels first — one step, about 20 seconds.
+              Premium plan is only available for migrated servers.
             </p>
           )}
           <p className="text-center text-[11px] text-slate-500">Secure payment via Paddle</p>

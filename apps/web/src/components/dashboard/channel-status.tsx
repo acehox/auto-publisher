@@ -41,15 +41,18 @@ function statusRank(channel: GuildChannel): number {
   return channel.canPublish === false ? 0 : 1;
 }
 
-/** One publishing row, identical on the migrated and legacy branches. */
-function PublishRow({ channel, pill }: { channel: GuildChannel; pill?: React.ReactNode }) {
+/**
+ * One publishing row, identical on the migrated and legacy branches. A broken
+ * row carries the Fix control and no label: the control names the state and acts
+ * on it, and the card's own headline already counts the broken channels.
+ */
+function PublishRow({ channel }: { channel: GuildChannel }) {
   const broken = channel.canPublish === false;
   return (
     <ChannelRow
       name={channel.name}
       tone={broken ? 'red' : 'green'}
-      pill={pill}
-      status={<ChannelStatusLabel kind={broken ? 'blocked' : 'publishing'} />}
+      status={broken ? undefined : <ChannelStatusLabel kind="publishing" />}
       actions={<ChannelFixButton channel={channel} />}
     />
   );
@@ -102,11 +105,7 @@ function MigratedStatus({
       footer={footer}
     >
       {enabled.map(channel => (
-        <PublishRow
-          key={channel.channelId}
-          channel={channel}
-          pill={channel.filters.length > 0 ? <FilterPill count={channel.filters.length} /> : null}
-        />
+        <PublishRow key={channel.channelId} channel={channel} />
       ))}
       {paused.map(channel => (
         <ChannelRow
@@ -118,15 +117,6 @@ function MigratedStatus({
         />
       ))}
     </StatusCard>
-  );
-}
-
-/** Read-only echo of the Channels tab's pill; acting on filters happens there. */
-function FilterPill({ count }: { count: number }) {
-  return (
-    <span className="whitespace-nowrap rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-400">
-      {count} filter{count !== 1 ? 's' : ''}
-    </span>
   );
 }
 
