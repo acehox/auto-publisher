@@ -1,4 +1,4 @@
-import { Check, Crown, Minus } from 'lucide-react';
+import { Check, Minus, Zap } from 'lucide-react';
 import { type PlanValue, planComparison } from '@/lib/plans';
 
 interface PlanComparisonTableProps {
@@ -59,7 +59,7 @@ export function PlanComparisonTable({
             className={`text-xs font-normal text-blue-300 ${compact ? 'px-3 py-2 text-left uppercase tracking-wide' : 'w-24 pb-2 text-center'}`}
           >
             <span className="inline-flex items-center gap-1">
-              <Crown className="h-3 w-3" aria-hidden="true" />
+              <Zap className="h-3 w-3" aria-hidden="true" />
               Premium
             </span>
           </th>

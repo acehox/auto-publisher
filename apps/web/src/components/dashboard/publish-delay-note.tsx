@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock } from 'lucide-react';
+import { Clock, Zap } from 'lucide-react';
 import { useIsPublicInstance } from '@/components/site-config-context';
 
 /**
@@ -18,8 +18,34 @@ import { useIsPublicInstance } from '@/components/site-config-context';
  */
 export function publishDelayCopy(hasSubscription: boolean): string {
   return hasSubscription
-    ? "Your messages are published at Premium priority — they go ahead of the free queue whenever there's a backlog."
-    : "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium and your messages move to the front of the queue.";
+    ? 'Your messages are published at Premium priority. They go ahead of the free queue during busy periods.'
+    : "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium to prioritize your messages.";
+}
+
+/**
+ * The same fact compressed to one line, for the Overview card's footer where it
+ * sits under a channel list rather than in a prose block. Same `entitled`
+ * predicate as the long form, so the two can never disagree.
+ */
+export function publishDelayShortCopy(entitled: boolean): string {
+  return entitled
+    ? 'Messages are published at priority.'
+    : 'Messages may be delayed. Upgrade to prioritize your messages.';
+}
+
+/**
+ * Footer form of the short copy. The Zap is Premium's one mark across the
+ * product (it replaced the crown), so it rides only the entitled line — on the
+ * free line it would decorate the thing being upsold.
+ */
+export function PublishDelayFooter({ hasSubscription }: { hasSubscription: boolean }) {
+  const entitled = usePublishDelayEntitled(hasSubscription);
+  return (
+    <span className="flex items-center gap-1.5">
+      {entitled && <Zap className="size-3.5 shrink-0" />}
+      {publishDelayShortCopy(entitled)}
+    </span>
+  );
 }
 
 /**

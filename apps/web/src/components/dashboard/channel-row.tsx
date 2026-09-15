@@ -1,13 +1,16 @@
 import type { ReactNode } from 'react';
 import { StatusDot, type Tone } from '@/components/dashboard/notice-strip';
-import { cn } from '@/lib/utils';
+import { channelLabel, cn } from '@/lib/utils';
 
 /**
- * One channel line, shared by the Overview status card (divided rows inside one
- * card) and the Channels tab (standalone bordered rows). Severity is a bare dot
- * rather than an icon — a list of identical megaphones states nothing a row
- * doesn't already say. The status label is added only where nothing else on the
- * row states it (Channels rows carry a toggle, which does).
+ * One channel line. Rows never carry their own border or fill — they are
+ * hairline-divided children of a card (the Overview status card, a Channels
+ * group), which is why both tabs read as one list rather than a stack of tiles.
+ * Severity is a bare dot rather than an icon — a list of identical megaphones
+ * states nothing a row doesn't already say. The status label is added only where
+ * nothing else on the row states it (Channels rows carry a toggle, which does).
+ *
+ * `name` is the bare channel name; the row applies the `#` itself.
  */
 export function ChannelRow({
   name,
@@ -17,7 +20,6 @@ export function ChannelRow({
   pill,
   actions,
   muted,
-  variant = 'plain',
 }: {
   name: string;
   /** Colours the dot. */
@@ -26,22 +28,19 @@ export function ChannelRow({
   sub?: ReactNode;
   pill?: ReactNode;
   actions?: ReactNode;
+  /** Dimmed until hovered — an off channel is still readable on purpose. */
   muted?: boolean;
-  variant?: 'plain' | 'card';
 }) {
   return (
     <div
       className={cn(
-        'flex items-center gap-3',
-        variant === 'card'
-          ? 'rounded-lg border border-slate-800 bg-slate-900/40 px-3.5 py-3'
-          : 'border-slate-800/70 border-t px-4 py-3',
-        muted && 'opacity-60'
+        'flex items-center gap-3 border-slate-800/70 border-t px-4 py-3',
+        muted && 'opacity-60 transition-opacity hover:opacity-100'
       )}
     >
       <StatusDot tone={tone} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-slate-100">{name}</p>
+        <p className="truncate text-sm text-slate-100">{channelLabel(name)}</p>
         {sub && <p className="mt-0.5 text-xs text-slate-400">{sub}</p>}
       </div>
       {pill}

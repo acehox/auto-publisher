@@ -16,7 +16,7 @@ export function LockedFeature({
   trialAvailable: boolean;
 }) {
   return (
-    <div className="space-y-3.5 rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+    <div className="space-y-3.5 rounded-xl border border-slate-800 bg-slate-900 p-5">
       <p className="text-[11px] uppercase tracking-wider text-yellow-500">Premium feature</p>
       <p className="text-sm leading-relaxed text-slate-200">
         Filters let a channel publish only the messages you choose — by keyword, author, mention or

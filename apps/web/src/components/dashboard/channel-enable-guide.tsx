@@ -22,9 +22,9 @@ import { Button } from '@/components/ui/button';
  * "I granted the permissions" commits, the corner control or ESC leaves the
  * channel off.
  *
- * Also the second and last place the 10/hour limit and the queue-delay note
- * appear (the other is the collapsed "How publishing works" on Channels): here
- * they are decision-relevant, so they earn the space.
+ * Also the second and last place the 10/hour limit appears (the other is the
+ * collapsed "How publishing works" on Channels): here it is decision-relevant,
+ * so it earns the space.
  */
 export function ChannelEnableGuideModal({
   channelName,
@@ -59,7 +59,7 @@ export function ChannelEnableGuideModal({
         <PermissionSteps />
 
         <div className="space-y-1.5 border-slate-800 border-t pt-3 text-xs leading-relaxed text-slate-400">
-          <p>Discord publishes at most 10 messages per hour, per channel.</p>
+          <p>Discord allows up to 10 published messages per hour, per channel.</p>
           <p>{publishDelayCopy(entitled)}</p>
         </div>
 

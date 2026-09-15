@@ -18,7 +18,7 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { getGuildRoles, setChannelFilters } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
 import type { FilterInput, FilterMatchMode, GuildChannel, GuildRole } from '@/lib/api/types';
-import { cn } from '@/lib/utils';
+import { channelLabel, cn } from '@/lib/utils';
 
 interface FilterManagerProps {
   guildId: string;
@@ -120,11 +120,11 @@ export function FilterManager({ guildId, channels }: FilterManagerProps) {
                   'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors',
                   active
                     ? 'border-blue-500/40 bg-blue-500/10'
-                    : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+                    : 'border-slate-800 bg-slate-900 hover:border-slate-700'
                 )}
               >
                 <span className="min-w-0 flex-1 truncate text-sm text-slate-100">
-                  {channel.name}
+                  {channelLabel(channel.name)}
                 </span>
                 <span className="whitespace-nowrap text-xs text-slate-400">
                   {count > 0 ? `${count} condition${count !== 1 ? 's' : ''}` : 'Publishes all'}
@@ -148,7 +148,7 @@ export function FilterManager({ guildId, channels }: FilterManagerProps) {
               Channels
             </button>
             <span className="min-w-0 truncate font-semibold text-sm text-white">
-              {selected.name}
+              {channelLabel(selected.name)}
             </span>
           </div>
           <ChannelRuleEditor
@@ -252,7 +252,7 @@ function ChannelRuleEditor({
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+      <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
         {/* The sentence framing is what makes the feature self-explanatory. */}
         <div className="flex flex-wrap items-center gap-2 border-slate-800/70 border-b px-4 py-3.5">
           <span className="text-sm text-slate-200">Publish a message when</span>
@@ -267,7 +267,8 @@ function ChannelRuleEditor({
 
         {conditions.length === 0 ? (
           <p className="px-4 py-4 text-xs text-slate-500">
-            No conditions — every message in {channel.name} publishes. Add one to narrow it.
+            No conditions — every message in {channelLabel(channel.name)} publishes. Add one to
+            narrow it.
           </p>
         ) : (
           conditions.map((condition, index) => (

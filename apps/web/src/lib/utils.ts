@@ -19,3 +19,12 @@ export function formatNumber(num: number): string {
 export function formatNumberFull(num: number): string {
   return `${num.toLocaleString('en-US')}+`;
 }
+
+/**
+ * How a Discord channel is named anywhere in the UI. One definition so a name
+ * can never render bare on one surface and prefixed on the next — the backend
+ * stores it without the `#`, which is what made that drift easy.
+ */
+export function channelLabel(name: string): string {
+  return `#${name}`;
+}

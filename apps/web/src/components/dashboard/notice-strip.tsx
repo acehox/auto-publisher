@@ -7,6 +7,15 @@ import { cn } from '@/lib/utils';
 /** Severity accent, carried on a strip's left edge, icon and text. */
 export type Tone = 'blue' | 'green' | 'amber' | 'yellow' | 'red' | 'slate';
 
+const FILL: Record<Tone, string> = {
+  blue: 'border-blue-500/40 bg-blue-950/40',
+  green: 'border-green-500/40 bg-green-950/40',
+  amber: 'border-amber-500/40 bg-amber-950/40',
+  yellow: 'border-yellow-500/40 bg-yellow-950/40',
+  red: 'border-red-500/40 bg-red-950/40',
+  slate: 'border-slate-700 bg-slate-900',
+};
+
 const EDGE: Record<Tone, string> = {
   blue: 'border-l-blue-400',
   green: 'border-l-green-400',
@@ -63,6 +72,7 @@ export function NoticeStrip({
   onDismiss,
   icon: Icon = TONE_ICON[tone],
   spin,
+  filled,
   className,
 }: {
   tone: Tone;
@@ -71,13 +81,17 @@ export function NoticeStrip({
   onDismiss?: () => void;
   icon?: LucideIcon;
   spin?: boolean;
+  /** Tone-tinted surface with a full tone border, instead of the left edge. */
+  filled?: boolean;
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center gap-x-3.5 gap-y-2 rounded-lg border border-slate-800 border-l-2 bg-slate-900/50 px-3.5 py-3',
-        EDGE[tone],
+        'flex flex-wrap items-center gap-x-3.5 gap-y-2 rounded-lg px-3.5 py-3',
+        filled
+          ? cn('border', FILL[tone])
+          : cn('border border-slate-800 border-l-2 bg-slate-900', EDGE[tone]),
         className
       )}
     >

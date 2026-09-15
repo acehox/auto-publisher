@@ -2,21 +2,24 @@
 
 import { Megaphone } from 'lucide-react';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { ChannelFixButton } from '@/components/dashboard/channel-fix';
 import { ChannelRow, ChannelStatusLabel } from '@/components/dashboard/channel-row';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { useGuild } from '@/components/dashboard/guild-context';
-import { StatusCard } from '@/components/dashboard/status-card';
+import { PublishDelayFooter } from '@/components/dashboard/publish-delay-note';
+import { StatusCard, StatusCardAction } from '@/components/dashboard/status-card';
 import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
 import { Button } from '@/components/ui/button';
 import type { GuildChannel } from '@/lib/api/types';
 
 /**
  * The Overview's answer to "is it working". Read-only by contract: Overview
- * never carries a control that changes state, Channels never carries a summary
- * — so there is no toggle here and no ambient publishing note either (the
- * 10/hour limit and the queue-delay note live once on Channels, and once inside
- * the enable guide where they are decision-relevant).
+ * never carries a control that changes state — the header's Manage link and the
+ * Fix dialog navigate, they don't write — and Channels never carries a summary.
+ * The card's footer states the queue-delay fact in its short form, because it is
+ * what "publishing" on this card actually promises; the long form and the
+ * 10/hour limit sit below in `HowPublishingWorks`, shared with Channels.
  *
  * The card is the alert, so a broken channel needs no banner above it: severity
  * is on the card's top edge, icon and headline, and the Fix control sits on the
@@ -25,10 +28,11 @@ import type { GuildChannel } from '@/lib/api/types';
  */
 export function ChannelStatus() {
   const { guild, data } = useGuild();
+  const footer = <PublishDelayFooter hasSubscription={guild.hasSubscription} />;
   return data.migrated ? (
-    <MigratedStatus guildId={guild.id} channels={data.channels} />
+    <MigratedStatus guildId={guild.id} channels={data.channels} footer={footer} />
   ) : (
-    <LegacyStatus channels={data.channels} />
+    <LegacyStatus guildId={guild.id} channels={data.channels} footer={footer} />
   );
 }
 
@@ -44,7 +48,6 @@ function PublishRow({ channel, pill }: { channel: GuildChannel; pill?: React.Rea
     <ChannelRow
       name={channel.name}
       tone={broken ? 'red' : 'green'}
-      sub={broken ? 'Missing permissions' : undefined}
       pill={pill}
       status={<ChannelStatusLabel kind={broken ? 'blocked' : 'publishing'} />}
       actions={<ChannelFixButton channel={channel} />}
@@ -52,7 +55,15 @@ function PublishRow({ channel, pill }: { channel: GuildChannel; pill?: React.Rea
   );
 }
 
-function MigratedStatus({ guildId, channels }: { guildId: string; channels: GuildChannel[] }) {
+function MigratedStatus({
+  guildId,
+  channels,
+  footer,
+}: {
+  guildId: string;
+  channels: GuildChannel[];
+  footer: ReactNode;
+}) {
   const { needsFixingCount } = useGuildAttention();
   const enabled = channels.filter(c => c.enabled).sort((a, b) => statusRank(a) - statusRank(b));
   const paused = channels.filter(c => c.hasSavedSetup);
@@ -79,13 +90,16 @@ function MigratedStatus({ guildId, channels }: { guildId: string; channels: Guil
   return (
     <StatusCard
       tone={needsFixingCount > 0 ? 'red' : 'green'}
+      title="Channels"
       headline={
         needsFixingCount > 0
           ? needsFixingCount === 1
-            ? "1 channel isn't publishing"
-            : `${needsFixingCount} channels aren't publishing`
-          : `Publishing in ${enabled.length} channel${enabled.length !== 1 ? 's' : ''}`
+            ? '1 channel not publishing'
+            : `${needsFixingCount} channels not publishing`
+          : `All good — publishing in ${enabled.length} channel${enabled.length !== 1 ? 's' : ''}`
       }
+      action={<StatusCardAction href={`/dashboard/${guildId}/channels`}>Manage</StatusCardAction>}
+      footer={footer}
     >
       {enabled.map(channel => (
         <PublishRow
@@ -130,7 +144,15 @@ function NoAnnouncementChannels() {
  * a publishing channel — itemized the same way, minus the paused group it cannot
  * have. The legacy card above does the steering. Removed at sunset.
  */
-function LegacyStatus({ channels }: { channels: GuildChannel[] }) {
+function LegacyStatus({
+  guildId,
+  channels,
+  footer,
+}: {
+  guildId: string;
+  channels: GuildChannel[];
+  footer: ReactNode;
+}) {
   const total = channels.length;
   if (total === 0) return <NoAnnouncementChannels />;
 
@@ -139,13 +161,16 @@ function LegacyStatus({ channels }: { channels: GuildChannel[] }) {
   return (
     <StatusCard
       tone={broken > 0 ? 'red' : 'green'}
+      title="Channels"
       headline={
         broken > 0
           ? broken === 1
-            ? "1 channel isn't publishing"
-            : `${broken} channels aren't publishing`
-          : `Publishing in ${total} announcement channel${total !== 1 ? 's' : ''}`
+            ? '1 channel not publishing'
+            : `${broken} channels not publishing`
+          : `All good — publishing in ${total} announcement channel${total !== 1 ? 's' : ''}`
       }
+      action={<StatusCardAction href={`/dashboard/${guildId}/channels`}>Manage</StatusCardAction>}
+      footer={footer}
     >
       {[...channels]
         .sort((a, b) => statusRank(a) - statusRank(b))

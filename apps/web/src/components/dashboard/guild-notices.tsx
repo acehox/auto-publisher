@@ -1,9 +1,10 @@
 'use client';
 
-import { Loader2, TriangleAlert } from 'lucide-react';
+import { CircleX, Loader2, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { ChannelFixDialog } from '@/components/dashboard/channel-fix';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { NoticeAction, NoticeStrip } from '@/components/dashboard/notice-strip';
@@ -17,19 +18,20 @@ import { Button } from '@/components/ui/button';
 import type { GuildChannel } from '@/lib/api/types';
 import { links } from '@/lib/constants';
 import { useActivationPoll } from '@/lib/use-activation-poll';
+import { channelLabel } from '@/lib/utils';
 
 /**
- * Everything the Overview can say that is NOT about a channel. The banner stack
- * is gone: a channel problem is the status card's job, so only checkout
- * activation, legacy mode and paused-over-limit survive here — one line each,
- * except legacy mode, which carries a deadline and so gets a heading, a date and
- * a button inside the same strip geometry.
+ * Everything the Overview says outside the channel list. One line each, with
+ * two exceptions: legacy mode, which carries a deadline and so gets a heading,
+ * a date and a button inside the same strip geometry, and the misconfigured
+ * banner, which is the one filled strip — a broken channel is the only state
+ * that must be readable before the card below it is.
  *
- * Priority runs top to bottom — checkout, legacy, paused — with one reordering
- * rule: a status card in error outranks every notice, so the paused strip moves
- * BELOW it (`position="below"`). That exists so a yellow line can never push a
- * red one down the page. Legacy guilds never carry a red card, so paused is the
- * only notice the rule can move.
+ * Priority runs top to bottom — misconfigured, checkout, legacy, paused — with
+ * one reordering rule: while a channel is broken the paused strip moves BELOW
+ * the status card (`position="below"`), so a yellow line can never push a red
+ * one down the page. Legacy guilds never surface the broken banner, so paused is
+ * the only notice the rule can move.
  *
  * Off this tab the sidebar's Overview badge is the only persistent signal, kept
  * in step via the shared `useGuildAttention`.
@@ -54,11 +56,13 @@ export function GuildNotices({ position }: { position: 'above' | 'below' }) {
   const showPausedHere = showPaused && (position === 'below') === pausedBelow;
   const showCheckout = isCheckoutReturn && position === 'above';
   const showLegacy = showMigration && position === 'above';
+  const showBroken = showMisconfigured && position === 'above';
 
-  if (!showCheckout && !showLegacy && !showPausedHere) return null;
+  if (!showCheckout && !showLegacy && !showPausedHere && !showBroken) return null;
 
   return (
     <div className="space-y-3">
+      {showBroken && <MisconfiguredStrip guildId={guild.id} channels={data.channels} />}
       {showCheckout && <CheckoutStrip variant={active ? 'confirmed' : phase} />}
       {showLegacy && (
         <LegacyCard guildId={guild.id} channels={data.channels} channelLimit={data.channelLimit} />
@@ -67,6 +71,55 @@ export function GuildNotices({ position }: { position: 'above' | 'below' }) {
         <PausedStrip guildId={guild.id} pausedCount={pausedCount} onDismiss={dismissPaused} />
       )}
     </div>
+  );
+}
+
+/**
+ * The one filled strip. A channel the bot cannot publish in is the only failure
+ * the admin has to act on in Discord rather than here, so it names the channel
+ * and opens the permission steps directly. With one channel broken "Fix now"
+ * triggers that channel's dialog; past one the channels tab is the only place
+ * that can show them all, so it links there instead.
+ */
+function MisconfiguredStrip({ guildId, channels }: { guildId: string; channels: GuildChannel[] }) {
+  const broken = channels.filter(c => c.enabled && c.canPublish === false);
+  const only = broken.length === 1 ? broken[0] : undefined;
+
+  return (
+    <NoticeStrip
+      tone="red"
+      filled
+      icon={CircleX}
+      actions={
+        only ? (
+          <ChannelFixDialog
+            channel={only}
+            trigger={
+              <button
+                type="button"
+                className="cursor-pointer whitespace-nowrap font-medium text-red-300 text-xs transition-colors hover:text-red-200"
+              >
+                Fix now &rarr;
+              </button>
+            }
+          />
+        ) : (
+          <NoticeAction href={`/dashboard/${guildId}/channels`}>Fix now &rarr;</NoticeAction>
+        )
+      }
+    >
+      {only ? (
+        <>
+          <span className="font-medium text-white">{channelLabel(only.name)}</span> is missing
+          Discord permissions and isn&apos;t publishing.
+        </>
+      ) : (
+        <>
+          <span className="font-medium text-white">{broken.length} channels</span> are missing
+          Discord permissions and aren&apos;t publishing.
+        </>
+      )}
+    </NoticeStrip>
   );
 }
 
@@ -135,7 +188,7 @@ function LegacyCard({
 
   return (
     <>
-      <section className="flex items-start gap-3.5 rounded-lg border border-slate-800 border-l-2 border-l-amber-400 bg-slate-900/50 px-3.5 py-3.5">
+      <section className="flex items-start gap-3.5 rounded-lg border border-slate-800 border-l-2 border-l-amber-400 bg-slate-900 px-3.5 py-3.5">
         <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-400" />
         <div className="min-w-42 flex-1">
           <h2 className="font-semibold text-sm text-white">This server runs in legacy mode</h2>

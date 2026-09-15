@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronDown, Crown, LayoutGrid } from 'lucide-react';
+import { Check, ChevronDown, LayoutGrid, Zap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useGuildList } from '@/components/dashboard/guild-list-context';
@@ -61,7 +61,7 @@ export function GuildSwitcher({ current, compact }: { current: DiscordGuild; com
           'group flex w-full cursor-pointer items-center gap-2.5 outline-none transition-colors',
           compact
             ? 'text-left'
-            : 'rounded-lg border border-slate-800 bg-slate-900/40 px-2.5 py-2.5 hover:border-slate-700 data-[state=open]:border-blue-500/50'
+            : 'rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-2.5 hover:border-slate-700 data-[state=open]:border-blue-500/50'
         )}
       >
         <GuildAvatar guild={current} size={26} />
@@ -99,7 +99,7 @@ export function GuildSwitcher({ current, compact }: { current: DiscordGuild; com
               <GuildAvatar guild={guild} size={22} />
               <span className="min-w-0 flex-1 truncate">{guild.name}</span>
               {guild.hasSubscription && isPublicInstance && (
-                <Crown className="size-3.5 shrink-0 text-yellow-500" />
+                <Zap className="size-3.5 shrink-0 text-yellow-500" />
               )}
               {guild.id === current.id && <Check className="size-3.5 shrink-0 text-blue-400" />}
             </Link>

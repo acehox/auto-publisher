@@ -28,7 +28,7 @@ export function BotAbsentCard({ guildId }: { guildId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-3.5 rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+      <div className="space-y-3.5 rounded-xl border border-slate-800 bg-slate-900 p-5">
         <div className="flex items-center gap-2.5">
           <span className="size-2 shrink-0 rounded-full bg-amber-400" />
           <h2 className="text-base font-semibold text-white">

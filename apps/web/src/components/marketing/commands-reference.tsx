@@ -1,4 +1,4 @@
-import { Crown } from 'lucide-react';
+import { Zap } from 'lucide-react';
 
 interface Command {
   name: string;
@@ -42,7 +42,7 @@ export function CommandsReference() {
               <code className="font-mono text-sm text-blue-300">{command.name}</code>
               {command.premium && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-300">
-                  <Crown className="h-3 w-3" />
+                  <Zap className="h-3 w-3" />
                   Premium
                 </span>
               )}

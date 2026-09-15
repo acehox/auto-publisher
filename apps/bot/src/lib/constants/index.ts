@@ -118,12 +118,12 @@ export const notes = {
   // No "every message will be published" — the proxy gate drops on Discord's
   // 10/hour/channel sublimit, so the absolute would be false on either plan.
   publishDelayFree:
-    "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium and your messages move to the front of the queue.",
+    "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium to prioritize your messages.",
   // Priority publishing, NOT "dedicated capacity": there is one publishing
   // pipeline and Premium is a queue tier within it (ADR 0011). ZZP čl. 60 st. 2
   // makes this copy a contract term, so it has to describe what actually runs.
   publishDelayPremium:
-    "Your messages are published at Premium priority — they go ahead of the free queue whenever there's a backlog.",
+    'Your messages are published at Premium priority. They go ahead of the free queue during busy periods.',
   permissionsExtendedDisable:
     "Don't keep permissions disabled for too long, as the bot will automatically disable channels that lack proper permissions for an extended period.",
 } as const;

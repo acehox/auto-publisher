@@ -17,7 +17,7 @@ import {
 import { migrateGuild } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
 import type { GuildChannel } from '@/lib/api/types';
-import { cn } from '@/lib/utils';
+import { channelLabel, cn } from '@/lib/utils';
 
 // MIGRATION: remove this component with the rest of the legacy UX at sunset.
 
@@ -108,7 +108,9 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
                     {checked && <Check className="size-3" />}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm text-slate-100">{channel.name}</span>
+                    <span className="block truncate text-sm text-slate-100">
+                      {channelLabel(channel.name)}
+                    </span>
                     {channel.canPublish === false && (
                       <span className="mt-0.5 block text-[11px] text-red-300">
                         Missing permissions — fix in Discord after this

@@ -20,6 +20,7 @@ import { Switch } from '@/components/ui/switch';
 import { disableChannel, enableChannel } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
 import type { ChannelLimitReason, GuildChannel } from '@/lib/api/types';
+import { channelLabel } from '@/lib/utils';
 
 interface ChannelConfigProps {
   guildId: string;
@@ -66,15 +67,17 @@ export function ChannelConfig({
         const channel = channels.find(c => c.channelId === channelId);
         if (result.ok) {
           if (enabled) {
-            toast.success(`${channel?.name ?? 'Channel'} is no longer publishing.`);
+            toast.success(
+              `${channel ? channelLabel(channel.name) : 'Channel'} is no longer publishing.`
+            );
           } else if (channel?.canPublish === false) {
             // Enabled, but the bot still can't publish here — point at the Fix
             // control on its row rather than claim a false "all good".
-            toast.warning(`${channel.name} is enabled but not publishing.`, {
-              description: 'Grant the missing permissions in Discord — use Fix on its row.',
+            toast.warning(`${channelLabel(channel.name)} is enabled but not publishing.`, {
+              description: 'Grant the missing permissions in Discord to fix it.',
             });
           } else {
-            toast.success(`${channel?.name ?? 'Channel'} is now publishing.`);
+            toast.success(`${channel ? channelLabel(channel.name) : 'Channel'} is now publishing.`);
           }
           router.refresh();
           return;
@@ -141,7 +144,7 @@ export function ChannelConfig({
       )}
       <Switch
         checked={on}
-        aria-label={`${on ? 'Disable' : 'Enable'} ${channel.name}`}
+        aria-label={`${on ? 'Disable' : 'Enable'} ${channelLabel(channel.name)}`}
         disabled={isPending && pendingChannelId === channel.channelId}
         onCheckedChange={() =>
           on ? handleToggleChannel(channel.channelId, true) : setGuideChannel(channel)
@@ -175,22 +178,21 @@ export function ChannelConfig({
       ) : !migrated ? (
         // MIGRATION: a read-only picture until they migrate. One note on the
         // heading rather than a repeated "legacy" tag on every row.
-        <ChannelGroup label="Channels" meta="Migration needed">
+        <ChannelGroup label="Channels" count={channels.length} meta="Migration needed">
           {channels.map(channel => (
             <ChannelRow
               key={channel.channelId}
               name={channel.name}
               tone={channel.canPublish === false ? 'red' : 'green'}
-              variant="card"
               muted
               actions={<Switch checked={channel.canPublish !== false} disabled />}
             />
           ))}
         </ChannelGroup>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {enabled.length > 0 && (
-            <ChannelGroup label="Enabled">
+            <ChannelGroup label="Enabled" count={enabled.length}>
               {enabled.map(channel => {
                 const broken = channel.canPublish === false;
                 return (
@@ -198,13 +200,11 @@ export function ChannelConfig({
                     key={channel.channelId}
                     name={channel.name}
                     tone={broken ? 'red' : 'green'}
-                    sub={broken ? 'Missing permissions' : undefined}
-                    variant="card"
                     pill={
                       channel.filters.length > 0 ? (
                         <Link
                           href={`/dashboard/${guildId}/filters?channel=${channel.channelId}`}
-                          aria-label={`Edit filters for ${channel.name}`}
+                          aria-label={`Edit filters for ${channelLabel(channel.name)}`}
                           className="whitespace-nowrap rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-[11px] text-blue-300 transition-colors hover:bg-blue-500/20"
                         >
                           {channel.filters.length} filter
@@ -225,11 +225,12 @@ export function ChannelConfig({
           )}
 
           {disabled.length > 0 && (
-            <ChannelGroup label="Disabled">
+            <ChannelGroup label="Disabled" count={disabled.length}>
               {disabled.map(channel => (
                 <ChannelRow
                   key={channel.channelId}
                   name={channel.name}
+                  muted
                   // Retained config from an over-limit pause (ADR 0009), stated
                   // only on the row it applies to.
                   sub={
@@ -237,7 +238,6 @@ export function ChannelConfig({
                       ? 'Saved setup kept — paused when the plan filled up'
                       : undefined
                   }
-                  variant="card"
                   actions={toggleFor(channel, false)}
                 />
               ))}
@@ -252,7 +252,7 @@ export function ChannelConfig({
         <ChannelLimitModal
           reason={limitHit.reason}
           guildId={guildId}
-          channelName={limitHit.name || null}
+          channelName={limitHit.name ? channelLabel(limitHit.name) : null}
           onClose={() => setLimitHit(null)}
         />
       )}
@@ -268,7 +268,7 @@ export function ChannelConfig({
 
       {guideChannel && (
         <ChannelEnableGuideModal
-          channelName={guideChannel.name}
+          channelName={channelLabel(guideChannel.name)}
           hasSubscription={hasSubscription}
           onConfirm={confirmEnableFromGuide}
           onCancel={() => setGuideChannel(null)}

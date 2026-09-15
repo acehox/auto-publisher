@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Crown } from 'lucide-react';
+import { ArrowRight, Check, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -50,7 +50,7 @@ export function PricingPlans({ trialOffered }: { trialOffered: boolean }) {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <Crown className="w-5 h-5 text-yellow-500" />
+                  <Zap className="w-5 h-5 text-yellow-500" />
                   <h3 className="text-white text-xl font-semibold">Annual</h3>
                 </div>
                 <span className="text-xs font-semibold bg-green-500/20 text-green-400 px-2.5 py-1 rounded-full">

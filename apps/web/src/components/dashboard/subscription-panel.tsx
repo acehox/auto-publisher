@@ -90,7 +90,7 @@ export function SubscriptionPanel({ guildId, guildName, subscription }: Subscrip
 /** Shared card chrome: the blue→purple hairline is the Premium marker. */
 function PremiumCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/40">
+    <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
       <div className="h-0.5 bg-linear-to-r from-blue-500 to-purple-500" />
       <div className="space-y-4 p-5">{children}</div>
     </div>
@@ -226,7 +226,7 @@ function BillingCard({
       {/* States the effect positively rather than denying a refund — a
           disclaimer has to raise the idea in order to rule it out. */}
       <p className="text-xs leading-relaxed text-slate-500">
-        Cancelling stops renewals at the end of the period — it isn&apos;t a refund.{' '}
+        Cancelling stops renewals at the end of the period.{' '}
         <Link href="/refunds" target="_blank" className="text-slate-400 hover:underline">
           Refunds policy
         </Link>
@@ -323,7 +323,7 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
     <div className="space-y-3.5">
       {/* The one fact on this page about THIS server rather than about the
           plans, and the reason the cap is worth paying to remove. */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/40 px-3.5 py-3">
+      <div className="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-3">
         <p className="text-xs text-slate-300">
           {migrated
             ? `${enabled} of ${limit} channels used`

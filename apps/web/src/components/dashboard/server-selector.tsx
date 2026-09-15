@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, Crown, ServerOff } from 'lucide-react';
+import { ChevronRight, ServerOff, Zap } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -29,7 +29,7 @@ function sortGuilds(guilds: DiscordGuild[]): DiscordGuild[] {
  * recognises it by its icon, not by a status line — so no groups, no channel
  * counts, no per-row buttons. Servers without the bot are dimmed and
  * chevron-less and lead to the Discord invite; the only qualifiers on a name are
- * a gold crown for Premium and an amber Legacy tag with a matching left edge.
+ * a gold Zap for Premium and an amber Legacy tag with a matching left edge.
  *
  * No tabs and no switcher here: there is no server in scope yet.
  */
@@ -120,7 +120,7 @@ export function ServerSelector() {
                     ? 'border-slate-800/60 border-l-slate-800/60 hover:border-slate-700'
                     : legacy
                       ? 'border-amber-500/25 border-l-amber-400 bg-amber-500/5 hover:border-amber-500/40'
-                      : 'border-slate-800 border-l-slate-800 bg-slate-900/40 hover:border-blue-500/40'
+                      : 'border-slate-800 border-l-slate-800 bg-slate-900 hover:border-blue-500/40'
                 )}
               >
                 <div
@@ -159,7 +159,7 @@ export function ServerSelector() {
                 </span>
 
                 {guild.hasSubscription && isPublicInstance && (
-                  <Crown className="size-4 shrink-0 text-yellow-500" />
+                  <Zap className="size-4 shrink-0 text-yellow-500" />
                 )}
                 {legacy && (
                   <span className="shrink-0 rounded border border-amber-500/45 bg-amber-500/10 px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider text-amber-400">

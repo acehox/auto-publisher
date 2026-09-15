@@ -31,7 +31,7 @@ export function GuildErrorCard({
   const isPending = isPendingProp ?? isPendingInternal;
 
   return (
-    <div className="max-w-110 space-y-3 rounded-xl border border-slate-800 bg-slate-900/40 p-5">
+    <div className="max-w-110 space-y-3 rounded-xl border border-slate-800 bg-slate-900 p-5">
       <p className="font-semibold text-sm text-white">{title}</p>
       {description && <p className="text-xs leading-relaxed text-slate-400">{description}</p>}
       <Button
