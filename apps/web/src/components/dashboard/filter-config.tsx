@@ -1,12 +1,13 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, Filter as FilterIcon, Loader2, Plus } from 'lucide-react';
+import { Filter as FilterIcon, Loader2, Plus, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { ConditionRow } from '@/components/dashboard/condition-row';
 import { EmptyState } from '@/components/dashboard/empty-state';
+import { FilterChannelSelect } from '@/components/dashboard/filter-channel-select';
 import {
   DEFAULT_MATCH_MODE,
   filterValueError,
@@ -18,7 +19,8 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { getGuildRoles, setChannelFilters } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
 import type { FilterInput, FilterMatchMode, GuildChannel, GuildRole } from '@/lib/api/types';
-import { channelLabel, cn } from '@/lib/utils';
+import { useUnsavedChangesWarning } from '@/lib/use-unsaved-changes';
+import { cn } from '@/lib/utils';
 
 interface FilterManagerProps {
   guildId: string;
@@ -43,9 +45,12 @@ function serializeRule(matchMode: FilterMatchMode, conditions: FilterInput[]): s
 }
 
 /**
- * List-and-detail, not an accordion: enabled channels are a list, a rule is a
- * page. Desktop shows both; mobile drills in and back, which is what lets a
- * condition have the full width instead of four controls squeezed onto one line.
+ * One rule at a time, chosen by a channel select. The channel rides the URL as
+ * `?channel=<id>` rather than a route segment: it selects a view inside one
+ * tool, not a separate resource, and the Channels tab already deep-links that
+ * shape. The write goes through `history.replaceState` — Next's supported
+ * shallow update — so switching costs no navigation, no RSC fetch, and no back
+ * entry, leaving Back meaning "leave Filters".
  */
 export function FilterManager({ guildId, channels }: FilterManagerProps) {
   const [roles, setRoles] = useState<GuildRole[]>([]);
@@ -67,22 +72,26 @@ export function FilterManager({ guildId, channels }: FilterManagerProps) {
 
   const enabledChannels = channels.filter(channel => channel.enabled);
 
-  // Deep link: the Channels tab's filter pill arrives with ?channel=<id>, which
-  // selects that channel — on mobile that means opening its rule directly.
   const searchParams = useSearchParams();
   const requested = searchParams.get('channel');
-  const deepLinked =
-    requested && enabledChannels.some(c => c.channelId === requested) ? requested : null;
-
-  const [selectedId, setSelectedId] = useState<string | null>(
-    () => deepLinked ?? enabledChannels[0]?.channelId ?? null
+  const [selectedId, setSelectedId] = useState<string | null>(() =>
+    requested && enabledChannels.some(c => c.channelId === requested)
+      ? requested
+      : (enabledChannels[0]?.channelId ?? null)
   );
-  // Mobile is one pane at a time; a deep link lands straight on the rule.
-  const [mobileDetail, setMobileDetail] = useState(deepLinked !== null);
-
   const selected = enabledChannels.find(c => c.channelId === selectedId) ?? enabledChannels[0];
 
-  if (enabledChannels.length === 0) {
+  // The URL always names the channel on screen, including the default one, so
+  // the address bar is shareable without the user having touched the select.
+  useEffect(() => {
+    if (!selected) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('channel') === selected.channelId) return;
+    params.set('channel', selected.channelId);
+    window.history.replaceState(null, '', `${window.location.pathname}?${params}`);
+  }, [selected]);
+
+  if (enabledChannels.length === 0 || !selected) {
     return (
       <EmptyState
         icon={FilterIcon}
@@ -99,68 +108,20 @@ export function FilterManager({ guildId, channels }: FilterManagerProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-      <div className={cn('lg:w-59 lg:shrink-0', mobileDetail && 'hidden lg:block')}>
-        <p className="px-0.5 pb-2 text-[11px] uppercase tracking-wider text-slate-400">
-          Enabled channels
-        </p>
-        <div className="space-y-1.5">
-          {enabledChannels.map(channel => {
-            const active = channel.channelId === selected?.channelId;
-            const count = channel.filters.length;
-            return (
-              <button
-                key={channel.channelId}
-                type="button"
-                onClick={() => {
-                  setSelectedId(channel.channelId);
-                  setMobileDetail(true);
-                }}
-                className={cn(
-                  'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors',
-                  active
-                    ? 'border-blue-500/40 bg-blue-500/10'
-                    : 'border-slate-800 bg-slate-900 hover:border-slate-700'
-                )}
-              >
-                <span className="min-w-0 flex-1 truncate text-sm text-slate-100">
-                  {channelLabel(channel.name)}
-                </span>
-                <span className="whitespace-nowrap text-xs text-slate-400">
-                  {count > 0 ? `${count} condition${count !== 1 ? 's' : ''}` : 'Publishes all'}
-                </span>
-                <ChevronRight className="size-3.5 shrink-0 text-slate-600 lg:hidden" />
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {selected && (
-        <div className={cn('min-w-0 flex-1 space-y-3', !mobileDetail && 'hidden lg:block')}>
-          <div className="flex items-center gap-2.5 lg:hidden">
-            <button
-              type="button"
-              onClick={() => setMobileDetail(false)}
-              className="flex cursor-pointer items-center gap-1 text-xs text-blue-400"
-            >
-              <ChevronLeft className="size-3.5" />
-              Channels
-            </button>
-            <span className="min-w-0 truncate font-semibold text-sm text-white">
-              {channelLabel(selected.name)}
-            </span>
-          </div>
-          <ChannelRuleEditor
-            key={selected.channelId}
-            guildId={guildId}
-            channel={selected}
-            roles={roles}
-            rolesById={rolesById}
-          />
-        </div>
-      )}
-    </div>
+    <ChannelRuleEditor
+      key={selected.channelId}
+      guildId={guildId}
+      channel={selected}
+      roles={roles}
+      rolesById={rolesById}
+      selector={
+        <FilterChannelSelect
+          channels={enabledChannels}
+          selected={selected}
+          onSelect={setSelectedId}
+        />
+      }
+    />
   );
 }
 
@@ -169,17 +130,23 @@ export function FilterManager({ guildId, channels }: FilterManagerProps) {
  * demand via explicit Save (no autosave). Local state is the source of truth so
  * a background refresh never clobbers an edit; `baseline` holds the last-saved
  * rule, powering Revert and dirty detection.
+ *
+ * A real `<form>`, so Save is a submit and the browser's own semantics apply.
+ * The channel select heads the form and the actions close it, both outside the
+ * card; the action row is sticky because a rule can run to 50 conditions.
  */
 function ChannelRuleEditor({
   guildId,
   channel,
   roles,
   rolesById,
+  selector,
 }: {
   guildId: string;
   channel: GuildChannel;
   roles: GuildRole[];
   rolesById: Record<string, GuildRole>;
+  selector: ReactNode;
 }) {
   const router = useRouter();
   const { filtersPerChannel } = useSiteConfig();
@@ -208,6 +175,8 @@ function ChannelRuleEditor({
   const invalidCount = countValues(conditions) - countValues(cleaned);
   const dirty =
     serializeRule(matchMode, populated) !== serializeRule(baseline.matchMode, baseline.conditions);
+
+  useUnsavedChangesWarning(dirty);
 
   const save = async () => {
     setSaving(true);
@@ -251,24 +220,31 @@ function ChannelRuleEditor({
   };
 
   return (
-    <div className="space-y-3">
+    <form
+      onSubmit={event => {
+        event.preventDefault();
+        if (dirty && !saving) void save();
+      }}
+      className="space-y-4"
+    >
+      <div className="max-w-sm">{selector}</div>
+
       <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
         {/* The sentence framing is what makes the feature self-explanatory. */}
         <div className="flex flex-wrap items-center gap-2 border-slate-800/70 border-b px-4 py-3.5">
-          <span className="text-sm text-slate-200">Publish a message when</span>
+          <span className="text-sm text-slate-200">Messages will be published when</span>
           <SegmentedControl
             options={MATCH_MODE_OPTIONS}
             value={matchMode}
             onChange={setMatchMode}
             size="sm"
           />
-          <span className="text-sm text-slate-200">of these match</span>
+          <span className="text-sm text-slate-200">of these conditions match:</span>
         </div>
 
         {conditions.length === 0 ? (
-          <p className="px-4 py-4 text-xs text-slate-500">
-            No conditions — every message in {channelLabel(channel.name)} publishes. Add one to
-            narrow it.
+          <p className="px-4 py-4 text-sm text-slate-500">
+            No conditions, add one to start filtering.
           </p>
         ) : (
           conditions.map((condition, index) => (
@@ -288,26 +264,26 @@ function ChannelRuleEditor({
           ))
         )}
 
-        <div className="px-4 py-3">
+        <div className="border-slate-800/70 border-t px-4 py-3">
           <button
             type="button"
             onClick={addCondition}
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-700 border-dashed px-3 py-1.5 text-xs text-slate-300 transition-colors hover:border-slate-600 hover:text-white"
+            className="inline-flex cursor-pointer items-center gap-1.5 text-sm text-blue-400 transition-colors hover:text-blue-300"
           >
-            <Plus className="size-3.5" />
+            <Plus className="size-4" />
             Add condition
           </button>
         </div>
       </div>
 
-      {/* Sticky so Save is reachable from anywhere in a long rule; inert until dirty. */}
-      <div className="sticky bottom-22 z-10 flex flex-wrap items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/85 px-3.5 py-3 backdrop-blur-sm md:bottom-4">
-        <span
-          className={cn('min-w-32 flex-1 text-xs', dirty ? 'text-amber-400' : 'text-slate-500')}
-        >
+      {/* Sticky so Save stays in reach through a 50-condition rule; the mobile
+          offset clears the fixed bottom tab bar. */}
+      <div className="sticky bottom-22 z-20 flex flex-wrap items-center justify-end gap-3 rounded-xl border border-slate-800 bg-slate-950/85 px-3.5 py-3 backdrop-blur-sm md:bottom-4">
+        <p className={cn('text-xs', dirty ? 'text-slate-200' : 'text-slate-500')}>
           {dirty ? 'Unsaved changes' : 'All changes saved'}
-        </span>
+        </p>
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={() => {
@@ -317,13 +293,14 @@ function ChannelRuleEditor({
           disabled={!dirty || saving}
           className="text-slate-400 hover:text-white"
         >
+          <RotateCcw />
           Revert
         </Button>
-        <Button size="sm" onClick={save} disabled={!dirty || saving}>
-          {saving && <Loader2 className="size-4 animate-spin" />}
-          Save changes
+        <Button type="submit" size="sm" disabled={!dirty || saving}>
+          {saving ? <Loader2 className="animate-spin" /> : <Save />}
+          Save
         </Button>
       </div>
-    </div>
+    </form>
   );
 }

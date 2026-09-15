@@ -111,7 +111,7 @@ const conditionLine = (filter: Filter, position: number, roleIds: ReadonlySet<Sn
 /** Mirrors the dashboard's rule sentence (`filter-config.tsx`). */
 const leadLine = (state: PanelState): string => {
   if (state.filters.length === 0) {
-    return 'No conditions — every message in this channel publishes. Add one to filter.';
+    return 'No conditions, add one to start filtering.';
   }
   if (state.filters.length === 1) {
     return 'Messages will be published when this condition matches:';
