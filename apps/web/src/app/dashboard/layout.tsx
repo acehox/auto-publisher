@@ -3,6 +3,8 @@ import { Suspense } from 'react';
 import { AuthRedirect } from '@/components/auth/auth-redirect';
 import { DashboardLoadingSkeleton } from '@/components/dashboard/dashboard-loading';
 import { GuildListProvider } from '@/components/dashboard/guild-list-context';
+import { Navbar } from '@/components/layout/navbar';
+import { SiteShell } from '@/components/layout/site-shell';
 import { getUserGuilds } from '@/lib/api/actions';
 import { AuthExpiredError } from '@/lib/api/backend';
 import type { DiscordGuild } from '@/lib/api/types';
@@ -29,13 +31,19 @@ export default async function DashboardLayout({
   const session = await auth();
 
   if (!session?.user) {
-    return <AuthRedirect callbackUrl="/dashboard" />;
+    return (
+      <SiteShell nav={<Navbar />}>
+        <AuthRedirect callbackUrl="/dashboard" />
+      </SiteShell>
+    );
   }
 
   return (
-    <Suspense fallback={<DashboardLoadingSkeleton />}>
-      <GuildListLoader>{children}</GuildListLoader>
-    </Suspense>
+    <SiteShell nav={<Navbar variant="dashboard" />}>
+      <Suspense fallback={<DashboardLoadingSkeleton />}>
+        <GuildListLoader>{children}</GuildListLoader>
+      </Suspense>
+    </SiteShell>
   );
 }
 

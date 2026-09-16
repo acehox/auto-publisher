@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 import { AuthRedirect } from '@/components/auth/auth-redirect';
+import { Navbar } from '@/components/layout/navbar';
+import { SiteShell } from '@/components/layout/site-shell';
 import { auth } from '@/lib/auth';
 
 export default async function LoginPage() {
@@ -9,5 +11,9 @@ export default async function LoginPage() {
     redirect('/dashboard');
   }
 
-  return <AuthRedirect callbackUrl="/dashboard" />;
+  return (
+    <SiteShell nav={<Navbar />}>
+      <AuthRedirect callbackUrl="/dashboard" />
+    </SiteShell>
+  );
 }

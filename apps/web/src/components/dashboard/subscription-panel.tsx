@@ -199,9 +199,7 @@ function BillingCard({
           <div className="flex flex-wrap items-center gap-3">
             <Button asChild variant={pastDue ? 'default' : 'secondary'}>
               <a href={detail.portalUrl} target="_blank" rel="noopener noreferrer">
-                {/* portalUrl is the subscription-scoped payment-method deep link,
-                    so this label is literal, not a euphemism, when past due. */}
-                {pastDue ? 'Update payment method' : 'Manage subscription'}
+                Update payment method
                 <ExternalLink className="size-3" />
               </a>
             </Button>

@@ -6,11 +6,11 @@
 const PUBLISH_PERMISSIONS = ['View Channel', 'Send Messages', 'Manage Messages'];
 
 const STEPS = [
-  'Open your Discord server.',
+  'Open your Discord server',
   'Select the channel → Edit Channel',
-  'Open Permissions tab.',
+  'Open Permissions tab',
   'Add Auto Publisher role and grant all three permissions:',
-  'Save. Publishing starts on the next message.',
+  'Save. Publishing starts on the next message',
 ];
 
 /**

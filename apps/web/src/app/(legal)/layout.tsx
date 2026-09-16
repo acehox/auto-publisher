@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { StaticNavbar } from '@/components/layout/navbar-static';
+import { SiteShell } from '@/components/layout/site-shell';
 import { legalDocuments } from '@/lib/legal/documents';
 
 /**
@@ -14,21 +16,22 @@ export default function LegalLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
-      <nav aria-label="Legal documents" className="mb-12 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-        {legalDocuments.map(document => (
-          <Link
-            key={document.href}
-            href={document.href}
-            className="text-slate-400 hover:text-blue-400 transition-colors"
-          >
-            {document.label}
-          </Link>
-        ))}
-      </nav>
+    <SiteShell nav={<StaticNavbar />}>
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
+        <nav aria-label="Legal documents" className="mb-12 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          {legalDocuments.map(document => (
+            <Link
+              key={document.href}
+              href={document.href}
+              className="text-slate-400 hover:text-blue-400 transition-colors"
+            >
+              {document.label}
+            </Link>
+          ))}
+        </nav>
 
-      <article
-        className="prose prose-invert prose-slate max-w-none
+        <article
+          className="prose prose-invert prose-slate max-w-none
           prose-headings:text-white prose-headings:font-semibold
           prose-h1:text-3xl prose-h1:sm:text-4xl prose-h1:mb-4
           prose-h2:mt-12 prose-h2:text-xl prose-h2:sm:text-2xl
@@ -39,9 +42,10 @@ export default function LegalLayout({
           prose-table:text-slate-300 prose-th:text-white
           prose-code:text-blue-300 prose-code:before:content-none prose-code:after:content-none
           prose-hr:border-slate-800"
-      >
-        {children}
-      </article>
-    </section>
+        >
+          {children}
+        </article>
+      </section>
+    </SiteShell>
   );
 }

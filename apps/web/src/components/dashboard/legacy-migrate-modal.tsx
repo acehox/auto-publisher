@@ -113,7 +113,7 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
                     </span>
                     {channel.canPublish === false && (
                       <span className="mt-0.5 block text-[11px] text-red-300">
-                        Missing permissions — fix in Discord after this
+                        Missing permissions
                       </span>
                     )}
                   </span>

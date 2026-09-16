@@ -1,5 +1,7 @@
 import { isPublicInstance } from '@ap/config';
 import { notFound } from 'next/navigation';
+import { Navbar } from '@/components/layout/navbar';
+import { SiteShell } from '@/components/layout/site-shell';
 
 /**
  * Checkout is a hosted-service surface: a self-hosted instance has no billing,
@@ -22,5 +24,5 @@ export default function CheckoutLayout({
 }>) {
   if (!isPublicInstance) notFound();
 
-  return children;
+  return <SiteShell nav={<Navbar />}>{children}</SiteShell>;
 }
