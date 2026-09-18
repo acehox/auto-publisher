@@ -2,12 +2,13 @@
 
 import { CircleX, Loader2, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useState, useTransition } from 'react';
 import { ChannelFixDialog } from '@/components/dashboard/channel-fix';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { NoticeAction, NoticeStrip } from '@/components/dashboard/notice-strip';
+import { PremiumWelcomeModal } from '@/components/dashboard/premium-welcome-modal';
 import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
 import {
   useIsPublicInstance,
@@ -17,7 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import type { GuildChannel } from '@/lib/api/types';
 import { links } from '@/lib/constants';
-import { useActivationPoll } from '@/lib/use-activation-poll';
+import { type ActivationPhase, useActivationPoll } from '@/lib/use-activation-poll';
 import { channelLabel } from '@/lib/utils';
 
 /**
@@ -27,17 +28,27 @@ import { channelLabel } from '@/lib/utils';
  * banner, which is the one filled strip — a broken channel is the only state
  * that must be readable before the card below it is.
  *
- * Priority runs top to bottom — misconfigured, checkout, legacy, paused — with
+ * Priority runs top to bottom — checkout, misconfigured, legacy, paused — with
  * one reordering rule: while a channel is broken the paused strip moves BELOW
  * the status card (`position="below"`), so a yellow line can never push a red
  * one down the page. Legacy guilds never surface the broken banner, so paused is
  * the only notice the rule can move.
+ *
+ * Activation outranks even a broken channel: it is the only strip that resolves
+ * on its own within a minute, and burying it under a permissions failure reads
+ * as the checkout having silently done nothing.
+ *
+ * A COMPLETED checkout is the one exception to the one-line rule: it leaves the
+ * stack entirely for `PremiumWelcomeModal`. The strip stays for the two states
+ * that are still waiting on the webhook, which are status, not reward.
  *
  * Off this tab the sidebar's Overview badge is the only persistent signal, kept
  * in step via the shared `useGuildAttention`.
  */
 export function GuildNotices({ position }: { position: 'above' | 'below' }) {
   const { guild, data } = useGuild();
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { showMigration, showPaused, pausedCount, showMisconfigured, dismissPaused } =
     useGuildAttention();
@@ -49,28 +60,56 @@ export function GuildNotices({ position }: { position: 'above' | 'below' }) {
   const isCheckoutReturn = isPublicInstance && searchParams.get('success') === 'true';
   const active = guild.hasSubscription;
   const phase = useActivationPoll(isCheckoutReturn && !active, active);
+  // Covers the gap before the param-stripping replace lands, and survives the
+  // `router.refresh()` the activation poller may still have in flight.
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+
+  const dismissWelcome = useCallback(() => {
+    setWelcomeDismissed(true);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('success');
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams]);
 
   // The status card outranks strips only when it is in error; that is the sole
   // condition that moves the paused strip below it.
   const pausedBelow = showMisconfigured;
   const showPausedHere = showPaused && (position === 'below') === pausedBelow;
-  const showCheckout = isCheckoutReturn && position === 'above';
+  const showCheckout = isCheckoutReturn && !active && position === 'above';
+  const showWelcome = isCheckoutReturn && active && !welcomeDismissed && position === 'above';
   const showLegacy = showMigration && position === 'above';
   const showBroken = showMisconfigured && position === 'above';
 
-  if (!showCheckout && !showLegacy && !showPausedHere && !showBroken) return null;
+  const strips = showCheckout || showLegacy || showPausedHere || showBroken;
+  if (!strips && !showWelcome) return null;
 
   return (
-    <div className="space-y-3">
-      {showBroken && <MisconfiguredStrip guildId={guild.id} channels={data.channels} />}
-      {showCheckout && <CheckoutStrip variant={active ? 'confirmed' : phase} />}
-      {showLegacy && (
-        <LegacyCard guildId={guild.id} channels={data.channels} channelLimit={data.channelLimit} />
+    <>
+      {showWelcome && (
+        <PremiumWelcomeModal
+          guildName={guild.name}
+          trialing={data.subscription?.status === 'trialing'}
+          onClose={dismissWelcome}
+        />
       )}
-      {showPausedHere && (
-        <PausedStrip guildId={guild.id} pausedCount={pausedCount} onDismiss={dismissPaused} />
+      {strips && (
+        <div className="space-y-3">
+          {showCheckout && <CheckoutStrip variant={phase} />}
+          {showBroken && <MisconfiguredStrip guildId={guild.id} channels={data.channels} />}
+          {showLegacy && (
+            <LegacyCard
+              guildId={guild.id}
+              channels={data.channels}
+              channelLimit={data.channelLimit}
+            />
+          )}
+          {showPausedHere && (
+            <PausedStrip guildId={guild.id} pausedCount={pausedCount} onDismiss={dismissPaused} />
+          )}
+        </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -124,21 +163,15 @@ function MisconfiguredStrip({ guildId, channels }: { guildId: string; channels: 
 }
 
 /**
- * Post-checkout activation, at most once per checkout and never counted by the
- * attention badge — it is self-resolving. None of the three may claim a payment
- * was taken: a trial checkout completes at $0.00.
+ * Post-checkout activation WHILE the webhook is still outstanding — the success
+ * state left for `PremiumWelcomeModal`. Never counted by the attention badge; it
+ * is self-resolving. Neither variant may claim a payment was taken: a trial
+ * checkout completes at $0.00.
  */
-function CheckoutStrip({ variant }: { variant: 'activating' | 'gaveUp' | 'confirmed' }) {
+function CheckoutStrip({ variant }: { variant: ActivationPhase }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  if (variant === 'confirmed') {
-    return (
-      <NoticeStrip tone="green">
-        Premium is active. Unlimited channels and filters are unlocked.
-      </NoticeStrip>
-    );
-  }
   if (variant === 'activating') {
     return (
       <NoticeStrip tone="blue" icon={Loader2} spin>
