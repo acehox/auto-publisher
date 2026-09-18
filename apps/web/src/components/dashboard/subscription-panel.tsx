@@ -1,10 +1,9 @@
 'use client';
 
-import { Check, Clock, ExternalLink, Loader2, Zap } from 'lucide-react';
+import { AlertTriangle, Check, Clock, ExternalLink, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
-import { toast } from 'sonner';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { NoticeStrip } from '@/components/dashboard/notice-strip';
@@ -281,6 +280,7 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
   const [migrateOpen, setMigrateOpen] = useState(false);
   // Unticked by default and never pre-ticked: a pre-ticked box is not acceptance.
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsError, setTermsError] = useState(false);
   // Preselect the interval picked on /premium (?upgrade=month|year, forwarded by
   // the server selector); default yearly, matching the "from $4.17/mo" framing.
   const [billingInterval, setBillingInterval] = useState<BillingInterval>(
@@ -302,14 +302,10 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
       return;
     }
     if (!acceptedTerms) {
-      // A toast, not inline text: inline grew the card and pushed the CTA down
-      // under the cursor mid-click. Fixed id so repeats replace one toast.
-      toast.warning('Accept the terms to continue', {
-        id: 'accept-terms',
-        description: 'Check the box to agree to the Terms and the Refunds & Withdrawal policy.',
-      });
+      setTermsError(true);
       return;
     }
+    setTermsError(false);
     setError(false);
     startTransition(async () => {
       try {
@@ -444,7 +440,10 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
               <Checkbox
                 id="accept-terms"
                 checked={acceptedTerms}
-                onCheckedChange={checked => setAcceptedTerms(checked === true)}
+                onCheckedChange={checked => {
+                  setAcceptedTerms(checked === true);
+                  if (checked === true) setTermsError(false);
+                }}
                 className="mt-0.5"
               />
               <label
@@ -482,6 +481,12 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
         )}
 
         <div className="space-y-2">
+          {termsError && (
+            <p className="flex items-center justify-center gap-1.5 text-center text-xs text-red-400">
+              <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
+              Please agree to the terms before continuing.
+            </p>
+          )}
           <Button
             className="w-full"
             size="lg"
