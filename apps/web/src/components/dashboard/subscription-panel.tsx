@@ -202,19 +202,14 @@ function BillingCard({
                 <ExternalLink className="size-3" />
               </a>
             </Button>
-            {/* Deliberately not the primary action, and deliberately NOT labelled
-                as a withdrawal: it ends the renewal at period close and refunds
-                nothing. Hidden once a cancellation is scheduled — Paddle's deep
-                link degrades to an account overview there, so the button would
-                stop doing what it says. */}
-            {detail.cancelUrl && !cancelScheduled && (
+            {detail.cancelUrl && (
               <a
                 href={detail.cancelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm text-slate-400 transition-colors hover:text-slate-200"
               >
-                Cancel subscription
+                {!cancelScheduled ? 'Cancel subscription' : "Don't cancel"}
               </a>
             )}
           </div>
