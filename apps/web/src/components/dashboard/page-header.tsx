@@ -20,7 +20,7 @@ export function PageHeader({
         <h1 className="text-lg font-semibold tracking-tight text-white sm:text-xl">{title}</h1>
         {meta && <p className="mt-1 text-xs text-slate-500">{meta}</p>}
       </div>
-      {aside && <div className="pt-1.5 font-mono text-xs text-slate-400">{aside}</div>}
+      {aside && <div className="pt-1.5 text-xs text-slate-400">{aside}</div>}
     </div>
   );
 }
