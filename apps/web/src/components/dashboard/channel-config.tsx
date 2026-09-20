@@ -4,7 +4,9 @@ import { Loader2, Megaphone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { ChannelDisableFiltersModal } from '@/components/dashboard/channel-disable-confirm';
 import { ChannelEnableGuideModal } from '@/components/dashboard/channel-enable-guide';
+import { ChannelFiltersPremiumModal } from '@/components/dashboard/channel-filters-premium';
 import { ChannelFixButton } from '@/components/dashboard/channel-fix';
 import { ChannelGroup } from '@/components/dashboard/channel-group';
 import { ChannelLimitModal } from '@/components/dashboard/channel-limit-upsell';
@@ -18,7 +20,6 @@ import { HowPublishingWorks } from '@/components/dashboard/how-publishing-works'
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { NoticeAction, NoticeStrip } from '@/components/dashboard/notice-strip';
 import { PageHeader } from '@/components/dashboard/page-header';
-import { useIsPublicInstance } from '@/components/site-config-context';
 import { Switch } from '@/components/ui/switch';
 import { disableChannel, enableChannel } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
@@ -48,7 +49,6 @@ export function ChannelConfig({
   migrated,
 }: ChannelConfigProps) {
   const router = useRouter();
-  const isPublicInstance = useIsPublicInstance();
   const [isPending, startTransition] = useTransition();
   const [pendingChannelId, setPendingChannelId] = useState<string | null>(null);
   // Label, not name: the modal says which setup was kept, and a hidden channel
@@ -58,17 +58,31 @@ export function ChannelConfig({
     label: string | null;
   } | null>(null);
   // Channel awaiting the enable guide acknowledgment (null = no guide open).
-  const [guideChannel, setGuideChannel] = useState<GuildChannel | null>(null);
+  // Carries the filter consent so the guide stays the last step before the write.
+  const [guideChannel, setGuideChannel] = useState<{
+    channel: GuildChannel;
+    clearFilters: boolean;
+  } | null>(null);
+  const [filtersBlocked, setFiltersBlocked] = useState<GuildChannel | null>(null);
+  // Disabling deletes the row, rule included — the warning `/ap disable` has
+  // always shown.
+  const [disableChannelWithFilters, setDisableChannelWithFilters] = useState<GuildChannel | null>(
+    null
+  );
   // MIGRATION: removed at sunset with the legacy strip.
   const [migrateOpen, setMigrateOpen] = useState(false);
 
-  const handleToggleChannel = (channelId: string, enabled: boolean) => {
+  const handleToggleChannel = (
+    channelId: string,
+    enabled: boolean,
+    options: { clearFilters?: boolean } = {}
+  ) => {
     setPendingChannelId(channelId);
     startTransition(async () => {
       try {
         const result = enabled
           ? await disableChannel(guildId, channelId)
-          : await enableChannel(guildId, channelId);
+          : await enableChannel(guildId, channelId, options);
         const channel = channels.find(c => c.channelId === channelId);
         if (result.ok) {
           if (enabled) {
@@ -111,6 +125,13 @@ export function ChannelConfig({
           router.refresh();
           return;
         }
+        // Like the branch above, must precede the cap fallback, which treats
+        // any 400 as a limit hit.
+        if (result.code === 'FILTERS_PREMIUM') {
+          if (channel) setFiltersBlocked(channel);
+          else toast.error('That channel keeps filters that only run on Premium.');
+          return;
+        }
         // Cap hit. Scoped to 400 — every other status is handled above, and a
         // 5xx rendered as an upsell is the bug this guard prevents.
         if (result.status === 400) {
@@ -130,17 +151,26 @@ export function ChannelConfig({
   // Enabling always passes through the guide: permissions are a prerequisite,
   // not an afterthought. Aborting leaves the channel disabled.
   const confirmEnableFromGuide = () => {
-    const channel = guideChannel;
+    const pending = guideChannel;
     setGuideChannel(null);
-    if (channel) handleToggleChannel(channel.channelId, false);
+    if (pending) {
+      handleToggleChannel(pending.channel.channelId, false, {
+        clearFilters: pending.clearFilters,
+      });
+    }
+  };
+
+  // `channelLimit !== 0` IS the free plan (`Plans.channelLimit` returns 0 only
+  // for Premium). Asked before the guide so a free guild is not walked through
+  // permissions for a channel the backend will refuse; the FILTERS_PREMIUM
+  // branch above stays the authority for a stale list.
+  const requestEnable = (channel: GuildChannel) => {
+    if (channelLimit !== 0 && channel.filters.length > 0) return setFiltersBlocked(channel);
+    setGuideChannel({ channel, clearFilters: false });
   };
 
   const enabled = channels.filter(c => c.enabled);
   const disabled = channels.filter(c => !c.enabled);
-  // MIGRATION: a legacy guild has no allowlist, so it has no count to cap —
-  // stating a limit it isn't subject to is worse than stating nothing.
-  const capped =
-    migrated && channels.length > 0 && isPublicInstance && !hasSubscription && channelLimit !== 0;
 
   const toggleFor = (channel: GuildChannel, on: boolean) => (
     <div className="flex shrink-0 items-center gap-2">
@@ -151,18 +181,28 @@ export function ChannelConfig({
         checked={on}
         aria-label={`${on ? 'Disable' : 'Enable'} ${channelLabel(channel.name)}`}
         disabled={isPending && pendingChannelId === channel.channelId}
-        onCheckedChange={() =>
-          on ? handleToggleChannel(channel.channelId, true) : setGuideChannel(channel)
-        }
+        onCheckedChange={() => {
+          if (!on) return requestEnable(channel);
+          if (channel.filters.length > 0) return setDisableChannelWithFilters(channel);
+          handleToggleChannel(channel.channelId, true);
+        }}
       />
     </div>
   );
+
+  // Stated by cause: `hasSavedSetup` is merely "paused", so keying the filter
+  // copy off it told a channel paused purely for the cap that it held a rule.
+  const pausedSub = (channel: GuildChannel): string | undefined => {
+    if (!channel.hasSavedSetup) return undefined;
+    const n = channel.filters.length;
+    if (n > 0) return `${n} filter${n === 1 ? '' : 's'} saved for Premium`;
+    return channelLimit === 0 ? 'Paused' : `Paused. The Free plan publishes ${channelLimit}.`;
+  };
 
   return (
     <div className="space-y-4">
       <PageHeader
         title="Channels"
-        aside={capped ? `Plan limit: ${enabled.length} of ${channelLimit}` : undefined}
       />
 
       {/* MIGRATION: removed at sunset, along with the read-only branch below. */}
@@ -221,8 +261,12 @@ export function ChannelConfig({
                           channel={channel}
                           icon
                           // Reuses the disable path for its toast, refresh and
-                          // dead-token handling.
-                          onRemove={() => handleToggleChannel(channel.channelId, true)}
+                          // dead-token handling, confirm included.
+                          onRemove={() =>
+                            channel.filters.length > 0
+                              ? setDisableChannelWithFilters(channel)
+                              : handleToggleChannel(channel.channelId, true)
+                          }
                         />
                         {toggleFor(channel, true)}
                       </>
@@ -240,9 +284,7 @@ export function ChannelConfig({
                   key={channel.channelId}
                   name={channel.name}
                   muted
-                  // Retained config from an over-limit pause (ADR 0009), stated
-                  // only on the row it applies to.
-                  sub={channel.hasSavedSetup ? 'Filters retained from Premium plan' : undefined}
+                  sub={pausedSub(channel)}
                   actions={toggleFor(channel, false)}
                 />
               ))}
@@ -271,9 +313,36 @@ export function ChannelConfig({
         />
       )}
 
+      {filtersBlocked && (
+        <ChannelFiltersPremiumModal
+          guildId={guildId}
+          channelName={filtersBlocked.name ? channelLabel(filtersBlocked.name) : null}
+          filterCount={filtersBlocked.filters.length}
+          onClear={() => {
+            const channel = filtersBlocked;
+            setFiltersBlocked(null);
+            setGuideChannel({ channel, clearFilters: true });
+          }}
+          onClose={() => setFiltersBlocked(null)}
+        />
+      )}
+
+      {disableChannelWithFilters && (
+        <ChannelDisableFiltersModal
+          channelName={channelLabel(disableChannelWithFilters.name)}
+          filterCount={disableChannelWithFilters.filters.length}
+          onConfirm={() => {
+            const channel = disableChannelWithFilters;
+            setDisableChannelWithFilters(null);
+            handleToggleChannel(channel.channelId, true);
+          }}
+          onCancel={() => setDisableChannelWithFilters(null)}
+        />
+      )}
+
       {guideChannel && (
         <ChannelEnableGuideModal
-          channelName={channelLabel(guideChannel.name)}
+          channelName={channelLabel(guideChannel.channel.name)}
           hasSubscription={hasSubscription}
           onConfirm={confirmEnableFromGuide}
           onCancel={() => setGuideChannel(null)}

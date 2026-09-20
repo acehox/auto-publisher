@@ -18,6 +18,8 @@ export const ChannelEnableReqSchema = z.object({
   }),
   body: z.object({
     guildId: Validations.snowflakeId,
+    // Without it the service rejects a filtered unpause with FILTERS_PREMIUM.
+    clearFilters: z.boolean().optional(),
   }),
 });
 
@@ -72,6 +74,20 @@ export const GuildChannelReqSchema = z.object({
     guildId: Validations.snowflakeId,
     channelId: Validations.snowflakeId,
   }),
+});
+
+/** Same consent flag as the bot's `/ap enable`. */
+export const GuildChannelEnableReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+    channelId: Validations.snowflakeId,
+  }),
+  body: z
+    .object({
+      clearFilters: z.boolean().optional(),
+    })
+    .optional()
+    .default({}),
 });
 
 // MIGRATION: Remove after migration period (6 months)

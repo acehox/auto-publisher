@@ -35,15 +35,24 @@ export async function getGuildChannels(guildId: string): Promise<GuildChannel[]>
   return backendFetch<GuildChannel[]>(`/api/guild/${guildId}/channels`);
 }
 
-export async function enableChannel(guildId: string, channelId: string): Promise<MutationResult> {
+export async function enableChannel(
+  guildId: string,
+  channelId: string,
+  /** Consent to drop a retained rule the guild's plan can no longer run. */
+  options: { clearFilters?: boolean } = {}
+): Promise<MutationResult> {
   try {
     await backendFetch(`/api/guild/${guildId}/channel/${channelId}`, {
       method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options.clearFilters ? { clearFilters: true } : {}),
     });
     return { ok: true };
   } catch (error) {
+    // Not narrowed to ChannelLimitReason: this route also answers
+    // NOT_ANNOUNCEMENT_CHANNEL and FILTERS_PREMIUM.
     if (error instanceof BackendError) {
-      return { ok: false, status: error.status, code: error.code as ChannelLimitReason };
+      return { ok: false, status: error.status, code: error.code };
     }
     throw error;
   }

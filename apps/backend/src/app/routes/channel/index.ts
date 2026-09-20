@@ -44,10 +44,10 @@ export const Channel: Router = (() => {
    */
   router.put('/', validateRequest(ChannelEnableReqSchema), async (req, res) => {
     const { channelId } = req.params;
-    const { guildId } = req.body;
+    const { guildId, clearFilters } = req.body;
 
     try {
-      await Services.Channels.add(guildId, channelId);
+      await Services.Channels.add(guildId, channelId, { clearFilters });
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true },

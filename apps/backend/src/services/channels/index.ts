@@ -229,11 +229,16 @@ const assertAnnouncementChannelOfGuild = async (
 };
 
 /**
- * Add channel to channel DB & cache
+ * Add channel to channel DB & cache.
  * @param guildId ID of the guild
  * @param channelId ID of the channel
+ * @param options.clearFilters Consent to drop a retained rule; only the unpause branch reads it
  */
-const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
+const add = async (
+  guildId: Snowflake,
+  channelId: Snowflake,
+  options: { clearFilters?: boolean } = {}
+): Promise<void> => {
   // Before the cap read, so ids the caller has no claim to can't probe a
   // guild's channel count.
   await assertAnnouncementChannelOfGuild(guildId, channelId);
@@ -262,16 +267,35 @@ const add = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
         'LIMIT_FREE'
       );
     }
+
+    // The bot's hot path has no plan check — a serving channel's conditions are
+    // a Premium guild's by construction (ADR 0009) — so unpausing with filters
+    // intact hands a free guild Premium filtering, and only a guild ALSO over
+    // the count cap would ever be corrected by the nightly backstop. In the
+    // service, not the routes, so the dashboard and `/ap enable` can't diverge.
+    const retained = existing.filters ?? [];
+    const dropFilters = retained.length > 0 && !(await Plans.isPremium(guildId));
+    if (dropFilters && !options.clearFilters) {
+      throw createHttpError(
+        'Filters only run on Premium',
+        StatusCodes.BAD_REQUEST,
+        'FILTERS_PREMIUM',
+        { filterCount: retained.length }
+      );
+    }
+
     await db
       .update(channelTable)
-      .set({ pausedAt: null })
+      .set({ pausedAt: null, ...(dropFilters ? { filters: [] } : {}) })
       .where(eq(channelTable.channelId, channelId));
     await Data.Channels.Cache.set(
       channelId,
-      existing.filters ?? [],
+      dropFilters ? [] : retained,
       (existing.filterMode as FilterMatchMode) || FilterMatchMode.All
     );
-    logger.debug(`Unpaused channel ${channelId} for guild ${guildId}`);
+    logger.debug(
+      `Unpaused channel ${channelId} for guild ${guildId}${dropFilters ? ` (dropped ${retained.length} filters)` : ''}`
+    );
     return;
   }
 

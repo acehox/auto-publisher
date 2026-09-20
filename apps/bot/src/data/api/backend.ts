@@ -38,13 +38,17 @@ const lifecycleRequest = async (path: string, init: RequestInit): Promise<Respon
 };
 
 // Channels
-const addChannel = async (guildId: Snowflake, channelId: Snowflake) => {
+const addChannel = async (
+  guildId: Snowflake,
+  channelId: Snowflake,
+  options: { clearFilters?: boolean } = {}
+) => {
   return request(`/channel/${channelId}`, {
     method: RequestMethod.Put,
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ guildId }),
+    body: JSON.stringify({ guildId, ...(options.clearFilters ? { clearFilters: true } : {}) }),
   });
 };
 

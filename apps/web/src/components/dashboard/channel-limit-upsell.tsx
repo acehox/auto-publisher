@@ -49,8 +49,8 @@ export function ChannelLimitModal({
         <DialogHeader>
           <DialogTitle>The Free plan publishes {freeChannelLimit} channels</DialogTitle>
           <DialogDescription>
-            {channelName ? `${channelName} keeps` : 'That channel keeps'} the setup you just made
-            and stays paused. Premium publishes every channel, with filters and priority in the
+            {channelName ?? 'That channel'} stays off until you turn another channel off, or
+            upgrade. Premium publishes every channel, adds filters, and moves you up the publish
             queue.
           </DialogDescription>
         </DialogHeader>

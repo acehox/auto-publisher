@@ -7,11 +7,9 @@ import { HowPublishingWorks } from '@/components/dashboard/how-publishing-works'
 import { PageHeader } from '@/components/dashboard/page-header';
 
 /**
- * Guild Overview — the attention surface and default landing tab. One status
- * card plus at most a couple of one-line strips; the strip below the card is
- * the paused notice, which only moves there when a channel is broken
- * (`GuildNotices`). The ambient facts close the page, same component and same
- * guard as the Channels tab, so the two tabs state them identically.
+ * Guild Overview — the attention surface and default landing tab. The ambient
+ * facts close the page, same component and same guard as the Channels tab, so
+ * the two tabs state them identically.
  */
 export default function OverviewPage() {
   const { guild, data } = useGuild();
@@ -19,9 +17,8 @@ export default function OverviewPage() {
   return (
     <div className="space-y-4">
       <PageHeader title="Overview" />
-      <GuildNotices position="above" />
+      <GuildNotices />
       <ChannelStatus />
-      <GuildNotices position="below" />
       {data.channels.length > 0 && <HowPublishingWorks hasSubscription={guild.hasSubscription} />}
     </div>
   );

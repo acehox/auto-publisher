@@ -39,10 +39,15 @@ export function usePersistentDismissal(key: string): [boolean, () => void] {
 export interface GuildAttention {
   /** MIGRATION: legacy guild (auto-publishes everything). Removed at sunset. */
   showMigration: boolean;
-  /** Over the free limit with retained (paused) channels AND not dismissed */
+  /** Retained (paused) channels on the free plan AND not dismissed */
   showPaused: boolean;
   /** Count of paused (retained) channels — drives the paused banner copy */
   pausedCount: number;
+  /**
+   * Every paused channel is paused for its filters, not the count cap. Quoting
+   * the channel limit at a guild under it reads as a contradiction.
+   */
+  pausedForFiltersOnly: boolean;
   /** Premium is scheduled to end and more channels are serving than Free publishes */
   showPremiumEnding: boolean;
   cancelEffectiveAt: string | null;
@@ -80,8 +85,14 @@ export function useGuildAttention(): GuildAttention {
 
   // Paused-channels state: the guild is on the free plan (channelLimit !== 0)
   // and has retained channels it is no longer serving. ADR 0009.
-  const pausedCount = data.channels.filter(c => c.hasSavedSetup).length;
+  const pausedChannels = data.channels.filter(c => c.hasSavedSetup);
+  const pausedCount = pausedChannels.length;
   const overLimitPaused = data.channelLimit !== 0 && pausedCount > 0 && !guild.hasSubscription;
+  // `pauseFiltered` runs before `pauseExcess`, so a filtered channel is paused
+  // whether or not the guild is over the cap.
+  const pausedForFiltersOnly =
+    pausedChannels.every(c => c.filters.length > 0) &&
+    data.channels.filter(c => c.enabled).length < freeChannelLimit;
 
   const dismissKey = `ap:pausedBannerDismissed:${guild.id}`;
   const [pausedDismissed, dismissPaused] = usePersistentDismissal(dismissKey);
@@ -131,6 +142,7 @@ export function useGuildAttention(): GuildAttention {
     showMigration,
     showPaused,
     pausedCount,
+    pausedForFiltersOnly,
     showPremiumEnding,
     cancelEffectiveAt,
     servingCount,

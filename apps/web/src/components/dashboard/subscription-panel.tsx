@@ -339,7 +339,7 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
             over the cap — the echo would name a state it cannot be in. */}
         {migrated && paused > 0 && (
           <p className="mt-2 text-[11px] text-yellow-400">
-            {paused} channel{paused !== 1 ? 's are' : ' is'} paused over the limit — setup kept.
+            {paused} channel{paused !== 1 ? 's are' : ' is'} paused over the limit
           </p>
         )}
       </div>

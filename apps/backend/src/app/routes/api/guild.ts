@@ -18,6 +18,7 @@ import { Services } from 'services/index.js';
 import { isEntitledStatus } from 'services/subscriptions.js';
 import { logger } from 'utils/logger.js';
 import {
+  GuildChannelEnableReqSchema,
   GuildChannelReqSchema,
   GuildMigrateReqSchema,
   GuildReqSchema,
@@ -254,24 +255,29 @@ export const GuildApi: Router = (() => {
 
   /**
    * PUT /api/guild/:guildId/channel/:channelId
-   * Enable channel for auto-publishing. Channel type, guild ownership and the
-   * cap are all enforced in `Channels.add`.
+   * Enable channel for auto-publishing. Channel type, guild ownership, the cap
+   * and the free-plan filter gate are all enforced in `Channels.add`.
    */
-  router.put('/channel/:channelId', validateRequest(GuildChannelReqSchema), async (req, res) => {
-    const { guildId, channelId } = req.params;
+  router.put(
+    '/channel/:channelId',
+    validateRequest(GuildChannelEnableReqSchema),
+    async (req, res) => {
+      const { guildId, channelId } = req.params;
+      const { clearFilters } = req.body ?? {};
 
-    try {
-      await Services.Channels.add(guildId, channelId);
+      try {
+        await Services.Channels.add(guildId, channelId, { clearFilters });
 
-      res.status(StatusCodes.OK).json({
-        status: StatusCodes.OK,
-        data: { success: true },
-        message: 'Channel enabled successfully',
-      } as APIResponse);
-    } catch (error) {
-      sendErrorResponse(res, error, 'Failed to enable channel');
+        res.status(StatusCodes.OK).json({
+          status: StatusCodes.OK,
+          data: { success: true },
+          message: 'Channel enabled successfully',
+        } as APIResponse);
+      } catch (error) {
+        sendErrorResponse(res, error, 'Failed to enable channel');
+      }
     }
-  });
+  );
 
   /**
    * DELETE /api/guild/:guildId/channel/:channelId

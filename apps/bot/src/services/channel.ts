@@ -42,10 +42,15 @@ const fetchNewsChannel = async (channel: DiscordChannel | GuildChannel) => {
  * Enable auto-publishing for a channel
  * @param guildId The guild ID
  * @param channelId The channel ID
+ * @param options.clearFilters Consent to drop a retained rule a free guild can't run
  * @returns API response with status codes for handler to process
  */
-const enable = async (guildId: Snowflake, channelId: Snowflake) => {
-  return await Data.API.Backend.addChannel(guildId, channelId);
+const enable = async (
+  guildId: Snowflake,
+  channelId: Snowflake,
+  options: { clearFilters?: boolean } = {}
+) => {
+  return await Data.API.Backend.addChannel(guildId, channelId, options);
 };
 
 /**

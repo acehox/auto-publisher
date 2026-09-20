@@ -30,32 +30,26 @@ import { type ActivationPhase, useActivationPoll } from '@/lib/use-activation-po
 import { channelLabel, formatDate } from '@/lib/utils';
 
 /**
- * Everything the Overview says outside the channel list. One line each, with
- * two exceptions: legacy mode, which carries a deadline and so gets a heading,
- * a date and a button inside the same strip geometry, and the misconfigured
- * banner, which is the one filled strip — a broken channel is the only state
- * that must be readable before the card below it is.
+ * Everything the Overview says outside the channel list. One line each, with two
+ * exceptions: legacy mode, which carries a deadline, and the misconfigured
+ * banner, the one filled strip — a broken channel is the only state that must be
+ * readable before the card below it.
  *
- * Priority runs top to bottom — checkout, misconfigured, legacy, then the two
- * yellow plan strips (paused / premium ending), which are mutually exclusive:
- * paused needs no subscription, premium-ending needs a live one. One reordering
- * rule: while a channel is broken those yellow strips move BELOW the status card
- * (`position="below"`), so a yellow line can never push a red one down the page.
- * Legacy guilds never surface the broken banner, so they are the only notices the
- * rule can move.
+ * Paused and premium-ending are mutually exclusive: paused needs no
+ * subscription, premium-ending a live one. Both stay above the status card even
+ * when it is in error — it is a card, not a third banner, and an earlier version
+ * that moved them below buried them under the channel list.
  *
- * Activation outranks even a broken channel: it is the only strip that resolves
- * on its own within a minute, and burying it under a permissions failure reads
- * as the checkout having silently done nothing.
- *
- * A COMPLETED checkout is the one exception to the one-line rule: it leaves the
- * stack entirely for `PremiumWelcomeModal`. The strip stays for the two states
- * that are still waiting on the webhook, which are status, not reward.
+ * Activation leads even a broken channel: it self-resolves within a minute, and
+ * burying it under a permissions failure reads as the checkout having done
+ * nothing. A COMPLETED checkout leaves the stack entirely for
+ * `PremiumWelcomeModal` — the strip is for the webhook-pending states, which are
+ * status, not reward.
  *
  * Off this tab the sidebar's Overview badge is the only persistent signal, kept
  * in step via the shared `useGuildAttention`.
  */
-export function GuildNotices({ position }: { position: 'above' | 'below' }) {
+export function GuildNotices() {
   const { guild, data } = useGuild();
   const router = useRouter();
   const pathname = usePathname();
@@ -64,6 +58,7 @@ export function GuildNotices({ position }: { position: 'above' | 'below' }) {
     showMigration,
     showPaused,
     pausedCount,
+    pausedForFiltersOnly,
     showMisconfigured,
     showPremiumEnding,
     cancelEffectiveAt,
@@ -90,18 +85,11 @@ export function GuildNotices({ position }: { position: 'above' | 'below' }) {
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [pathname, router, searchParams]);
 
-  // The status card outranks strips only when it is in error; that is the sole
-  // condition that moves the yellow plan strips below it.
-  const pausedBelow = showMisconfigured;
-  const yellowHere = (position === 'below') === pausedBelow;
-  const showPausedHere = showPaused && yellowHere;
-  const showEndingHere = showPremiumEnding && yellowHere;
-  const showCheckout = isCheckoutReturn && !active && position === 'above';
-  const showWelcome = isCheckoutReturn && active && !welcomeDismissed && position === 'above';
-  const showLegacy = showMigration && position === 'above';
-  const showBroken = showMisconfigured && position === 'above';
+  const showCheckout = isCheckoutReturn && !active;
+  const showWelcome = isCheckoutReturn && active && !welcomeDismissed;
 
-  const strips = showCheckout || showLegacy || showPausedHere || showBroken || showEndingHere;
+  const strips =
+    showCheckout || showMigration || showPaused || showMisconfigured || showPremiumEnding;
   if (!strips && !showWelcome) return null;
 
   return (
@@ -116,18 +104,23 @@ export function GuildNotices({ position }: { position: 'above' | 'below' }) {
       {strips && (
         <div className="space-y-3">
           {showCheckout && <CheckoutStrip variant={phase} />}
-          {showBroken && <MisconfiguredStrip guildId={guild.id} channels={data.channels} />}
-          {showLegacy && (
+          {showMisconfigured && <MisconfiguredStrip guildId={guild.id} channels={data.channels} />}
+          {showMigration && (
             <LegacyCard
               guildId={guild.id}
               channels={data.channels}
               channelLimit={data.channelLimit}
             />
           )}
-          {showPausedHere && (
-            <PausedStrip guildId={guild.id} pausedCount={pausedCount} onDismiss={dismissPaused} />
+          {showPaused && (
+            <PausedStrip
+              guildId={guild.id}
+              pausedCount={pausedCount}
+              forFiltersOnly={pausedForFiltersOnly}
+              onDismiss={dismissPaused}
+            />
           )}
-          {showEndingHere && cancelEffectiveAt && (
+          {showPremiumEnding && cancelEffectiveAt && (
             <PremiumEndingStrip
               guildId={guild.id}
               servingCount={servingCount}
@@ -292,10 +285,13 @@ function LegacyCard({
 function PausedStrip({
   guildId,
   pausedCount,
+  forFiltersOnly,
   onDismiss,
 }: {
   guildId: string;
   pausedCount: number;
+  /** Paused for carrying filters, not for the count cap — different sentence. */
+  forFiltersOnly: boolean;
   onDismiss: () => void;
 }) {
   const { freeChannelLimit } = useSiteConfig();
@@ -313,8 +309,10 @@ function PausedStrip({
         </>
       }
     >
-      {pausedCount} more channel{pausedCount !== 1 ? 's are' : ' is'} set up but paused — the Free
-      plan publishes {freeChannelLimit}.
+      {pausedCount === 1 ? '1 channel is' : `${pausedCount} channels are`} set up but paused.{' '}
+      {forFiltersOnly
+        ? `${pausedCount === 1 ? 'Its' : 'Their'} filters only run on Premium.`
+        : `The Free plan publishes ${freeChannelLimit}.`}
     </NoticeStrip>
   );
 }
