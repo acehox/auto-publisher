@@ -176,40 +176,17 @@ export const GuildApi: Router = (() => {
         throw createHttpError('Bot is not in this guild', StatusCodes.CONFLICT, 'BOT_NOT_PRESENT');
       }
 
-      const [channelRecords, announcementChannels, guildRow, channelLimit] = await Promise.all([
-        Services.Guilds.getChannelRecords(guildId),
-        Discord.getAnnouncementChannels(guildId),
+      // Publish capability per channel rides along, served from the bot-pushed
+      // publish-state cache (ADR 0008) with a REST write-back fallback. Drives
+      // the "Publishing / Not publishing" indicator + migrate-modal preselection.
+      const [channels, guildRow, channelLimit] = await Promise.all([
+        Services.Channels.getChannelsForDashboard(guildId),
         Services.Guilds.find(guildId),
         Services.Plans.channelLimit(guildId),
       ]);
 
       // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt NULL
       const migrated = !!guildRow?.migratedAt;
-
-      // Publish capability per channel, served from the bot-pushed publish-state
-      // cache (ADR 0008) with a REST write-back fallback. Drives the
-      // "Publishing / Not publishing" indicator + migrate-modal preselection.
-      const publishMap = await Services.PublishState.getMap(guildId, announcementChannels);
-
-      const enabledMap = new Map(channelRecords.map(ch => [ch.channelId, ch]));
-
-      const channels = announcementChannels.map(c => {
-        const record = enabledMap.get(c.id);
-        const publish = publishMap[c.id];
-        // Serving = a row exists AND is not paused (ADR 0009). A paused row is a
-        // disabled channel with retained config → surfaced via hasSavedSetup.
-        const serving = !!record && !record.pausedAt;
-        return {
-          channelId: c.id,
-          name: c.name ?? 'Unknown Channel',
-          type: c.type,
-          enabled: serving,
-          filters: record?.filters ?? [],
-          filterMode: record?.filterMode ?? 'all',
-          canPublish: publish?.canPublish ?? false,
-          ...(record?.pausedAt ? { hasSavedSetup: true } : {}),
-        };
-      });
 
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,

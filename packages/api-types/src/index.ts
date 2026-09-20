@@ -44,7 +44,13 @@ export interface ChannelFilterRule {
 /** Guild channel with filters (enriched with Discord channel info) */
 export interface GuildChannel {
   channelId: string;
-  name: string;
+  /**
+   * null = registered but not returned by Discord: hidden by private-channel
+   * obfuscation, or deleted while the bot was offline. Nullable rather than a
+   * `hidden` flag because we cannot tell those two apart — and the nullable type
+   * forces every render site to handle it.
+   */
+  name: string | null;
   type: number;
   enabled: boolean;
   filters: ChannelFilterRule[];

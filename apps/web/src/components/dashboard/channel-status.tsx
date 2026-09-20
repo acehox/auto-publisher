@@ -46,14 +46,15 @@ function statusRank(channel: GuildChannel): number {
  * row carries the Fix control and no label: the control names the state and acts
  * on it, and the card's own headline already counts the broken channels.
  */
-function PublishRow({ channel }: { channel: GuildChannel }) {
+function PublishRow({ guildId, channel }: { guildId: string; channel: GuildChannel }) {
   const broken = channel.canPublish === false;
   return (
     <ChannelRow
       name={channel.name}
       tone={broken ? 'red' : 'green'}
       status={broken ? undefined : <ChannelStatusLabel kind="publishing" />}
-      actions={<ChannelFixButton channel={channel} />}
+      // No onRemove — Overview is read-only by contract.
+      actions={<ChannelFixButton guildId={guildId} channel={channel} />}
     />
   );
 }
@@ -105,7 +106,7 @@ function MigratedStatus({
       footer={footer}
     >
       {enabled.map(channel => (
-        <PublishRow key={channel.channelId} channel={channel} />
+        <PublishRow key={channel.channelId} guildId={guildId} channel={channel} />
       ))}
       {paused.map(channel => (
         <ChannelRow
@@ -165,7 +166,7 @@ function LegacyStatus({
       {[...channels]
         .sort((a, b) => statusRank(a) - statusRank(b))
         .map(channel => (
-          <PublishRow key={channel.channelId} channel={channel} />
+          <PublishRow key={channel.channelId} guildId={guildId} channel={channel} />
         ))}
     </StatusCard>
   );

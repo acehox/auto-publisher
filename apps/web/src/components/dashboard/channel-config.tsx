@@ -51,10 +51,12 @@ export function ChannelConfig({
   const isPublicInstance = useIsPublicInstance();
   const [isPending, startTransition] = useTransition();
   const [pendingChannelId, setPendingChannelId] = useState<string | null>(null);
-  // Carries the refused channel's name so the modal can say which setup was kept.
-  const [limitHit, setLimitHit] = useState<{ reason: ChannelLimitReason; name: string } | null>(
-    null
-  );
+  // Label, not name: the modal says which setup was kept, and a hidden channel
+  // has no name to render.
+  const [limitHit, setLimitHit] = useState<{
+    reason: ChannelLimitReason;
+    label: string | null;
+  } | null>(null);
   // Channel awaiting the enable guide acknowledgment (null = no guide open).
   const [guideChannel, setGuideChannel] = useState<GuildChannel | null>(null);
   // MIGRATION: removed at sunset with the legacy strip.
@@ -114,7 +116,7 @@ export function ChannelConfig({
         if (result.status === 400) {
           setLimitHit({
             reason: (result.code as ChannelLimitReason | undefined) ?? 'LIMIT_FREE',
-            name: channel?.name ?? '',
+            label: channel ? channelLabel(channel.name) : null,
           });
           return;
         }
@@ -214,7 +216,14 @@ export function ChannelConfig({
                             name={channel.name}
                           />
                         )}
-                        <ChannelFixButton channel={channel} icon />
+                        <ChannelFixButton
+                          guildId={guildId}
+                          channel={channel}
+                          icon
+                          // Reuses the disable path for its toast, refresh and
+                          // dead-token handling.
+                          onRemove={() => handleToggleChannel(channel.channelId, true)}
+                        />
                         {toggleFor(channel, true)}
                       </>
                     }
@@ -252,7 +261,7 @@ export function ChannelConfig({
         <ChannelLimitModal
           reason={limitHit.reason}
           guildId={guildId}
-          channelName={limitHit.name ? channelLabel(limitHit.name) : null}
+          channelName={limitHit.label}
           onClose={() => setLimitHit(null)}
         />
       )}

@@ -1,4 +1,4 @@
-import { CircleCheck, CirclePause, Filter } from 'lucide-react';
+import { CircleCheck, CirclePause, EyeOff, Filter } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { CHIP_CLASS } from '@/components/dashboard/chip';
@@ -14,7 +14,8 @@ import { channelLabel, cn } from '@/lib/utils';
  * on both tabs; a broken one carries the Fix control instead, which names the
  * state and acts on it, so neither tab states one failure twice.
  *
- * `name` is the bare channel name; the row applies the `#` itself.
+ * `name` is the bare channel name; the row applies the `#` itself. Null means
+ * Discord no longer returns the channel (`GuildChannel.name`) — nothing to prefix.
  */
 export function ChannelRow({
   name,
@@ -25,7 +26,7 @@ export function ChannelRow({
   actions,
   muted,
 }: {
-  name: string;
+  name: string | null;
   /** Colours the dot. */
   tone?: Tone;
   status?: ReactNode;
@@ -44,7 +45,10 @@ export function ChannelRow({
     >
       <StatusDot tone={tone} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm text-slate-100">{channelLabel(name)}</p>
+        <p className="flex items-center gap-1.5 text-sm text-slate-100">
+          {name === null && <EyeOff aria-hidden className="size-3.5 shrink-0 text-slate-400" />}
+          <span className="truncate">{channelLabel(name)}</span>
+        </p>
         {sub && <p className="mt-0.5 text-xs text-slate-400">{sub}</p>}
       </div>
       {pill}
@@ -86,7 +90,7 @@ export function ChannelFilterPill({
   count: number;
   href: string;
   /** Bare channel name, for the link's accessible label. */
-  name: string;
+  name: string | null;
 }) {
   return (
     <Link

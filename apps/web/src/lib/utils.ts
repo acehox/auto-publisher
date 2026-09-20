@@ -23,8 +23,9 @@ export function formatNumberFull(num: number): string {
 /**
  * How a Discord channel is named anywhere in the UI. One definition so a name
  * can never render bare on one surface and prefixed on the next — the backend
- * stores it without the `#`, which is what made that drift easy.
+ * stores it without the `#`, which is what made that drift easy. A null name is a
+ * channel Discord no longer returns (`GuildChannel.name`).
  */
-export function channelLabel(name: string): string {
-  return `#${name}`;
+export function channelLabel(name: string | null): string {
+  return name === null ? 'Hidden channel' : `#${name}`;
 }

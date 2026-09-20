@@ -9,6 +9,7 @@ import { and, asc, count, eq, gt, isNotNull, isNull, sql } from 'drizzle-orm';
 import { Discord } from 'services/discord.js';
 import { Plans } from 'services/plans.js';
 import { logger } from 'utils/logger.js';
+import { getChannelsForDashboard } from './dashboard.js';
 import { Filters } from './filters.js';
 import * as ChannelOps from './operations.js';
 
@@ -462,6 +463,7 @@ export const Channels = {
   add,
   remove,
   countByGuild,
+  getChannelsForDashboard,
   setFilterMode,
   setFilters,
   getSize,

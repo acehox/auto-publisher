@@ -132,6 +132,7 @@ function MisconfiguredStrip({ guildId, channels }: { guildId: string; channels: 
       actions={
         only ? (
           <ChannelFixDialog
+            guildId={guildId}
             channel={only}
             trigger={
               <button
