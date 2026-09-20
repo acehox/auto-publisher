@@ -17,9 +17,14 @@ import { displayNameOf, type NavUser, UserAvatar } from './nav-user';
 export function AccountMenu({ user }: { user: NavUser }) {
   return (
     <DropdownMenu modal={false}>
-      <DropdownMenuTrigger className="group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-slate-800/50">
+      <DropdownMenuTrigger
+        aria-label={displayNameOf(user)}
+        className="group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-slate-800/50"
+      >
         <UserAvatar user={user} size={32} />
-        <span className="max-w-40 truncate text-sm text-white">{displayNameOf(user)}</span>
+        <span className="hidden max-w-40 truncate text-sm text-white sm:block">
+          {displayNameOf(user)}
+        </span>
         <ChevronDown className="h-4 w-4 text-slate-400 transition-transform group-data-[state=open]:rotate-180" />
       </DropdownMenuTrigger>
       <DropdownMenuContent>
