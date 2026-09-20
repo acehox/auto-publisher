@@ -60,7 +60,7 @@ export default function HowItWorksPage() {
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">What the bot needs</h2>
           <p className="text-slate-400 max-w-2xl mx-auto">
             Auto Publisher needs these permissions in every announcement channel that&apos;s
-            enabled. It only ever publishes messages, from you, another bot, or a webhook — it never
+            enabled. It only ever publishes messages, from you, another bot, or a webhook, it never
             creates them.
           </p>
         </div>

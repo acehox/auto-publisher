@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { legacySunsetLabel, links } from '@/lib/constants';
 import { getSiteConfig } from '@/lib/site-config';
@@ -29,7 +30,7 @@ const whatsNew = [
     icon: LayoutDashboard,
     title: 'A new web dashboard',
     description:
-      'Manage every server from the website — just sign in with Discord and configure things in a few clicks.',
+      'Manage every server from the website. Just sign in with Discord and configure things in a few clicks.',
   },
   {
     icon: Filter,
@@ -44,14 +45,25 @@ const whatsNew = [
   },
 ];
 
-const steps = [
+const steps: { title: string; description: ReactNode }[] = [
   {
     title: 'Open the dashboard',
-    description: 'Head to the dashboard and sign in with your Discord account.',
+    description: (
+      <>
+        Head to the{' '}
+        <Link
+          href="/dashboard"
+          className="text-blue-400 underline underline-offset-4 hover:text-blue-300"
+        >
+          dashboard
+        </Link>{' '}
+        and sign in with your Discord account.
+      </>
+    ),
   },
   {
     title: 'Pick your server',
-    description: 'Select the server you want to migrate — legacy servers show a "Legacy" badge.',
+    description: 'Select the server you want to migrate. Unmigrated servers show a "Legacy" badge.',
   },
   {
     title: 'Migrate and choose channels',
@@ -60,7 +72,7 @@ const steps = [
   },
   {
     title: 'Confirm',
-    description: 'That’s it — publishing continues without interruption.',
+    description: 'That’s it! Publishing continues without interruption.',
   },
 ];
 
@@ -81,15 +93,14 @@ export default function MigrationPage() {
             </span>
           </h1>
           <p className="text-lg sm:text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
-            Your migration guide — what is changing and how to keep your announcements flowing.
+            What is changing and how to keep your announcements flowing?
           </p>
           <div className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3">
             <span className="text-base sm:text-lg text-amber-200">
               Legacy mode ends on{' '}
               <span className="font-bold text-white">
                 {legacySunsetLabel(getSiteConfig().legacySunsetDate)}
-              </span>{' '}
-              — migrate before then to keep publishing.
+              </span>. Migrate before then to keep publishing.
             </span>
           </div>
         </div>
@@ -102,18 +113,18 @@ export default function MigrationPage() {
         <div className="space-y-4 text-slate-300 leading-relaxed">
           <p>
             For years, Auto Publisher simply published every announcement channel automatically.
-            That worked when we were small — but as the bot grew to thousands of servers, Discord
+            That worked when we were small, but as the bot grew to thousands of servers, Discord
             {'’'}s rate limits made that all-or-nothing approach fragile. Busy servers could hit
             those limits and see messages delayed or missed entirely.
           </p>
           <p>
-            The New Era rebuilds how publishing works from the ground up. It is faster, handles
-            Discord{'’'}s limits gracefully, and lets you choose exactly which channels publish — so
-            the bot only does the work you actually want, and does it reliably.
+            We have rebuilt how publishing works from the ground up. It is faster, handles Discord
+            {'’'}s limits gracefully, and lets you choose exactly which channels publish, so the bot
+            only does the work you actually want, and does it reliably.
           </p>
           <p>
             Just as importantly, these changes give Auto Publisher room to grow. They keep the
-            project healthy, sustainable, and here for the long run — so your community can keep
+            project healthy, sustainable, and here for the long run, so your community can keep
             counting on it for years to come.
           </p>
         </div>
@@ -167,9 +178,16 @@ export default function MigrationPage() {
             </li>
           ))}
         </ol>
-        <p className="text-sm text-slate-500 mt-6 text-center">
-          Prefer Discord? You can also run{' '}
-          <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-300">/ap enable</code> in a
+        <div className="mt-10 flex items-center gap-5">
+          <div className="h-px flex-1 bg-slate-800" />
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-blue-500/30 bg-blue-500/10 text-base font-semibold uppercase tracking-wide text-blue-300">
+            or
+          </span>
+          <div className="h-px flex-1 bg-slate-800" />
+        </div>
+        <p className="mt-6 text-slate-300 leading-relaxed text-center">
+          You can run{' '}
+          <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-200">/ap enable</code> in a
           channel to migrate that channel without leaving your server. Your server is automatically
           migrated as soon as you enable at first channel.
         </p>
