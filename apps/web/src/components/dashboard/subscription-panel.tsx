@@ -28,7 +28,7 @@ import {
   PREMIUM_YEARLY_SAVINGS_PERCENT,
 } from '@/lib/pricing';
 import { useSubscriptionDetail } from '@/lib/use-subscription-detail';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 
 interface SubscriptionPanelProps {
   guildId: string;
@@ -167,14 +167,7 @@ function BillingCard({
         <div>
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-400">
             <Clock className="size-4 shrink-0" aria-hidden="true" />
-            {dateLabel}:
-            <span className="font-medium text-white">
-              {new Date(dateValue).toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
-            </span>
+            {dateLabel}:<span className="font-medium text-white">{formatDate(dateValue)}</span>
           </p>
           {trialing && (
             <p className="mt-1 pl-6.5 text-xs text-slate-400">Your free trial runs until then.</p>

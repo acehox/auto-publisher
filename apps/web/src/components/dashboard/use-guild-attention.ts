@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { useGuild } from '@/components/dashboard/guild-context';
-import { useIsPublicInstance } from '@/components/site-config-context';
+import { useIsPublicInstance, useSiteConfig } from '@/components/site-config-context';
 
 // Same-tab listeners for the localStorage dismissal marker: the native `storage`
 // event only fires in OTHER tabs, so dismiss() notifies these directly. Shared at
@@ -43,13 +43,18 @@ export interface GuildAttention {
   showPaused: boolean;
   /** Count of paused (retained) channels — drives the paused banner copy */
   pausedCount: number;
+  /** Premium is scheduled to end and more channels are serving than Free publishes */
+  showPremiumEnding: boolean;
+  cancelEffectiveAt: string | null;
+  /** Channels currently publishing — broken ones included, they hold a slot */
+  servingCount: number;
   /** Enabled channels the bot currently can't publish in (migrated only) */
   needsFixingCount: number;
   /** ≥1 enabled channel the bot can't publish in (migrated only) — drives the misconfigured banner */
   showMisconfigured: boolean;
   /**
    * Attention items for the Overview sidebar badge: one per active nag banner
-   * (misconfigured channels, legacy migration, paused). Any number of broken
+   * (misconfigured channels, legacy migration, paused, premium ending). Any number of broken
    * channels collapse into the single misconfigured banner, so they count once
    * regardless of how many. The positive checkout-success card never counts.
    */
@@ -69,6 +74,7 @@ export function useGuildAttention(): GuildAttention {
   // paused banner is unreachable there. Gated at the source so the banner stack
   // and the sidebar badge can't disagree. Migration is not billing; it stays.
   const isPublicInstance = useIsPublicInstance();
+  const { freeChannelLimit } = useSiteConfig();
 
   const showMigration = !data.migrated;
 
@@ -88,6 +94,22 @@ export function useGuildAttention(): GuildAttention {
 
   const showPaused = isPublicInstance && overLimitPaused && !pausedDismissed;
 
+  // A merely scheduled cancel leaves the subscription entitled, so
+  // `hasSubscription` and `channelLimit` both still read as Premium — the
+  // scheduled change is the only signal, and this can never co-occur with the
+  // paused state above. `freeChannelLimit > 0` guards the SiteConfig default of
+  // 0 (misconfigured deployment), which would read every channel as over cap.
+  const cancelEffectiveAt =
+    data.subscription?.scheduledChange?.action === 'cancel'
+      ? data.subscription.scheduledChange.effectiveAt
+      : null;
+  const servingCount = data.channels.filter(c => c.enabled).length;
+  const showPremiumEnding =
+    isPublicInstance &&
+    cancelEffectiveAt !== null &&
+    freeChannelLimit > 0 &&
+    servingCount > freeChannelLimit;
+
   // Legacy guilds contribute no per-channel permission item — migration comes
   // first (the itemized status list is a migrated-guild concept).
   const needsFixingCount = data.migrated
@@ -97,12 +119,21 @@ export function useGuildAttention(): GuildAttention {
   // per-channel tally. The per-channel detail + Fix lives in the channel list.
   const showMisconfigured = needsFixingCount > 0;
 
-  const badgeCount = (showMisconfigured ? 1 : 0) + (showMigration ? 1 : 0) + (showPaused ? 1 : 0);
+  const badgeCount = [
+    //
+    showMisconfigured,
+    showMigration,
+    showPaused,
+    showPremiumEnding,
+  ].filter(Boolean).length;
 
   return {
     showMigration,
     showPaused,
     pausedCount,
+    showPremiumEnding,
+    cancelEffectiveAt,
+    servingCount,
     needsFixingCount,
     showMisconfigured,
     badgeCount,

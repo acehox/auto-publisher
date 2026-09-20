@@ -16,10 +16,18 @@ import {
   useSiteConfig,
 } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import type { GuildChannel } from '@/lib/api/types';
 import { links } from '@/lib/constants';
 import { type ActivationPhase, useActivationPoll } from '@/lib/use-activation-poll';
-import { channelLabel } from '@/lib/utils';
+import { channelLabel, formatDate } from '@/lib/utils';
 
 /**
  * Everything the Overview says outside the channel list. One line each, with
@@ -28,11 +36,13 @@ import { channelLabel } from '@/lib/utils';
  * banner, which is the one filled strip — a broken channel is the only state
  * that must be readable before the card below it is.
  *
- * Priority runs top to bottom — checkout, misconfigured, legacy, paused — with
- * one reordering rule: while a channel is broken the paused strip moves BELOW
- * the status card (`position="below"`), so a yellow line can never push a red
- * one down the page. Legacy guilds never surface the broken banner, so paused is
- * the only notice the rule can move.
+ * Priority runs top to bottom — checkout, misconfigured, legacy, then the two
+ * yellow plan strips (paused / premium ending), which are mutually exclusive:
+ * paused needs no subscription, premium-ending needs a live one. One reordering
+ * rule: while a channel is broken those yellow strips move BELOW the status card
+ * (`position="below"`), so a yellow line can never push a red one down the page.
+ * Legacy guilds never surface the broken banner, so they are the only notices the
+ * rule can move.
  *
  * Activation outranks even a broken channel: it is the only strip that resolves
  * on its own within a minute, and burying it under a permissions failure reads
@@ -50,8 +60,16 @@ export function GuildNotices({ position }: { position: 'above' | 'below' }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { showMigration, showPaused, pausedCount, showMisconfigured, dismissPaused } =
-    useGuildAttention();
+  const {
+    showMigration,
+    showPaused,
+    pausedCount,
+    showMisconfigured,
+    showPremiumEnding,
+    cancelEffectiveAt,
+    servingCount,
+    dismissPaused,
+  } = useGuildAttention();
 
   // Query-param-armed, but the variant is driven by real subscription state:
   // `hasSubscription` is live from Postgres once the webhook lands. A self-hosted
@@ -73,15 +91,17 @@ export function GuildNotices({ position }: { position: 'above' | 'below' }) {
   }, [pathname, router, searchParams]);
 
   // The status card outranks strips only when it is in error; that is the sole
-  // condition that moves the paused strip below it.
+  // condition that moves the yellow plan strips below it.
   const pausedBelow = showMisconfigured;
-  const showPausedHere = showPaused && (position === 'below') === pausedBelow;
+  const yellowHere = (position === 'below') === pausedBelow;
+  const showPausedHere = showPaused && yellowHere;
+  const showEndingHere = showPremiumEnding && yellowHere;
   const showCheckout = isCheckoutReturn && !active && position === 'above';
   const showWelcome = isCheckoutReturn && active && !welcomeDismissed && position === 'above';
   const showLegacy = showMigration && position === 'above';
   const showBroken = showMisconfigured && position === 'above';
 
-  const strips = showCheckout || showLegacy || showPausedHere || showBroken;
+  const strips = showCheckout || showLegacy || showPausedHere || showBroken || showEndingHere;
   if (!strips && !showWelcome) return null;
 
   return (
@@ -106,6 +126,13 @@ export function GuildNotices({ position }: { position: 'above' | 'below' }) {
           )}
           {showPausedHere && (
             <PausedStrip guildId={guild.id} pausedCount={pausedCount} onDismiss={dismissPaused} />
+          )}
+          {showEndingHere && cancelEffectiveAt && (
+            <PremiumEndingStrip
+              guildId={guild.id}
+              servingCount={servingCount}
+              endsAt={cancelEffectiveAt}
+            />
           )}
         </div>
       )}
@@ -289,5 +316,85 @@ function PausedStrip({
       {pausedCount} more channel{pausedCount !== 1 ? 's are' : ' is'} set up but paused — the Free
       plan publishes {freeChannelLimit}.
     </NoticeStrip>
+  );
+}
+
+/**
+ * Not dismissible: it carries a deadline, and clears itself once the admin trims
+ * to the cap or keeps Premium. "Keep Premium" is deliberately not a third link —
+ * this is a warning, not an upsell, and the Subscription tab is one click away.
+ * Which channels the backend would pick goes in the dialog: the line states the
+ * consequence, the dialog the rule.
+ */
+function PremiumEndingStrip({
+  guildId,
+  servingCount,
+  endsAt,
+}: {
+  guildId: string;
+  servingCount: number;
+  endsAt: string;
+}) {
+  const { freeChannelLimit } = useSiteConfig();
+  const [explainOpen, setExplainOpen] = useState(false);
+
+  return (
+    <>
+      <NoticeStrip
+        tone="yellow"
+        actions={
+          <>
+            <NoticeAction onClick={() => setExplainOpen(true)} muted>
+              What gets paused?
+            </NoticeAction>
+            <NoticeAction href={`/dashboard/${guildId}/channels`}>
+              Choose channels &rarr;
+            </NoticeAction>
+          </>
+        }
+      >
+        {servingCount} channels are publishing. When Premium ends on{' '}
+        <span className="font-medium text-white">{formatDate(endsAt)}</span> only {freeChannelLimit}{' '}
+        keep publishing. Pick which ones now.
+      </NoticeStrip>
+      {explainOpen && (
+        <PremiumEndingModal guildId={guildId} onClose={() => setExplainOpen(false)} />
+      )}
+    </>
+  );
+}
+
+/** Mirrors `pauseFiltered` → `pauseExcess` (backend `services/channels/pausing.ts`). */
+function PremiumEndingModal({ guildId, onClose }: { guildId: string; onClose: () => void }) {
+  const { freeChannelLimit } = useSiteConfig();
+
+  return (
+    <Dialog
+      open
+      onOpenChange={open => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>What happens when Premium ends</DialogTitle>
+          <DialogDescription>
+            The Free plan publishes {freeChannelLimit} channels. If you don&apos;t choose, some
+            channels will be automatically paused. <br />
+            Channels with filters are paused first, then the most recently added ones beyond{' '}
+            {freeChannelLimit}. Paused channels keep their setup and filters, and start publishing
+            again the moment you free up a slot or resubscribe.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Got it
+          </Button>
+          <Button asChild>
+            <Link href={`/dashboard/${guildId}/channels`}>Choose channels</Link>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

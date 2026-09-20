@@ -29,3 +29,16 @@ export function formatNumberFull(num: number): string {
 export function channelLabel(name: string | null): string {
   return name === null ? 'Hidden channel' : `#${name}`;
 }
+
+/**
+ * UTC-pinned so a date that server-renders and then hydrates can't disagree with
+ * itself across a midnight boundary — the same reason `legacySunsetLabel` pins.
+ */
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
