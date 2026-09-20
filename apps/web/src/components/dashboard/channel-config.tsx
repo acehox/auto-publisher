@@ -242,11 +242,7 @@ export function ChannelConfig({
                   muted
                   // Retained config from an over-limit pause (ADR 0009), stated
                   // only on the row it applies to.
-                  sub={
-                    channel.hasSavedSetup
-                      ? 'Saved setup kept — paused when the plan filled up'
-                      : undefined
-                  }
+                  sub={channel.hasSavedSetup ? 'Filters retained from Premium plan' : undefined}
                   actions={toggleFor(channel, false)}
                 />
               ))}
