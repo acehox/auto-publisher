@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { formatUsd, PREMIUM_PRICE_MONTHLY_USD, PREMIUM_TRIAL_DAYS } from '@/lib/pricing';
 import { Zap } from 'lucide-react';
 
 /**
@@ -11,7 +10,6 @@ import { Zap } from 'lucide-react';
  */
 export function LockedFeature({
   guildId,
-  trialAvailable,
 }: {
   guildId: string;
   trialAvailable: boolean;
@@ -34,10 +32,6 @@ export function LockedFeature({
         <Button asChild size="sm">
           <Link href={`/dashboard/${guildId}/subscription`}>See Premium plans</Link>
         </Button>
-        <span className="text-xs text-slate-500">
-          {formatUsd(PREMIUM_PRICE_MONTHLY_USD)}/mo
-          {trialAvailable && ` · ${PREMIUM_TRIAL_DAYS}-day free trial`}
-        </span>
       </div>
     </div>
   );
