@@ -43,7 +43,9 @@ interface GuildDashboardShellProps {
  *   - 768–1023px: the switcher on its own row, tabs as an underlined strip.
  *   - <768px: a fixed bottom tab bar — thumb-reachable, four fixed targets, the
  *     attention badge always visible. Not a hamburger, which would hide the
- *     badge behind a tap.
+ *     badge behind a tap. The switcher has no row here: it takes the navbar's
+ *     left slot in place of the wordmark (`NavbarGuildBrand`), so the chrome
+ *     above the content costs one row instead of two.
  *
  * The chrome renders instantly from the guild list + route param; only the
  * content and the badge suspend on the streamed detail promise (ADR 0007), so
@@ -101,11 +103,6 @@ export function GuildDashboardShell({ guildId, dataPromise, children }: GuildDas
             <div className="flex gap-1 border-slate-800/70 border-b px-6 pt-3">
               <StripTabs guildId={guildId} />
             </div>
-          </div>
-
-          {/* Mobile: the switcher is the screen title; the tabs are at the bottom. */}
-          <div className="border-slate-800/70 border-b px-4 py-2.5 md:hidden">
-            <GuildSwitcher current={guild} compact />
           </div>
 
           <main className="flex-1 px-4 pt-5 pb-24 md:px-6 md:pt-6 md:pb-10 lg:pt-7 lg:pb-10">

@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { createContext, useContext } from 'react';
 import type { DiscordGuild } from '@/lib/api/types';
 
@@ -38,5 +39,15 @@ export function useGuildList(): GuildListContextValue {
 
 /** The current guild by id, or undefined if it isn't in the seeded list. */
 export function useCurrentGuild(guildId: string): DiscordGuild | undefined {
+  return useGuildList().guilds.find(g => g.id === guildId);
+}
+
+/**
+ * The open route's guild, for chrome above the `[guildId]` segment that has no
+ * param. Undefined off a guild route, on a failed list fetch, or for a guild the
+ * user can't reach.
+ */
+export function useRouteGuild(): DiscordGuild | undefined {
+  const guildId = usePathname().match(/^\/dashboard\/([^/]+)/)?.[1];
   return useGuildList().guilds.find(g => g.id === guildId);
 }

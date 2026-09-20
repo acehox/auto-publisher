@@ -44,8 +44,9 @@ function GuildAvatar({ guild, size }: { guild: DiscordGuild; size: number }) {
  * control cannot. "All servers" lives inside it rather than beside it: it is the
  * control that changes servers.
  *
- * `compact` is the mobile shape, where the switcher IS the screen title: name
- * plus a caret, no plan line, no bordered box.
+ * `compact` is the mobile shape, where the switcher IS the screen title and sits
+ * in the navbar in place of the wordmark: name plus a caret, no plan line, no
+ * bordered box. Its own padding is the tap target — nothing wraps it there.
  */
 export function GuildSwitcher({ current, compact }: { current: DiscordGuild; compact?: boolean }) {
   const { guilds } = useGuildList();
@@ -60,7 +61,7 @@ export function GuildSwitcher({ current, compact }: { current: DiscordGuild; com
         className={cn(
           'group flex w-full cursor-pointer items-center gap-2.5 outline-none transition-colors',
           compact
-            ? 'text-left'
+            ? 'py-2.5 text-left'
             : 'rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-2.5 hover:border-slate-700 data-[state=open]:border-blue-500/50'
         )}
       >

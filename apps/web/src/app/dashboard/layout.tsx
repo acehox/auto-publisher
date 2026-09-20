@@ -3,7 +3,8 @@ import { Suspense } from 'react';
 import { AuthRedirect } from '@/components/auth/auth-redirect';
 import { DashboardLoadingSkeleton } from '@/components/dashboard/dashboard-loading';
 import { GuildListProvider } from '@/components/dashboard/guild-list-context';
-import { Navbar } from '@/components/layout/navbar';
+import { NavbarGuildBrand } from '@/components/dashboard/navbar-guild-brand';
+import { Navbar, NavbarView } from '@/components/layout/navbar';
 import { SiteShell } from '@/components/layout/site-shell';
 import { getUserGuilds } from '@/lib/api/actions';
 import { AuthExpiredError } from '@/lib/api/backend';
@@ -38,16 +39,50 @@ export default async function DashboardLayout({
     );
   }
 
+  const user = session.user;
+
   return (
-    <SiteShell nav={<Navbar variant="dashboard" />}>
-      <Suspense fallback={<DashboardLoadingSkeleton />}>
-        <GuildListLoader>{children}</GuildListLoader>
-      </Suspense>
+    <Suspense
+      fallback={
+        <DashboardChrome user={user}>
+          <DashboardLoadingSkeleton />
+        </DashboardChrome>
+      }
+    >
+      <GuildListLoader user={user}>{children}</GuildListLoader>
+    </Suspense>
+  );
+}
+
+type DashboardUser = React.ComponentProps<typeof NavbarView>['user'];
+
+/**
+ * Rendered at three call sites rather than once around the Suspense: the
+ * navbar's left slot reads the guild list, so it has to sit inside the provider.
+ */
+function DashboardChrome({
+  user,
+  brand,
+  children,
+}: {
+  user: DashboardUser;
+  brand?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <SiteShell nav={<NavbarView variant="dashboard" user={user} brand={brand} />}>
+      {children}
     </SiteShell>
   );
 }
 
-async function GuildListLoader({ children }: { children: React.ReactNode }) {
+async function GuildListLoader({
+  user,
+  children,
+}: {
+  user: DashboardUser;
+  children: React.ReactNode;
+}) {
   let guilds: DiscordGuild[] = [];
   let error = false;
   try {
@@ -56,14 +91,20 @@ async function GuildListLoader({ children }: { children: React.ReactNode }) {
     // A dead Discord token (session valid, token expired) is not a generic
     // failure — re-login instead of the "Something went wrong" card (ADR 0010).
     if (e instanceof AuthExpiredError) {
-      return <AuthRedirect callbackUrl="/dashboard" />;
+      return (
+        <DashboardChrome user={user}>
+          <AuthRedirect callbackUrl="/dashboard" />
+        </DashboardChrome>
+      );
     }
     error = true;
   }
 
   return (
     <GuildListProvider guilds={guilds} error={error}>
-      {children}
+      <DashboardChrome user={user} brand={<NavbarGuildBrand />}>
+        {children}
+      </DashboardChrome>
     </GuildListProvider>
   );
 }

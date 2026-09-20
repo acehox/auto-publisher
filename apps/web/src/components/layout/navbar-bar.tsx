@@ -19,10 +19,21 @@ interface NavbarBarProps {
   links: NavLinkItem[];
   account: React.ReactNode;
   mobileAccount: React.ReactNode;
+  /** Replaces the wordmark — the dashboard puts the guild switcher here. */
+  brand?: React.ReactNode;
+}
+
+export function NavbarBrandLink({ className }: { className?: string }) {
+  return (
+    <Link href="/" className={cn('flex items-center gap-3', className)}>
+      <Logo className="w-8 h-8" />
+      <span className="text-white text-base font-semibold">Auto Publisher</span>
+    </Link>
+  );
 }
 
 /** Client only for the active-link mark and the mobile panel's open state. */
-export function NavbarBar({ variant, links, account, mobileAccount }: NavbarBarProps) {
+export function NavbarBar({ variant, links, account, mobileAccount, brand }: NavbarBarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
@@ -44,11 +55,9 @@ export function NavbarBar({ variant, links, account, mobileAccount }: NavbarBarP
     >
       <div className={cn('px-4 sm:px-6 lg:px-8', inDashboard ? 'w-full' : 'max-w-7xl mx-auto')}>
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-12">
-            <Link href="/" className="flex items-center gap-3">
-              <Logo className="w-8 h-8" />
-              <span className="text-white text-base font-semibold">Auto Publisher</span>
-            </Link>
+          {/* min-w-0 so a long guild name truncates instead of pushing the account menu off-screen. */}
+          <div className="flex min-w-0 items-center gap-12">
+            {brand ?? <NavbarBrandLink />}
 
             <div className="hidden md:flex items-center gap-8">
               {links.map(link => (
@@ -70,7 +79,7 @@ export function NavbarBar({ variant, links, account, mobileAccount }: NavbarBarP
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-3">
             <div className={cn('items-center gap-3', inDashboard ? 'flex' : 'hidden sm:flex')}>
               {account}
             </div>
