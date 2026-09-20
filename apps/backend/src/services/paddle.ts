@@ -5,6 +5,7 @@ import {
   type EventEntity,
   Paddle,
   type Subscription as PaddleSubscription,
+  type Transaction as PaddleTransaction,
 } from '@paddle/paddle-node-sdk';
 import { logger } from 'utils/logger.js';
 
@@ -101,21 +102,34 @@ const createPortalSession = async (
   }
 };
 
+const MAX_TRANSACTIONS_SCANNED = 20;
+
 /**
- * Most recent `completed` (actually paid) transaction on the subscription — the
- * one a withdrawal refund is raised against. Null = nothing to refund (e.g. a
- * trial that never billed); that is a real state, not an error.
+ * `status: completed` is not enough: a trial's $0 checkout transaction is completed with the
+ * card only `authorized`, and `adjustments.create` rejects it with
+ * `adjustment_transaction_without_captured_payment`. A $0 proration or payment-method-change
+ * transaction is the same and can sit newer than a real payment — hence scanning on rather
+ * than stopping at the first completed row.
+ *
+ * Null = nothing to refund (a withdrawal inside the trial, the common case). Not an error.
  */
+const hasCapturedPayment = (transaction: PaddleTransaction): boolean =>
+  transaction.payments.some(payment => payment.status === 'captured');
+
 const findRefundableTransaction = async (paddleSubscriptionId: string): Promise<string | null> => {
   try {
     const collection = ensurePaddle().transactions.list({
       subscriptionId: [paddleSubscriptionId],
       status: ['completed'],
       orderBy: 'billed_at[DESC]',
-      perPage: 1,
+      perPage: MAX_TRANSACTIONS_SCANNED,
     });
 
-    for await (const transaction of collection) return transaction.id;
+    let scanned = 0;
+    for await (const transaction of collection) {
+      if (hasCapturedPayment(transaction)) return transaction.id;
+      if (++scanned >= MAX_TRANSACTIONS_SCANNED) break;
+    }
     return null;
   } catch (error) {
     logger.error(error, `Failed to list transactions for subscription ${paddleSubscriptionId}`);

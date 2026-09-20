@@ -295,10 +295,8 @@ const refund = async (record: Withdrawal, sub: Subscription): Promise<string | n
     transactionId = await PaddleService.findRefundableTransaction(sub.paddleSubscriptionId);
 
     if (!transactionId) {
-      // A real state, not a failure: a trial that never billed. Recorded so the row says why
-      // no money moved, and returned as 'none' so the UI can tell "nothing to refund" from
-      // the failure path's null.
-      await recordRefundOutcome(record.id, 'no_completed_transaction');
+      // Recorded even though nothing moved, so the row says why.
+      await recordRefundOutcome(record.id, 'no_captured_payment');
       return 'none';
     }
 
