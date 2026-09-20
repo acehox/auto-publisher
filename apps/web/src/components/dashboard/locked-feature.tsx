@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { formatUsd, PREMIUM_PRICE_MONTHLY_USD, PREMIUM_TRIAL_DAYS } from '@/lib/pricing';
+import { Zap } from 'lucide-react';
 
 /**
  * The locked Filters tab for a free server. Deliberately one small card, not a
@@ -17,7 +18,10 @@ export function LockedFeature({
 }) {
   return (
     <div className="space-y-3.5 rounded-xl border border-slate-800 bg-slate-900 p-5">
-      <p className="text-[11px] uppercase tracking-wider text-yellow-500">Premium feature</p>
+      <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-yellow-500">
+        <Zap className="size-3.5 shrink-0" aria-hidden="true" />
+        Premium feature
+      </p>
       <p className="text-sm leading-relaxed text-slate-200">
         Filters let a channel publish only the messages you choose — by keyword, author, mention or
         webhook.
