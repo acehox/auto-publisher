@@ -1,46 +1,20 @@
+import { Copy, type OperatorOption } from '@ap/copy';
 import type { SegmentedOption } from '@/components/ui/segmented-control';
 import type { FilterMatchMode, FilterType } from '@/lib/api/types';
 
-/** Per-field operator option; `negate` is the stored value. */
-export interface OperatorOption {
-  negate: boolean;
-  label: string;
-}
+export type { OperatorOption };
 
-/**
- * Per-field operator choices (positive first). The negative form replaces the
- * old allow/block split — a negated condition is "block this".
- */
-export const OPERATOR_OPTIONS: Record<FilterType, [OperatorOption, OperatorOption]> = {
-  keyword: [
-    { negate: false, label: 'contains' },
-    { negate: true, label: "doesn't contain" },
-  ],
-  author: [
-    { negate: false, label: 'is' },
-    { negate: true, label: 'is not' },
-  ],
-  mention: [
-    { negate: false, label: 'mentions' },
-    { negate: true, label: "doesn't mention" },
-  ],
-  webhook: [
-    { negate: false, label: 'is' },
-    { negate: true, label: 'is not' },
-  ],
-};
-
-/** Human-readable operator for a condition. */
-export function operatorLabel(type: FilterType, negate: boolean): string {
-  return OPERATOR_OPTIONS[type].find(option => option.negate === negate)?.label ?? '';
-}
-
-/** Wildcard cheatsheet shown under the keyword input. */
-export const KEYWORD_WILDCARD_EXAMPLES: { pattern: string; hint: string }[] = [
-  { pattern: 'spam*', hint: 'starts with' },
-  { pattern: '*spam', hint: 'ends with' },
-  { pattern: '*spam*', hint: 'contains' },
-];
+/** The `@ap/copy` labels reshaped into the pairs the picker iterates. */
+export const OPERATOR_OPTIONS: Record<FilterType, [OperatorOption, OperatorOption]> =
+  Object.fromEntries(
+    (Object.keys(Copy.filters.operators.labels) as FilterType[]).map(type => [
+      type,
+      [
+        { negate: false, label: Copy.filters.operators.labels[type].positive },
+        { negate: true, label: Copy.filters.operators.labels[type].negative },
+      ],
+    ])
+  ) as Record<FilterType, [OperatorOption, OperatorOption]>;
 
 /** Mirror of the backend refine: a keyword that is empty or only `*` is a no-op. */
 export function isNoOpKeyword(value: string): boolean {
@@ -69,13 +43,9 @@ export const MAX_VALUES: Record<FilterType, number> = {
 };
 
 /** All = every condition must hold (default), Any = at least one. */
-export const MATCH_MODE_OPTIONS: SegmentedOption<FilterMatchMode>[] = [
-  { value: 'all', label: 'All' },
-  { value: 'any', label: 'Any' },
-];
-
-/** Default match mode for a channel with conditions. */
-export const DEFAULT_MATCH_MODE: FilterMatchMode = 'all';
+export const MATCH_MODE_OPTIONS: SegmentedOption<FilterMatchMode>[] = (['all', 'any'] as const).map(
+  value => ({ value, label: Copy.filters.matchModes.labels[value] })
+);
 
 /** Discord snowflake: 17-20 digits. */
 export const SNOWFLAKE_REGEX = /^\d{17,20}$/;
@@ -87,13 +57,11 @@ export const SNOWFLAKE_REGEX = /^\d{17,20}$/;
  */
 export function filterValueError(type: FilterType, value: string): string | null {
   if (type === 'keyword') {
-    if (value.length > 200) return 'Keyword is too long (max 200 chars)';
-    return isNoOpKeyword(value) ? 'Keyword cannot be empty or only wildcards' : null;
+    if (value.length > 200) return Copy.filters.errors.keywordTooLong;
+    return isNoOpKeyword(value) ? Copy.filters.errors.keywordEmpty : null;
   }
   if (SNOWFLAKE_REGEX.test(value)) return null;
-  return type === 'webhook'
-    ? 'Enter a valid webhook ID (17-20 digits)'
-    : 'Enter a valid user ID (17-20 digits)';
+  return type === 'webhook' ? Copy.filters.errors.webhookId : Copy.filters.errors.userId;
 }
 
 /** Discord role color int → CSS hex; 0 means "no color" (default). */

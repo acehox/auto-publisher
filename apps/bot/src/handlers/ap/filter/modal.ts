@@ -1,4 +1,5 @@
-import { type Filter, FilterType, RegExPatterns } from '@ap/validations';
+import { Copy } from '@ap/copy';
+import { type Filter, FilterType, MAX_VALUES, RegExPatterns } from '@ap/validations';
 import {
   LabelBuilder,
   MentionableSelectMenuBuilder,
@@ -13,7 +14,6 @@ import {
 } from 'discord.js';
 import { emojis } from 'lib/constants/index.js';
 import { logger } from 'utils/logger.js';
-import { FIELD_DESCRIPTIONS, FIELD_LABELS, MAX_VALUES, OPERATOR_LABELS } from './meta.js';
 
 /** Custom id of the modal's single value input, whatever its component type. */
 const VALUE_ID = 'value';
@@ -105,7 +105,9 @@ export const buildFilterModal = (
     .setCustomId(customId)
     .setTitle(options.existing ? 'Edit condition' : 'Add condition')
     .addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(`**${FIELD_LABELS[type]}**\n${FIELD_DESCRIPTIONS[type]}`)
+      textDisplay.setContent(
+        `**${Copy.filters.fields.labels[type]}**\n${Copy.filters.fields.descriptions[type]}`
+      )
     )
     .addLabelComponents(
       buildOperatorLabel(type, options.existing?.negate),
@@ -114,7 +116,7 @@ export const buildFilterModal = (
 
 /** Operator select, mapped to the stored `negate` flag. */
 const buildOperatorLabel = (type: FilterType, currentNegate?: boolean): LabelBuilder => {
-  const labels = OPERATOR_LABELS[type];
+  const labels = Copy.filters.operators.labels[type];
   const select = new StringSelectMenuBuilder()
     .setCustomId(OPERATOR_ID)
     .setPlaceholder('Select how this condition matches')
@@ -155,9 +157,7 @@ const buildValueLabel = (type: FilterType, options: FilterModalOptions): LabelBu
       if (existing) input.setValue(existing.values.join(VALUE_SEPARATOR));
 
       return label
-        .setDescription(
-          'Comma-separated. Matches whole words. spam* starts with, *spam ends with, *spam* contains.'
-        )
+        .setDescription(`Comma-separated. ${Copy.filters.keyword.hint}`)
         .setTextInputComponent(input);
     }
 

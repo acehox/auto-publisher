@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import { Filter as FilterIcon, Loader2, Plus, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -8,11 +9,7 @@ import { toast } from 'sonner';
 import { ConditionRow } from '@/components/dashboard/condition-row';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { FilterChannelSelect } from '@/components/dashboard/filter-channel-select';
-import {
-  DEFAULT_MATCH_MODE,
-  filterValueError,
-  MATCH_MODE_OPTIONS,
-} from '@/components/dashboard/filter-meta';
+import { filterValueError, MATCH_MODE_OPTIONS } from '@/components/dashboard/filter-meta';
 import { useSiteConfig } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import { SegmentedControl } from '@/components/ui/segmented-control';
@@ -154,7 +151,7 @@ function ChannelRuleEditor({
     matchMode: FilterMatchMode;
     conditions: FilterInput[];
   }>(() => ({
-    matchMode: channel.filterMode ?? DEFAULT_MATCH_MODE,
+    matchMode: channel.filterMode ?? Copy.filters.matchModes.default,
     conditions: toInputs(channel),
   }));
   const [matchMode, setMatchMode] = useState<FilterMatchMode>(baseline.matchMode);
@@ -200,7 +197,7 @@ function ChannelRuleEditor({
     }
     if (signInOnAuthExpired(result.status)) return;
     if (result.code === 'FILTER_LIMIT') {
-      toast.error(`Up to ${filtersPerChannel} conditions per channel.`);
+      toast.error(Copy.filters.condition.limit(filtersPerChannel));
       return;
     }
     if (result.code === 'PREMIUM_INACTIVE') {
@@ -213,7 +210,7 @@ function ChannelRuleEditor({
   const addCondition = () => {
     // The cap is never displayed — it surfaces only on the attempt past it.
     if (conditions.length >= filtersPerChannel) {
-      toast.error(`Up to ${filtersPerChannel} conditions per channel.`);
+      toast.error(Copy.filters.condition.limit(filtersPerChannel));
       return;
     }
     setConditions(previous => [...previous, { type: 'keyword', negate: false, values: [] }]);
@@ -232,20 +229,18 @@ function ChannelRuleEditor({
       <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
         {/* The sentence framing is what makes the feature self-explanatory. */}
         <div className="flex flex-wrap items-center gap-2 border-slate-800/70 border-b px-4 py-3.5">
-          <span className="text-sm text-slate-200">Messages will be published when</span>
+          <span className="text-sm text-slate-200">{Copy.filters.rule.lead}</span>
           <SegmentedControl
             options={MATCH_MODE_OPTIONS}
             value={matchMode}
             onChange={setMatchMode}
             size="sm"
           />
-          <span className="text-sm text-slate-200">of these conditions match:</span>
+          <span className="text-sm text-slate-200">{Copy.filters.rule.tail}</span>
         </div>
 
         {conditions.length === 0 ? (
-          <p className="px-4 py-4 text-sm text-slate-500">
-            No conditions, add one to start filtering.
-          </p>
+          <p className="px-4 py-4 text-sm text-slate-500">{Copy.filters.rule.empty}</p>
         ) : (
           conditions.map((condition, index) => (
             <ConditionRow
@@ -271,7 +266,7 @@ function ChannelRuleEditor({
             className="inline-flex cursor-pointer items-center gap-1.5 text-sm text-blue-400 transition-colors hover:text-blue-300"
           >
             <Plus className="size-4" />
-            Add condition
+            {Copy.filters.condition.add}
           </button>
         </div>
       </div>

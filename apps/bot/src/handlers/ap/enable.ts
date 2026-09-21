@@ -1,4 +1,5 @@
 import { config } from '@ap/config';
+import { Copy } from '@ap/copy';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import {
   ActionRowBuilder,
@@ -11,11 +12,11 @@ import {
   type Snowflake,
 } from 'discord.js';
 import { Buttons } from 'lib/components/buttons.js';
-import { emojis, links, notes } from 'lib/constants/index.js';
+import { emojis, notes } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 import { formatNotes } from 'utils/notes.js';
-import { checkChannelPermissions } from 'utils/permissions.js';
+import { checkChannelPermissions, renderPermissionSteps } from 'utils/permissions.js';
 import { buildReply, replyPayload } from 'utils/reply.js';
 
 const failureContainer = (channelId: Snowflake) =>
@@ -40,21 +41,21 @@ async function offerFilterChoice(
 ): Promise<boolean> {
   const rule = filterCount === 1 ? 'filter' : 'filters';
   const prompt = buildReply({
-    title: `${emojis.warning} Filters only run on Premium`,
+    title: `${emojis.warning} ${Copy.channels.filtersPremium.title}`,
     body: [
-      `<#${channelId}> has ${filterCount} ${rule} saved from a Premium plan. The Free plan can't run them, so this channel either publishes **every** message or stays off.`,
-      `Removing the ${rule} can't be undone.`,
+      Copy.channels.filtersPremium.body(`<#${channelId}>`, filterCount),
+      Copy.channels.filtersPremium.clearOffer(filterCount),
     ],
   });
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new Button()
       .setCustomId('enable_clear_filters')
-      .setLabel(`Remove ${rule} and enable`)
+      .setLabel(Copy.channels.filtersPremium.clearAction(filterCount))
       .setStyle(ButtonStyle.Danger),
     new Button()
       .setCustomId('enable_keep_filters')
-      .setLabel('Keep it off')
+      .setLabel(Copy.channels.filtersPremium.keepOff)
       .setStyle(ButtonStyle.Secondary),
     Buttons.getPremium
   );
@@ -136,19 +137,15 @@ export async function chatInputEnable(
       .map(perm => `- ${perm.has ? emojis.checkmark : emojis.crossmark} \`${perm.name}\``)
       .join('\n');
 
+    // The ✅/❌ breakdown is additive — the dashboard cannot show which of the
+    // three is missing — but the remedy below it is the shared five steps, so
+    // an admin reads the same instructions on either surface.
     const errorContainer = buildReply({
-      title: `${emojis.warning} Missing Permissions`,
-      body: [
-        `Bot requires the following permissions in <#${channel.id}> channel to enable auto-publishing:`,
-        permissionsList,
-      ],
+      title: `${emojis.warning} <#${channel.id}> can't publish yet`,
+      body: [Copy.permissions.intro, permissionsList],
     })
       .addSeparatorComponents(separator => separator)
-      .addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent(
-          'Please review the permissions and try enabling auto-publishing again.'
-        )
-      );
+      .addTextDisplayComponents(textDisplay => textDisplay.setContent(renderPermissionSteps()));
 
     await interaction.editReply(replyPayload(errorContainer));
     return;
@@ -169,9 +166,9 @@ export async function chatInputEnable(
       (await Services.Channel.getGuildChannels(interaction.guildId))?.premium ?? false;
 
     return buildReply({
-      title: `${emojis.checkmark} Auto-publishing enabled!`,
+      title: `${emojis.checkmark} ${Copy.channels.outcome.enabled}`,
       body:
-        `Auto-publishing has been enabled in <#${channel.id}> channel` +
+        Copy.channels.outcome.enabledDetail(`<#${channel.id}>`) +
         formatNotes([
           notes.rateLimit,
           premium ? notes.publishDelayPremium : notes.publishDelayFree,
@@ -188,7 +185,7 @@ export async function chatInputEnable(
           replyPayload(
             buildReply({
               title: `${emojis.info} Already enabled`,
-              body: `Auto-publishing is already enabled in <#${channel.id}> channel.`,
+              body: Copy.channels.outcome.alreadyEnabledDetail(`<#${channel.id}>`),
             })
           )
         );
@@ -231,17 +228,18 @@ export async function chatInputEnable(
 
         // Always the free cap: a Premium guild is uncapped, so this rejection
         // can only ever be a free one (`LIMIT_FREE` is the sole reason code).
-        return interaction.editReply(
-          replyPayload(
+        return interaction.editReply({
+          flags: [MessageFlags.IsComponentsV2],
+          components: [
             buildReply({
-              title: `${emojis.crossmark} Channel limit reached`,
-              body: [
-                `You have reached the maximum number of channels (${config.limits.freeChannelsPerGuild}) for auto-publishing.`,
-                `Upgrade to **Premium** at [${links.hostname}](<${links.website}>) to unlock unlimited channels and extra features!`,
-              ],
-            })
-          )
-        );
+              title: `${emojis.crossmark} ${Copy.channels.limit.title(config.limits.freeChannelsPerGuild)}`,
+              body: Copy.channels.limit.body(`<#${channel.id}>`),
+            }),
+            // The copy no longer carries an inline upgrade link, so the CTA is
+            // a button — the dashboard modal's "Upgrade to Premium" equivalent.
+            new ActionRowBuilder<ButtonBuilder>().addComponents(Buttons.getPremium),
+          ],
+        });
       }
 
       logger.error(`Failed to enable auto-publishing: ${response.status} ${response.statusText}`);

@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,8 +27,6 @@ export function ChannelDisableFiltersModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const rule = filterCount === 1 ? 'filter' : 'filters';
-
   return (
     <AlertDialog
       open
@@ -38,16 +37,17 @@ export function ChannelDisableFiltersModal({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            This also deletes {filterCount} {rule}
+            {Copy.channels.disableDeletesFilters.title(filterCount)}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Turning off {channelName} removes its {rule} for good. To pause publishing without
-            losing them, revoke the bot&apos;s View Channel permission in Discord instead.
+            {Copy.channels.disableDeletesFilters.body(channelName, filterCount)}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Turn off and delete</AlertDialogAction>
+          <AlertDialogAction onClick={onConfirm}>
+            {Copy.channels.disableDeletesFilters.confirm}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

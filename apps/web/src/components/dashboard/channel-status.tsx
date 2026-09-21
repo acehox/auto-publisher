@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import { Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -76,15 +77,14 @@ function MigratedStatus({
     return channels.length > 0 ? (
       <EmptyState
         icon={Megaphone}
-        title="Ready to get started"
+        title={Copy.channels.empty.getStarted}
         action={
           <Button asChild size="sm">
             <Link href={`/dashboard/${guildId}/channels`}>Choose channels</Link>
           </Button>
         }
       >
-        Pick the announcement channels that should publish automatically. You can change this any
-        time.
+        {Copy.channels.empty.getStartedBody}
       </EmptyState>
     ) : (
       <NoAnnouncementChannels />
@@ -97,10 +97,8 @@ function MigratedStatus({
       title="Channels"
       headline={
         needsFixingCount > 0
-          ? needsFixingCount === 1
-            ? '1 channel not publishing'
-            : `${needsFixingCount} channels not publishing`
-          : `All good — publishing in ${enabled.length} channel${enabled.length !== 1 ? 's' : ''}`
+          ? Copy.channels.health.notPublishing(needsFixingCount)
+          : Copy.channels.health.allGood(enabled.length)
       }
       action={<StatusCardAction href={`/dashboard/${guildId}/channels`}>Manage</StatusCardAction>}
       footer={footer}
@@ -123,9 +121,8 @@ function MigratedStatus({
 
 function NoAnnouncementChannels() {
   return (
-    <EmptyState icon={Megaphone} title="No announcement channels in this server">
-      In Discord, open a channel&apos;s settings and turn on &ldquo;Announcement channel&rdquo;,
-      then come back here.
+    <EmptyState icon={Megaphone} title={Copy.channels.empty.noAnnouncement}>
+      {Copy.channels.empty.noAnnouncementBody}
     </EmptyState>
   );
 }
@@ -155,10 +152,8 @@ function LegacyStatus({
       title="Channels"
       headline={
         broken > 0
-          ? broken === 1
-            ? '1 channel not publishing'
-            : `${broken} channels not publishing`
-          : `All good — publishing in ${total} announcement channel${total !== 1 ? 's' : ''}`
+          ? Copy.channels.health.notPublishing(broken)
+          : Copy.channels.health.allGood(total, 'announcement channel')
       }
       action={<StatusCardAction href={`/dashboard/${guildId}/channels`}>Manage</StatusCardAction>}
       footer={footer}

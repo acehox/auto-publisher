@@ -1,3 +1,4 @@
+import { Copy } from '@ap/copy';
 import { PUBLISH_PERMISSION_FLAGS } from '@ap/utils';
 import type { GuildMember, NewsChannel } from 'discord.js';
 
@@ -39,3 +40,22 @@ export const checkChannelPermissions = (
     missing,
   };
 };
+
+/**
+ * The dashboard's permission steps as a Discord-markdown numbered list — the
+ * same five sentences the Fix dialog and the enable guide show, so an admin
+ * following either one reads the same instructions.
+ *
+ * The permission names are indented under their own step rather than listed
+ * separately: all three are always required (see `@ap/copy`'s note on why a
+ * computed missing-subset is wrong).
+ */
+export const renderPermissionSteps = (): string =>
+  Copy.permissions.steps
+    .flatMap((step, index) => {
+      const line = `${index + 1}. ${step}`;
+      return index === Copy.permissions.stepWithNames
+        ? [line, PUBLISH_PERMISSION_FLAGS.map(({ name }) => ` - \`${name}\``).join('\n')]
+        : [line];
+    })
+    .join('\n');

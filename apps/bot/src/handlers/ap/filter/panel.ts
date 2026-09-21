@@ -1,4 +1,5 @@
 import { config } from '@ap/config';
+import { Copy } from '@ap/copy';
 import { normalizeFilterValues } from '@ap/utils';
 import { type Filter, FilterMatchMode, FilterType } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
@@ -15,7 +16,6 @@ import { emojis } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { handlePremiumCheck } from 'utils/interactions.js';
 import { logger } from 'utils/logger.js';
-import { MODE_LABELS } from './meta.js';
 import { buildFilterModal, extractModalValues, fitsEditModal, modalCustomId } from './modal.js';
 import {
   buildFocusView,
@@ -60,7 +60,7 @@ export async function chatInputFilters(
   if (!interaction.inGuild()) return;
 
   // Filters are Premium, resolved per guild — the bot has no plan of its own
-  if (await handlePremiumCheck(interaction, interaction.guildId, 'filtering')) return;
+  if (await handlePremiumCheck(interaction, interaction.guildId)) return;
 
   // Get option values
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
@@ -298,7 +298,7 @@ export async function chatInputFilters(
             component,
             listView(
               state,
-              `${emojis.crossmark} Maximum ${config.limits.filtersPerChannel} conditions per channel — remove one first.`
+              `${emojis.crossmark} ${Copy.filters.condition.limit(config.limits.filtersPerChannel)}`
             )
           );
           return;
@@ -330,7 +330,7 @@ export async function chatInputFilters(
 
         const response = await Data.API.Backend.setFilterMode(channel.id, mode);
         const notice = response.ok
-          ? `${emojis.checkmark} Match mode set to **${MODE_LABELS[mode]}**.`
+          ? `${emojis.checkmark} Match mode set to **${Copy.filters.matchModes.labels[mode]}**.`
           : `${emojis.crossmark} ${await describeFailure(response, {
               notFound: 'Auto-publishing is no longer enabled in this channel.',
               fallback: 'Failed to update the match mode. Please try again later.',
@@ -509,7 +509,7 @@ const describeFailure = async (
     } | null;
 
     if (body?.code === 'FILTER_LIMIT') {
-      return `Maximum ${config.limits.filtersPerChannel} conditions per channel — remove one first.`;
+      return Copy.filters.condition.limit(config.limits.filtersPerChannel);
     }
     // Backend zod failures already read as prose; anything else is not actionable.
     if (body?.message?.startsWith('Invalid input:')) return body.message;

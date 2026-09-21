@@ -100,7 +100,8 @@ export default function MigrationPage() {
               Legacy mode ends on{' '}
               <span className="font-bold text-white">
                 {legacySunsetLabel(getSiteConfig().legacySunsetDate)}
-              </span>. Migrate before then to keep publishing.
+              </span>
+              . Migrate before then to keep publishing.
             </span>
           </div>
         </div>

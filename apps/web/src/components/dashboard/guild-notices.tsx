@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import { CircleX, Loader2, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -168,17 +169,10 @@ function MisconfiguredStrip({ guildId, channels }: { guildId: string; channels: 
         )
       }
     >
-      {only ? (
-        <>
-          <span className="font-medium text-white">{channelLabel(only.name)}</span> is missing
-          Discord permissions and isn&apos;t publishing.
-        </>
-      ) : (
-        <>
-          <span className="font-medium text-white">{broken.length} channels</span> are missing
-          Discord permissions and aren&apos;t publishing.
-        </>
-      )}
+      <span className="font-medium text-white">
+        {only ? channelLabel(only.name) : `${broken.length} channels`}
+      </span>
+      {Copy.permissions.missingTail(broken.length)}
     </NoticeStrip>
   );
 }
@@ -245,9 +239,9 @@ function LegacyCard({
       <section className="flex items-start gap-3.5 rounded-lg border border-slate-800 border-l-2 border-l-amber-400 bg-slate-900 px-3.5 py-3.5">
         <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-400" />
         <div className="min-w-42 flex-1">
-          <h2 className="font-semibold text-sm text-white">This server runs in legacy mode</h2>
+          <h2 className="font-semibold text-sm text-white">{Copy.legacy.title}</h2>
           <p className="mt-1 text-sm leading-snug text-slate-300">
-            You must migrate to keep publishing without interruption, by{' '}
+            {Copy.legacy.bodyLead}{' '}
             <span className="mt-1.5 font-medium text-amber-300">{sunsetLabel}.</span>
           </p>
 
@@ -257,14 +251,14 @@ function LegacyCard({
               onClick={() => setModalOpen(true)}
               className="bg-amber-500 text-slate-950 hover:bg-amber-400"
             >
-              Migrate now
+              {Copy.legacy.migrateNow}
             </Button>
             <Link
               href="/migration"
               target="_blank"
               className="text-slate-400 text-xs transition-colors hover:text-slate-200"
             >
-              Learn what is changing
+              {Copy.legacy.learnMore}
             </Link>
           </div>
         </div>
@@ -309,10 +303,10 @@ function PausedStrip({
         </>
       }
     >
-      {pausedCount === 1 ? '1 channel is' : `${pausedCount} channels are`} set up but paused.{' '}
+      {Copy.channels.paused.count(pausedCount)}{' '}
       {forFiltersOnly
-        ? `${pausedCount === 1 ? 'Its' : 'Their'} filters only run on Premium.`
-        : `The Free plan publishes ${freeChannelLimit}.`}
+        ? Copy.channels.paused.filtersReason(pausedCount)
+        : Copy.channels.paused.capReason(freeChannelLimit)}
     </NoticeStrip>
   );
 }

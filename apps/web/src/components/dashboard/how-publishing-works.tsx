@@ -1,10 +1,8 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import { Info } from 'lucide-react';
-import {
-  publishDelayCopy,
-  usePublishDelayEntitled,
-} from '@/components/dashboard/publish-delay-note';
+import { usePublishDelayEntitled } from '@/components/dashboard/publish-delay-note';
 
 /**
  * The three ambient facts that close both the Overview and Channels tabs — same
@@ -22,8 +20,8 @@ export function HowPublishingWorks({ hasSubscription }: { hasSubscription: boole
         Disclaimer
       </h2>
       <div className="mt-2.5 space-y-2 text-xs leading-relaxed text-slate-500">
-        <p>Discord allows up to 10 published messages per hour, per channel.</p>
-        <p>{publishDelayCopy(entitled)}</p>
+        <p>{Copy.publishing.rateLimit}</p>
+        <p>{Copy.publishing.delay(entitled)}</p>
       </div>
     </section>
   );

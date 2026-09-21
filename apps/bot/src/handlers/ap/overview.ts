@@ -1,5 +1,6 @@
 import { config } from '@ap/config';
-import { PUBLISH_PERMISSION_FLAGS, sortBySidebarOrder } from '@ap/utils';
+import { Copy } from '@ap/copy';
+import { sortBySidebarOrder } from '@ap/utils';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import {
   ActionRowBuilder,
@@ -14,10 +15,11 @@ import {
 } from 'discord.js';
 import { Buttons } from 'lib/components/buttons.js';
 import { emojis, legacySunsetTimestamp, notes } from 'lib/constants/index.js';
+import type { PausedChannel } from 'services/channel.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 import { formatNotes } from 'utils/notes.js';
-import { checkChannelPermissions } from 'utils/permissions.js';
+import { checkChannelPermissions, renderPermissionSteps } from 'utils/permissions.js';
 import { buildReply, replyPayload } from 'utils/reply.js';
 
 /**
@@ -47,8 +49,8 @@ interface OverviewState {
   premium: boolean;
   /** Registered + serving channels, broken-first. Empty for a legacy guild. */
   channels: OverviewChannel[];
-  /** Retained but over the free limit (ADR 0009), in sidebar order. */
-  pausedChannelIds: Snowflake[];
+  /** Retained but not serving (ADR 0009), in sidebar order, with filter counts. */
+  pausedChannels: PausedChannel[];
   /**
    * Announcement channels that exist in the guild at all, from the bot's cache.
    * `null` = no channel cache to read (uncached interaction), i.e. unknown —
@@ -112,6 +114,15 @@ const orderChannelIds = (channelIds: Snowflake[], guild: Guild | null): Snowflak
   );
 };
 
+/** {@link orderChannelIds} for paused rows, keeping each one's filter count. */
+const orderPausedChannels = (paused: PausedChannel[], guild: Guild | null): PausedChannel[] => {
+  const byId = new Map(paused.map(entry => [entry.channelId, entry]));
+  return orderChannelIds([...byId.keys()], guild).flatMap(id => {
+    const entry = byId.get(id);
+    return entry ? [entry] : [];
+  });
+};
+
 /**
  * Registered channels in the dashboard Overview's order: channels that can't
  * publish first, then the rest, sidebar order preserved within each group (a
@@ -157,7 +168,7 @@ const loadOverviewState = async (
     migrated: guildChannels.migrated,
     premium: guildChannels.premium,
     channels: buildOverviewChannels(guildChannels.channelIds, guild, botMember),
-    pausedChannelIds: orderChannelIds(guildChannels.pausedChannelIds, guild),
+    pausedChannels: orderPausedChannels(guildChannels.pausedChannels, guild),
     announcementChannelCount: guild ? announcementChannels.length : null,
     // Same three permission bits as the dashboard's `canPublish !== false`.
     // No bot member resolvable → count them all rather than under-report.
@@ -174,7 +185,8 @@ const loadOverviewState = async (
 /** Title line and the copy that follows the separator under it. */
 interface OverviewHeader {
   title: string;
-  body: string;
+  /** Null when the title says it all — the healthy header is one sentence. */
+  body: string | null;
 }
 
 /**
@@ -184,13 +196,16 @@ interface OverviewHeader {
  * guild counts as having them — never accuse a server of having none on
  * incomplete evidence.
  */
-const renderGetStartedHeader = (state: OverviewState): OverviewHeader => ({
-  title: `${emojis.botBrand} Ready to get started?`,
-  body:
-    state.announcementChannelCount === 0
-      ? `This server has no announcement channels yet. Create one in Discord, then enable it with </ap enable:${state.apCommandId}>.`
-      : 'Enable an announcement channel to start auto-publishing.',
-});
+const renderGetStartedHeader = (state: OverviewState): OverviewHeader =>
+  state.announcementChannelCount === 0
+    ? {
+        title: `${emojis.botBrand} ${Copy.channels.empty.noAnnouncement}`,
+        body: `${Copy.channels.empty.noAnnouncementLead}, then enable it with </ap enable:${state.apCommandId}>.`,
+      }
+    : {
+        title: `${emojis.botBrand} ${Copy.channels.empty.getStarted}`,
+        body: Copy.channels.empty.getStartedBody,
+      };
 
 /** Only shown when there is actually a channel to enable. */
 const renderEnableHint = (state: OverviewState): string | null =>
@@ -208,13 +223,10 @@ const renderHealthHeader = (state: OverviewState): OverviewHeader => {
 
   return blockedCount > 0
     ? {
-        title: `${emojis.crossmark} **${blockedCount}** channel${blockedCount !== 1 ? "s aren't" : " isn't"} publishing`,
-        body: 'Grant the missing permissions — see the list below.',
+        title: `${emojis.crossmark} ${Copy.channels.health.notPublishing(blockedCount)}`,
+        body: Copy.permissions.missingSummary(blockedCount),
       }
-    : {
-        title: `${emojis.checkmark} All good`,
-        body: `Publishing in **${count}** channel${count !== 1 ? 's' : ''}.`,
-      };
+    : { title: `${emojis.checkmark} ${Copy.channels.health.allGood(count)}`, body: null };
 };
 
 /**
@@ -243,39 +255,46 @@ const renderChannelList = (state: OverviewState): string => {
 };
 
 /**
- * The fix instructions the Overview puts behind its per-row "Fix" button (same
- * required permissions, same "resumes on its own" promise), inlined once
- * because Components V2 has no room for a button per row. No auto-disable
- * exists; setup is retained.
+ * The same five steps the dashboard's Fix dialog shows, inlined once because
+ * Components V2 has no room for a button per row. No auto-disable exists;
+ * setup is retained, so the last step's "publishing starts on the next message"
+ * is the whole remedy.
  */
 const renderFixBlock = (state: OverviewState): string[] | null => {
   const blockedCount = state.channels.filter(c => !c.canPublish).length;
   if (blockedCount === 0) return null;
 
-  return [
-    `Auto Publisher is missing permissions in the ${emojis.crossmark}-flagged channel${blockedCount !== 1 ? 's' : ''} above, so ${blockedCount !== 1 ? "they won't" : "it won't"} publish. Grant ${blockedCount !== 1 ? 'them' : 'it'} these permissions and publishing resumes on its own:`,
-    PUBLISH_PERMISSION_FLAGS.map(perm => `- \`${perm.name}\``).join('\n'),
-  ];
+  const flagged = `${emojis.crossmark}-flagged channel${blockedCount !== 1 ? 's' : ''}`;
+  return [`Grant these permissions in the ${flagged} above:`, renderPermissionSteps()];
 };
 
 /**
- * Paused channels are retained but over the free limit (ADR 0009) — surfaced
- * so the user understands why they went quiet, with the path back. Trails the
- * serving channels, matching the Overview's paused rows.
+ * Paused channels are retained but not serving (ADR 0009) — surfaced so the user
+ * understands why they went quiet, with the path back. Trails the serving
+ * channels, matching the Overview's paused rows.
  *
+ * Stated by CAUSE, like the dashboard's `PausedStrip`: a channel paused for
+ * carrying a Premium-only rule is not over the cap, and quoting the cap to a
+ * guild under it was simply wrong. Every paused channel holding a rule is the
+ * only case the filters sentence applies to — a mixed set falls back to the cap
+ * reason, which is then the reason at least one of them is paused.
  */
 const renderPausedBlock = (state: OverviewState): string[] | null => {
-  const total = state.pausedChannelIds.length;
+  const total = state.pausedChannels.length;
   if (total === 0) return null;
 
-  const rows = state.pausedChannelIds.slice(0, MAX_LISTED_PAUSED).map(id => `<#${id}> — Paused`);
+  const rows = state.pausedChannels
+    .slice(0, MAX_LISTED_PAUSED)
+    .map(({ channelId }) => `<#${channelId}> — Paused`);
   const hidden = total - rows.length;
   if (hidden > 0) rows.push(`-# …and **${hidden}** more.`);
 
-  return [
-    `${emojis.warning} **${total}** channel${total !== 1 ? 's are' : ' is'} paused — over the free limit of ${config.limits.freeChannelsPerGuild}. Upgrade to Premium to restore ${total !== 1 ? 'them' : 'it'}:`,
-    rows.join('\n'),
-  ];
+  const forFiltersOnly = state.pausedChannels.every(entry => entry.filterCount > 0);
+  const reason = forFiltersOnly
+    ? Copy.channels.paused.filtersReason(total)
+    : Copy.channels.paused.capReason(config.limits.freeChannelsPerGuild);
+
+  return [`${emojis.warning} ${Copy.channels.paused.count(total)} ${reason}`, rows.join('\n')];
 };
 
 const renderNotes = (premium: boolean): string =>
@@ -315,13 +334,12 @@ const buildEmptyContainer = (state: OverviewState): ContainerBuilder => {
 /**
  * MIGRATION: delete at sunset along with the rest of the legacy UX.
  *
- * Mirrors the dashboard's two legacy surfaces — the migrate banner in
- * `dashboard-banners.tsx` and `LegacyStatus` in `channel-status.tsx` — collapsed
+ * Mirrors the dashboard's two legacy surfaces — `LegacyCard` in
+ * `guild-notices.tsx` and `LegacyStatus` in `channel-status.tsx` — collapsed
  * into one card, since the bot has a single ephemeral reply where the dashboard
- * has a page. The banner's wording wins because it is the one that states the
- * consequence (publishing stops); the section's shorter sentence would repeat
- * its first clause verbatim. Still deliberately not itemized: the dashboard
- * withholds per-channel detail from legacy guilds to steer them to migrate.
+ * has a page. The card's one sentence is shared verbatim through `@ap/copy`.
+ * Still deliberately not itemized: the dashboard withholds per-channel detail
+ * from legacy guilds to steer them to migrate.
  *
  * The sunset date is a `<t:…:D>` timestamp rather than a formatted string so
  * Discord renders it in each viewer's own locale and timezone.
@@ -334,12 +352,12 @@ const buildLegacyContainer = (state: OverviewState): ContainerBuilder => {
     total === null
       ? null
       : total === 0
-        ? "This server doesn't have any announcement channels."
+        ? Copy.channels.empty.noAnnouncement
         : `Publishing in **${state.legacyPublishingCount}** of **${total}** announcement channel${total !== 1 ? 's' : ''}.`;
 
   const container = buildReply({
-    title: `${emojis.warning} This server runs in legacy mode`,
-    body: `Every announcement channel is published automatically. Legacy mode will be discontinued, and the bot may stop publishing in this server once it is retired. Migrate now to keep publishing without interruption, choose exactly which channels publish, and unlock new features.\n### Legacy mode ends on <t:${legacySunsetTimestamp}:D>`,
+    title: `${emojis.warning} ${Copy.legacy.title}`,
+    body: Copy.legacy.body(`<t:${legacySunsetTimestamp}:D>`),
   }).addActionRowComponents(
     new ActionRowBuilder<ButtonBuilder>().addComponents(
       Buttons.migrateNow(state.guildId),
@@ -424,7 +442,7 @@ export async function chatInputOverview(
 
     const container = !state.migrated
       ? buildLegacyContainer(state)
-      : state.channels.length === 0 && state.pausedChannelIds.length === 0
+      : state.channels.length === 0 && state.pausedChannels.length === 0
         ? buildEmptyContainer(state)
         : buildOverviewContainer(state);
 

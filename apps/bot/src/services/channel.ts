@@ -110,6 +110,24 @@ const getStatus = async (channelId: Snowflake) => {
   }
 };
 
+/** A paused channel and the size of the rule it kept (ADR 0009). */
+export interface PausedChannel {
+  channelId: Snowflake;
+  filterCount: number;
+}
+
+/**
+ * Accepts either shape the backend may send. A backend that predates the filter
+ * count sends bare ids; those degrade to `filterCount: 0`, which reads as the
+ * channel-cap reason — the wording this command has always used.
+ */
+const normalizePausedChannels = (
+  entries: (PausedChannel | string)[] | undefined
+): PausedChannel[] =>
+  (entries ?? []).map(entry =>
+    typeof entry === 'string' ? { channelId: entry, filterCount: 0 } : entry
+  );
+
 /**
  * Get a guild's auto-publishing state: serving channel IDs, paused ones
  * (retained but over the free limit, ADR 0009), whether the guild is migrated,
@@ -118,7 +136,7 @@ const getStatus = async (channelId: Snowflake) => {
  * `premium` is the bot's ONLY source for a guild's plan — one bot serves both,
  * so nothing about the running process implies it.
  * @param guildId The guild ID
- * @returns { channelIds, pausedChannelIds, migrated, premium }, or null if request fails
+ * @returns { channelIds, pausedChannels, migrated, premium }, or null if request fails
  */
 const getGuildChannels = async (guildId: Snowflake) => {
   try {
@@ -135,6 +153,8 @@ const getGuildChannels = async (guildId: Snowflake) => {
       status: number;
       data: {
         channelIds: string[];
+        pausedChannels?: (PausedChannel | string)[];
+        /** Pre-filter-count backends. */
         pausedChannelIds?: string[];
         migrated?: boolean;
         premium?: boolean;
@@ -143,7 +163,9 @@ const getGuildChannels = async (guildId: Snowflake) => {
     };
     return {
       channelIds: result.data.channelIds,
-      pausedChannelIds: result.data.pausedChannelIds ?? [],
+      pausedChannels: normalizePausedChannels(
+        result.data.pausedChannels ?? result.data.pausedChannelIds
+      ),
       // Defaults false: claiming Premium a guild does not have would offer
       // controls whose every write the backend then rejects with 403.
       premium: result.data.premium ?? false,

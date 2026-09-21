@@ -20,6 +20,12 @@ import { logger } from 'utils/logger.js';
 import { Discord } from './discord.js';
 import { Plans } from './plans.js';
 
+/** A retained-but-not-serving channel, as `/ap overview` needs to explain it. */
+export interface PausedChannel {
+  channelId: Snowflake;
+  filterCount: number;
+}
+
 /**
  * Get guild row from DB
  * @param guildId ID of the guild
@@ -59,14 +65,21 @@ const getChannels = async (guildId: Snowflake): Promise<string[]> => {
   }
 };
 
-/** Paused (retained-but-not-serving) channel IDs for a guild (ADR 0009) */
-const getPausedChannels = async (guildId: Snowflake): Promise<string[]> => {
+/**
+ * Paused (retained-but-not-serving) channels for a guild (ADR 0009), each with
+ * its filter count.
+ *
+ * The count is what lets `/ap overview` state the *cause* the way the dashboard
+ * does: a channel paused for carrying a Premium-only rule is not over the free
+ * cap, and telling an under-cap guild it hit the cap is simply wrong.
+ */
+const getPausedChannels = async (guildId: Snowflake): Promise<PausedChannel[]> => {
   try {
     const rows = await db
-      .select({ channelId: channel.channelId })
+      .select({ channelId: channel.channelId, filters: channel.filters })
       .from(channel)
       .where(and(eq(channel.guildId, guildId), isNotNull(channel.pausedAt)));
-    return rows.map(r => r.channelId);
+    return rows.map(r => ({ channelId: r.channelId, filterCount: r.filters?.length ?? 0 }));
   } catch (error) {
     logger.error(error);
     throw new Error('Failed to retrieve paused channels');

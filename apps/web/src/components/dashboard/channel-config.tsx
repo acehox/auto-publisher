@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import { Loader2, Megaphone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
@@ -84,19 +85,23 @@ export function ChannelConfig({
           ? await disableChannel(guildId, channelId)
           : await enableChannel(guildId, channelId, options);
         const channel = channels.find(c => c.channelId === channelId);
+        // Wording shared with the bot's `/ap enable` and `/ap disable` replies —
+        // a toast has no title/body split, so the channel name rides the sentence.
+        const subject = channel ? channelLabel(channel.name) : 'this channel';
         if (result.ok) {
           if (enabled) {
-            toast.success(
-              `${channel ? channelLabel(channel.name) : 'Channel'} is no longer publishing.`
-            );
+            toast.success(`${Copy.channels.outcome.disabled} in ${subject}.`);
           } else if (channel?.canPublish === false) {
             // Enabled, but the bot still can't publish here — point at the Fix
             // control on its row rather than claim a false "all good".
-            toast.warning(`${channelLabel(channel.name)} is enabled but not publishing.`, {
-              description: 'Grant the missing permissions in Discord to fix it.',
-            });
+            toast.warning(
+              `${Copy.channels.outcome.enabled} in ${subject}, but it isn't publishing yet.`,
+              {
+                description: 'Grant the missing permissions in Discord to fix it.',
+              }
+            );
           } else {
-            toast.success(`${channel ? channelLabel(channel.name) : 'Channel'} is now publishing.`);
+            toast.success(`${Copy.channels.outcome.enabled} in ${subject}.`);
           }
           router.refresh();
           return;
@@ -114,7 +119,7 @@ export function ChannelConfig({
         // this list was open. Carries no `code`, so without this branch it falls
         // into the cap fallback and renders as "channel limit reached".
         if (result.status === 409) {
-          toast.info('That channel was already enabled elsewhere.');
+          toast.info(Copy.channels.outcome.alreadyEnabled);
           router.refresh();
           return;
         }
@@ -195,15 +200,15 @@ export function ChannelConfig({
   const pausedSub = (channel: GuildChannel): string | undefined => {
     if (!channel.hasSavedSetup) return undefined;
     const n = channel.filters.length;
-    if (n > 0) return `${n} filter${n === 1 ? '' : 's'} saved for Premium`;
-    return channelLimit === 0 ? 'Paused' : `Paused. The Free plan publishes ${channelLimit}.`;
+    if (n > 0) return Copy.channels.paused.rowFilters(n);
+    return channelLimit === 0
+      ? 'Paused'
+      : `Paused. ${Copy.channels.paused.capReason(channelLimit)}`;
   };
 
   return (
     <div className="space-y-4">
-      <PageHeader
-        title="Channels"
-      />
+      <PageHeader title="Channels" />
 
       {/* MIGRATION: removed at sunset, along with the read-only branch below. */}
       {!migrated && (

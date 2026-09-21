@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import Link from 'next/link';
 import { useSiteConfig } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
@@ -47,11 +48,9 @@ export function ChannelLimitModal({
     >
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>The Free plan publishes {freeChannelLimit} channels</DialogTitle>
+          <DialogTitle>{Copy.channels.limit.title(freeChannelLimit)}</DialogTitle>
           <DialogDescription>
-            {channelName ?? 'That channel'} stays off until you turn another channel off, or
-            upgrade. Premium publishes every channel, adds filters, and moves you up the publish
-            queue.
+            {Copy.channels.limit.body(channelName ?? 'That channel')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

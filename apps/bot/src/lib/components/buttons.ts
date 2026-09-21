@@ -1,3 +1,4 @@
+import { Copy } from '@ap/copy';
 import { ButtonBuilder, ButtonStyle, type Snowflake } from 'discord.js';
 import { emojis, links } from 'lib/constants/index.js';
 
@@ -6,8 +7,10 @@ export const website = new ButtonBuilder()
   .setURL(links.website)
   .setStyle(ButtonStyle.Link);
 
+// Names its destination, like the dashboard's locked card — "Get Premium" read
+// as the upgrade itself, which the next screen then asks for again.
 export const getPremium = new ButtonBuilder()
-  .setLabel('Get Premium')
+  .setLabel(Copy.premium.seePlans)
   .setURL(links.premiumPage)
   .setStyle(ButtonStyle.Link);
 

@@ -1,10 +1,8 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
-import {
-  publishDelayCopy,
-  usePublishDelayEntitled,
-} from '@/components/dashboard/publish-delay-note';
+import { usePublishDelayEntitled } from '@/components/dashboard/publish-delay-note';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -51,16 +49,14 @@ export function ChannelEnableGuideModal({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Before {channelName} can publish</AlertDialogTitle>
-          <AlertDialogDescription>
-            The bot needs three channel permissions in Discord before it can post here.
-          </AlertDialogDescription>
+          <AlertDialogDescription>{Copy.permissions.intro}</AlertDialogDescription>
         </AlertDialogHeader>
 
         <PermissionSteps />
 
         <div className="space-y-1.5 border-slate-800 border-t pt-3 text-xs leading-relaxed text-slate-400">
-          <p>Discord allows up to 10 published messages per hour, per channel.</p>
-          <p>{publishDelayCopy(entitled)}</p>
+          <p>{Copy.publishing.rateLimit}</p>
+          <p>{Copy.publishing.delay(entitled)}</p>
         </div>
 
         <AlertDialogFooter>

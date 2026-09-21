@@ -1,3 +1,4 @@
+import { Copy } from '@ap/copy';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import {
   ActionRowBuilder,
@@ -9,16 +10,15 @@ import {
   MessageFlags,
   type Snowflake,
 } from 'discord.js';
-import { emojis, notes } from 'lib/constants/index.js';
+import { emojis } from 'lib/constants/index.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
-import { formatNotes } from 'utils/notes.js';
 import { buildReply, replyPayload } from 'utils/reply.js';
 
 const disabledContainer = (channelId: Snowflake) =>
   buildReply({
-    title: `${emojis.checkmark} Auto-publishing disabled`,
-    body: `Auto-publishing has been disabled in <#${channelId}> channel.`,
+    title: `${emojis.checkmark} ${Copy.channels.outcome.disabled}`,
+    body: Copy.channels.outcome.disabledDetail(`<#${channelId}>`),
   });
 
 export async function chatInputDisable(
@@ -50,16 +50,17 @@ export async function chatInputDisable(
     {
       const filters = channelStatus.filters;
       if (filters && filters.length > 0) {
+        // Same sentence as the dashboard's disable confirm — the deletion is the
+        // same one, and "revoke View Channel instead" is the only way to pause
+        // without losing the rule. No auto-disable is threatened: none exists.
         const warningContainer = buildReply({
-          title: `${emojis.warning} This will also remove all filters`,
-          body:
-            `Disabling auto-publishing in <#${channel.id}> channel will remove every filter set for it.\n\nIf you want to temporarily disable auto-publishing without removing filters, we suggest disabling \`View Channel\` permission instead.` +
-            formatNotes([notes.permissionsExtendedDisable]),
+          title: `${emojis.warning} ${Copy.channels.disableDeletesFilters.title(filters.length)}`,
+          body: Copy.channels.disableDeletesFilters.body(`<#${channel.id}>`, filters.length),
         });
 
         const confirmButton = new Button()
           .setCustomId('confirm_disable')
-          .setLabel('Disable Anyway')
+          .setLabel(Copy.channels.disableDeletesFilters.confirm)
           .setStyle(ButtonStyle.Danger);
 
         const cancelButton = new Button()

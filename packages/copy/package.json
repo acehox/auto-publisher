@@ -1,0 +1,14 @@
+{
+  "name": "@ap/copy",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@ap/tsconfig": "workspace:*"
+  }
+}

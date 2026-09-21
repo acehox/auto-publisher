@@ -1,4 +1,5 @@
 import { config, env, isPublicInstance } from '@ap/config';
+import { Copy } from '@ap/copy';
 import { getDiscordFormat } from '@ap/utils';
 
 const HOSTNAME = 'auto-publisher.gg';
@@ -113,17 +114,16 @@ export const emojiNames: Record<keyof typeof emojis, string> = {
   redCircle: 'red_circle_dot',
 };
 
+/**
+ * The ambient publishing facts, from `@ap/copy` so the dashboard cannot state
+ * them differently. ZZP čl. 60 st. 2 makes them contract terms.
+ *
+ * There is no `permissionsExtendedDisable` note any more: it promised an
+ * auto-disable that has never existed, and contradicted this bot's own "grant
+ * the permissions and publishing resumes on its own".
+ */
 export const notes = {
-  rateLimit: 'Discord allows up to 10 messages to be published per hour per channel.',
-  // No "every message will be published" — the proxy gate drops on Discord's
-  // 10/hour/channel sublimit, so the absolute would be false on either plan.
-  publishDelayFree:
-    "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium to prioritize your messages.",
-  // Priority publishing, NOT "dedicated capacity": there is one publishing
-  // pipeline and Premium is a queue tier within it (ADR 0011). ZZP čl. 60 st. 2
-  // makes this copy a contract term, so it has to describe what actually runs.
-  publishDelayPremium:
-    'Your messages are published at Premium priority. They go ahead of the free queue during busy periods.',
-  permissionsExtendedDisable:
-    "Don't keep permissions disabled for too long, as the bot will automatically disable channels that lack proper permissions for an extended period.",
+  rateLimit: Copy.publishing.rateLimit,
+  publishDelayFree: Copy.publishing.delay(false),
+  publishDelayPremium: Copy.publishing.delay(true),
 } as const;

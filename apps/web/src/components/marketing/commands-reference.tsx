@@ -6,19 +6,25 @@ interface Command {
   premium?: boolean;
 }
 
+// Verbatim from the bot's own command registration (`apps/bot/src/commands/ap.ts`,
+// `commands/static/help.ts`) — this table is a picture of what Discord shows in
+// the command picker, so paraphrasing it would make the two disagree.
 const commands: Command[] = [
-  { name: '/ap enable', description: 'Turn on auto-publishing for an announcement channel.' },
-  { name: '/ap disable', description: 'Turn off auto-publishing for a channel.' },
+  { name: '/ap enable', description: 'Enable auto-publishing in announcement channel' },
+  { name: '/ap disable', description: 'Disable auto-publishing in announcement channel' },
   {
     name: '/ap overview',
-    description: 'See publishing status for every channel in the server.',
+    description: 'See publishing status for every channel in this server',
   },
   {
     name: '/ap filters',
-    description: 'Build the conditions that decide which messages get published.',
+    description: 'Choose exactly which messages auto-publish from each channel',
     premium: true,
   },
-  { name: '/help', description: 'Overview of everything Auto Publisher can do.' },
+  {
+    name: '/help',
+    description: 'Discover all the ways you can use Auto Publisher to manage your channels!',
+  },
 ];
 
 export function CommandsReference() {

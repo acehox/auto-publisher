@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import {
   AtSign,
   Check,
@@ -14,10 +15,8 @@ import {
 import { useMemo, useState } from 'react';
 import {
   filterValueError,
-  KEYWORD_WILDCARD_EXAMPLES,
   MAX_VALUES,
   OPERATOR_OPTIONS,
-  operatorLabel,
   roleColorHex,
 } from '@/components/dashboard/filter-meta';
 import {
@@ -41,12 +40,20 @@ import { TagInput } from '@/components/ui/tag-input';
 import type { FilterInput, FilterType, GuildRole } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 
-const FIELD_OPTIONS: { value: FilterType; label: string; icon: LucideIcon }[] = [
-  { value: 'keyword', label: 'Content', icon: TextAlignStart },
-  { value: 'author', label: 'Author', icon: User },
-  { value: 'mention', label: 'Mention', icon: AtSign },
-  { value: 'webhook', label: 'Webhook', icon: Webhook },
-];
+const FIELD_ICONS: Record<FilterType, LucideIcon> = {
+  keyword: TextAlignStart,
+  author: User,
+  mention: AtSign,
+  webhook: Webhook,
+};
+
+// Labels and order come from `@ap/copy`; only the icons are web-side.
+const FIELD_OPTIONS: { value: FilterType; label: string; icon: LucideIcon }[] =
+  Copy.filters.fields.order.map(value => ({
+    value,
+    label: Copy.filters.fields.labels[value],
+    icon: FIELD_ICONS[value],
+  }));
 
 const selectClass =
   'flex h-8 cursor-pointer items-center gap-2 rounded-md border border-slate-700 px-2.5 text-xs text-slate-200 outline-none transition-colors hover:border-slate-600 disabled:cursor-not-allowed disabled:opacity-50';
@@ -152,7 +159,7 @@ export function ConditionRow({
               disabled={disabled}
               className={cn(selectClass, 'text-slate-300')}
             >
-              <span className="truncate">{operatorLabel(type, negate)}</span>
+              <span className="truncate">{Copy.filters.operators.label(type, negate)}</span>
               <ChevronDown className="size-3 shrink-0 opacity-60" />
             </button>
           </DropdownMenuTrigger>
@@ -185,7 +192,7 @@ export function ConditionRow({
             />
             <p className="text-[11px] leading-relaxed text-slate-500">
               Whole words. Use * as a wildcard:{' '}
-              {KEYWORD_WILDCARD_EXAMPLES.map((example, index) => (
+              {Copy.filters.keyword.wildcards.map((example, index) => (
                 <span key={example.pattern}>
                   {index > 0 && ', '}
                   <code className="font-mono text-slate-400">{example.pattern}</code>
@@ -328,11 +335,9 @@ export function ConditionRow({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove this condition?</AlertDialogTitle>
+            <AlertDialogTitle>{Copy.filters.condition.removeTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              {field.label} {operatorLabel(type, negate)} {values.length}{' '}
-              {values.length === 1 ? 'value' : 'values'}. Removing it widens what the channel
-              publishes.
+              {Copy.filters.condition.removeBody(type, negate, values.length)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,8 +37,6 @@ export function ChannelFiltersPremiumModal({
   onClear: () => void;
   onClose: () => void;
 }) {
-  const rule = filterCount === 1 ? 'filter' : 'filters';
-  const them = filterCount === 1 ? 'it' : 'them';
   const subject = channelName ?? 'That channel';
 
   return (
@@ -49,26 +48,24 @@ export function ChannelFiltersPremiumModal({
     >
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Filters only run on Premium</DialogTitle>
+          <DialogTitle>{Copy.channels.filtersPremium.title}</DialogTitle>
           <DialogDescription>
-            {subject} has {filterCount} {rule} saved from Premium. The Free plan can&apos;t run{' '}
-            {them}, so this channel stays off until you upgrade.
+            {Copy.channels.filtersPremium.body(subject, filterCount)}
           </DialogDescription>
         </DialogHeader>
 
         <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3">
           <p className="text-sm text-slate-300">
-            Staying on Free? Remove the {rule} and this channel publishes every message. You
-            can&apos;t get {them} back.
+            {Copy.channels.filtersPremium.clearOffer(filterCount)}
           </p>
           <Button variant="outline" size="sm" className="mt-3" onClick={onClear}>
-            Remove {rule} and enable
+            {Copy.channels.filtersPremium.clearAction(filterCount)}
           </Button>
         </div>
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            Keep it off
+            {Copy.channels.filtersPremium.keepOff}
           </Button>
           <Button asChild>
             <Link href={`/dashboard/${guildId}/subscription`}>Upgrade to Premium</Link>

@@ -19,9 +19,10 @@ export const Guild: Router = (() => {
     const { guildId } = req.params;
 
     try {
-      // channelIds = serving; pausedChannelIds = retained-but-paused (ADR 0009),
-      // surfaced separately by /ap overview.
-      const [channelIds, pausedChannelIds, guildRow, premium] = await Promise.all([
+      // channelIds = serving; pausedChannels = retained-but-paused (ADR 0009),
+      // surfaced separately by /ap overview. Each paused entry carries its filter
+      // count, which is what lets the bot state WHY a channel is paused.
+      const [channelIds, pausedChannels, guildRow, premium] = await Promise.all([
         Services.Guilds.getChannels(guildId),
         Services.Guilds.getPausedChannels(guildId),
         Services.Guilds.find(guildId),
@@ -32,7 +33,7 @@ export const Guild: Router = (() => {
         // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt
         // NULL. A legacy guild has no channel rows, so without this the bot
         // can't tell "publishes everything" from "publishes nothing".
-        data: { channelIds, pausedChannelIds, migrated: !!guildRow?.migratedAt, premium },
+        data: { channelIds, pausedChannels, migrated: !!guildRow?.migratedAt, premium },
         message: 'Channels retrieved successfully',
       } as APIResponse);
     } catch (error) {

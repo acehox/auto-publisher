@@ -1,3 +1,4 @@
+import { Copy } from '@ap/copy';
 import { type Filter, FilterMatchMode, FilterType } from '@ap/validations';
 import {
   ActionRowBuilder,
@@ -9,13 +10,6 @@ import {
   StringSelectMenuBuilder,
 } from 'discord.js';
 import { emojis } from 'lib/constants/index.js';
-import {
-  FIELD_DESCRIPTIONS,
-  FIELD_LABELS,
-  FIELD_ORDER,
-  MODE_LABELS,
-  operatorLabel,
-} from './meta.js';
 
 /**
  * Component ids the panel collector routes on. Anything after the first `:` is the
@@ -100,7 +94,7 @@ const valuePreview = (filter: Filter, roleIds: ReadonlySet<Snowflake>): string =
 };
 
 const conditionLabel = (filter: Filter): string =>
-  `**${FIELD_LABELS[filter.type]}** ${operatorLabel(filter.type, filter.negate)}`;
+  `**${Copy.filters.fields.labels[filter.type]}** ${Copy.filters.operators.label(filter.type, filter.negate)}`;
 
 const conditionEmoji = (filter: Filter): string =>
   filter.negate ? emojis.crossmark : emojis.checkmark;
@@ -108,22 +102,18 @@ const conditionEmoji = (filter: Filter): string =>
 const conditionLine = (filter: Filter, position: number, roleIds: ReadonlySet<Snowflake>): string =>
   `${position}. ${conditionEmoji(filter)} ${conditionLabel(filter)} ${valuePreview(filter, roleIds)}`;
 
-/** Mirrors the dashboard's rule sentence (`filter-config.tsx`). */
+/** The dashboard's rule sentence, with the match mode inlined where its control sits. */
 const leadLine = (state: PanelState): string => {
-  if (state.filters.length === 0) {
-    return 'No conditions, add one to start filtering.';
-  }
-  if (state.filters.length === 1) {
-    return 'Messages will be published when this condition matches:';
-  }
-  return `Messages will be published when **${MODE_LABELS[state.filterMode]}** of these conditions match:`;
+  if (state.filters.length === 0) return Copy.filters.rule.empty;
+  if (state.filters.length === 1) return Copy.filters.rule.single;
+  return `${Copy.filters.rule.lead} **${Copy.filters.matchModes.labels[state.filterMode]}** ${Copy.filters.rule.tail}`;
 };
 
 const modeButton = (mode: FilterMatchMode, current: FilterMatchMode): ButtonBuilder => {
   const active = mode === current;
   const button = new ButtonBuilder()
     .setCustomId(`${PanelIds.Mode}:${mode}`)
-    .setLabel(MODE_LABELS[mode])
+    .setLabel(Copy.filters.matchModes.labels[mode])
     .setStyle(active ? ButtonStyle.Primary : ButtonStyle.Secondary)
     .setDisabled(active);
 
@@ -201,10 +191,10 @@ export const buildListView = (
           .setCustomId(PanelIds.Type)
           .setPlaceholder('Choose a condition type…')
           .addOptions(
-            FIELD_ORDER.map(type => ({
-              label: FIELD_LABELS[type],
+            Copy.filters.fields.order.map(type => ({
+              label: Copy.filters.fields.labels[type],
               value: type,
-              description: FIELD_DESCRIPTIONS[type],
+              description: Copy.filters.fields.descriptions[type],
               default: type === options.selectedType,
             }))
           )
@@ -217,7 +207,7 @@ export const buildListView = (
   const actions = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(PanelIds.Add)
-      .setLabel('Add condition')
+      .setLabel(Copy.filters.condition.add)
       .setStyle(ButtonStyle.Primary)
   );
 
@@ -286,19 +276,23 @@ export const buildFocusView = (
     .addSeparatorComponents(separator => separator);
 
   if (options.confirmRemove) {
+    // Names the consequence, not merely the irreversibility — same as the
+    // dashboard's condition-row confirm.
     return container
       .addTextDisplayComponents(textDisplay =>
-        textDisplay.setContent(`${emojis.warning} Delete this condition? This can't be undone.`)
+        textDisplay.setContent(
+          `${emojis.warning} **${Copy.filters.condition.removeTitle}**\n${Copy.filters.condition.removeBody(filter.type, filter.negate, filter.values.length)}`
+        )
       )
       .addActionRowComponents(
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId(`${PanelIds.RemoveConfirm}:${filter.id}`)
-            .setLabel('Confirm delete')
+            .setLabel('Remove')
             .setStyle(ButtonStyle.Danger),
           new ButtonBuilder()
             .setCustomId(`${PanelIds.Focus}:${filter.id}`)
-            .setLabel('Cancel')
+            .setLabel('Keep')
             .setStyle(ButtonStyle.Secondary)
         )
       );
