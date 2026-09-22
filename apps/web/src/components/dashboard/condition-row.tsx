@@ -5,9 +5,11 @@ import {
   AtSign,
   Check,
   ChevronDown,
+  Loader2,
   type LucideIcon,
   TextAlignStart,
   Trash2,
+  TriangleAlert,
   User,
   Webhook,
   X,
@@ -17,6 +19,7 @@ import {
   filterValueError,
   MAX_VALUES,
   OPERATOR_OPTIONS,
+  type RolesStatus,
   roleColorHex,
 } from '@/components/dashboard/filter-meta';
 import {
@@ -36,6 +39,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { TagInput } from '@/components/ui/tag-input';
 import type { FilterInput, FilterType, GuildRole } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
@@ -56,12 +60,14 @@ const FIELD_OPTIONS: { value: FilterType; label: string; icon: LucideIcon }[] =
   }));
 
 const selectClass =
-  'flex h-8 cursor-pointer items-center gap-2 rounded-md border border-slate-700 px-2.5 text-xs text-slate-200 outline-none transition-colors hover:border-slate-600 disabled:cursor-not-allowed disabled:opacity-50';
+  'flex h-9 cursor-pointer items-center gap-2 rounded-md border border-slate-700 px-2.5 text-xs text-slate-200 outline-none transition-colors hover:border-slate-600 disabled:cursor-not-allowed disabled:opacity-50';
 
 interface ConditionRowProps {
   condition: FilterInput;
   roles: GuildRole[];
   rolesById: Record<string, GuildRole>;
+  rolesStatus: RolesStatus;
+  onRetryRoles: () => void;
   disabled?: boolean;
   onChange: (next: FilterInput) => void;
   onRemove: () => void;
@@ -80,6 +86,8 @@ export function ConditionRow({
   condition,
   roles,
   rolesById,
+  rolesStatus,
+  onRetryRoles,
   disabled = false,
   onChange,
   onRemove,
@@ -92,8 +100,19 @@ export function ConditionRow({
   const FieldIcon = field.icon;
 
   // Mention is stored as one value list but edited as roles (picker) + user IDs.
-  const roleIds = useMemo(() => values.filter(v => rolesById[v]), [values, rolesById]);
-  const userIds = useMemo(() => values.filter(v => !rolesById[v]), [values, rolesById]);
+  // The split is only meaningful once the role list is known: deriving it from an
+  // empty `rolesById` files every saved role id under "user ids", so a slow or
+  // failed fetch silently reshuffled the row. Until then the values render
+  // read-only and neither bucket claims them.
+  const rolesKnown = rolesStatus === 'ready';
+  const roleIds = useMemo(
+    () => (rolesKnown ? values.filter(v => rolesById[v]) : []),
+    [values, rolesById, rolesKnown]
+  );
+  const userIds = useMemo(
+    () => (rolesKnown ? values.filter(v => !rolesById[v]) : []),
+    [values, rolesById, rolesKnown]
+  );
   const selectedRoleSet = useMemo(() => new Set(roleIds), [roleIds]);
 
   const setValues = (next: string[]) => onChange({ ...condition, values: next });
@@ -177,11 +196,10 @@ export function ConditionRow({
         </DropdownMenu>
       </div>
 
-      <div className="col-span-2 space-y-2 sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:pt-1">
+      <div className="col-span-2 space-y-2 sm:col-span-1 sm:col-start-2 sm:row-start-1">
         {type === 'keyword' && (
           <>
             <TagInput
-              bare
               values={values}
               onChange={setValues}
               disabled={disabled}
@@ -205,7 +223,6 @@ export function ConditionRow({
 
         {type === 'webhook' && (
           <TagInput
-            bare
             values={values}
             onChange={setValues}
             disabled={disabled}
@@ -218,7 +235,6 @@ export function ConditionRow({
         {type === 'author' && (
           <>
             <TagInput
-              bare
               values={values}
               onChange={setValues}
               disabled={disabled}
@@ -233,51 +249,92 @@ export function ConditionRow({
         )}
 
         {type === 'mention' && (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  disabled={disabled}
-                  className="w-full justify-between border-slate-700 font-normal text-slate-300"
+                  disabled={disabled || !rolesKnown}
+                  className="h-9 w-full justify-between border-slate-700 bg-slate-800/50 font-normal text-slate-300 hover:bg-slate-800 hover:text-white dark:bg-slate-800/50 dark:hover:bg-slate-800"
                 >
-                  {roleIds.length > 0
-                    ? `${roleIds.length} role${roleIds.length === 1 ? '' : 's'} selected`
-                    : 'Pick roles…'}
-                  <ChevronDown className="size-4 opacity-60" />
+                  {rolesStatus === 'loading'
+                    ? 'Loading roles…'
+                    : rolesStatus === 'error'
+                      ? "Roles didn't load"
+                      : roleIds.length > 0
+                        ? `${roleIds.length} role${roleIds.length === 1 ? '' : 's'} selected`
+                        : 'Pick roles…'}
+                  {rolesStatus === 'loading' ? (
+                    <Loader2 className="size-4 animate-spin opacity-60" />
+                  ) : (
+                    <ChevronDown className="size-4 opacity-60" />
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="start"
-                className="max-h-64 w-(--radix-dropdown-menu-trigger-width) overflow-y-auto"
+                className="w-(--radix-dropdown-menu-trigger-width) p-0"
               >
-                {roles.length === 0 && (
-                  <div className="px-3 py-2 text-sm text-slate-500">No roles found</div>
-                )}
-                {roles.map(role => {
-                  const selected = selectedRoleSet.has(role.id);
-                  return (
-                    <DropdownMenuItem
-                      key={role.id}
-                      className={cn('py-1.5', selected && 'bg-slate-800/60')}
-                      onSelect={event => {
-                        event.preventDefault();
-                        toggleRole(role.id);
-                      }}
-                    >
-                      <span
-                        className="size-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: roleColorHex(role.color) ?? '#94a3b8' }}
-                      />
-                      <span className="flex-1 truncate">{role.name}</span>
-                      {selected && <Check className="size-4 shrink-0 text-blue-400" />}
-                    </DropdownMenuItem>
-                  );
-                })}
+                <ScrollArea className="max-h-64">
+                  <div className="p-1">
+                    {roles.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-slate-500">No roles found</div>
+                    )}
+                    {roles.map(role => {
+                      const selected = selectedRoleSet.has(role.id);
+                      return (
+                        <DropdownMenuItem
+                          key={role.id}
+                          className={cn('py-1.5', selected && 'bg-slate-800/60')}
+                          onSelect={event => {
+                            event.preventDefault();
+                            toggleRole(role.id);
+                          }}
+                        >
+                          <span
+                            className="size-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: roleColorHex(role.color) ?? '#94a3b8' }}
+                          />
+                          <span className="flex-1 truncate">{role.name}</span>
+                          {selected && <Check className="size-4 shrink-0 text-blue-400" />}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {roleIds.length > 0 && (
+            {rolesStatus === 'error' && (
+              <p className="flex flex-wrap items-center gap-1.5 text-[11px] text-amber-400">
+                <TriangleAlert className="size-3.5 shrink-0" />
+                Couldn't load this server's roles.
+                <button
+                  type="button"
+                  onClick={onRetryRoles}
+                  className="cursor-pointer underline underline-offset-2 hover:text-amber-300"
+                >
+                  Try again
+                </button>
+              </p>
+            )}
+
+            {/* Roles unknown: show what is saved, but claim nothing about what
+                each value is. Editing resumes once the list resolves. */}
+            {!rolesKnown && values.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {values.map(id => (
+                  <span
+                    key={id}
+                    className="inline-flex items-center rounded-md bg-slate-800 px-2 py-0.5 font-mono text-slate-400 text-sm"
+                  >
+                    {id}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {rolesKnown && roleIds.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {roleIds.map(id => {
                   const role = rolesById[id];
@@ -288,7 +345,9 @@ export function ConditionRow({
                     >
                       <span
                         className="size-1.5 rounded-full"
-                        style={{ backgroundColor: (role && roleColorHex(role.color)) ?? '#94a3b8' }}
+                        style={{
+                          backgroundColor: (role && roleColorHex(role.color)) ?? '#94a3b8',
+                        }}
                       />
                       {role ? role.name : id}
                       {!disabled && (
@@ -307,16 +366,22 @@ export function ConditionRow({
               </div>
             )}
 
-            {/* One value list, two input affordances — roles above, raw ids here. */}
-            <TagInput
-              bare
-              values={userIds}
-              onChange={next => setValues([...roleIds, ...next])}
-              disabled={disabled}
-              maxItems={Math.max(0, max - roleIds.length)}
-              placeholder="…or paste a user ID"
-              validate={value => filterValueError('mention', value)}
-            />
+            {/* One value list, two input affordances — roles above, raw ids here.
+                Labelled and boxed because unlabelled it read as caption text under
+                the picker rather than as a field. */}
+            {rolesKnown && (
+              <div className="space-y-1">
+                <p className="text-[11px] text-slate-500">Or add specific users</p>
+                <TagInput
+                  values={userIds}
+                  onChange={next => setValues([...roleIds, ...next])}
+                  disabled={disabled}
+                  maxItems={Math.max(0, max - roleIds.length)}
+                  placeholder="Paste a user ID…"
+                  validate={value => filterValueError('mention', value)}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -326,7 +391,7 @@ export function ConditionRow({
           type="button"
           aria-label="Remove condition"
           onClick={handleRemove}
-          className="col-start-2 row-start-1 cursor-pointer justify-self-end rounded-md p-1 text-slate-600 transition-colors hover:bg-red-500/10 hover:text-red-400 sm:col-start-3 sm:mt-1"
+          className="col-start-2 row-start-1 cursor-pointer justify-self-end rounded-md p-1 text-slate-600 transition-colors hover:bg-red-500/10 hover:text-red-400 sm:col-start-3 sm:mt-1.5"
         >
           <Trash2 className="size-4" />
         </button>

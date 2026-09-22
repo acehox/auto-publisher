@@ -10,8 +10,6 @@ interface TagInputProps {
   placeholder?: string;
   /** Placeholder once at least one chip exists; keeps the input discoverable. */
   morePlaceholder?: string;
-  /** Drops the bordered box so the chips sit inline in a row that owns the frame. */
-  bare?: boolean;
   disabled?: boolean;
   maxItems?: number;
   /** Returns why a value is invalid, or null if it's valid. */
@@ -39,7 +37,6 @@ export function TagInput({
   onChange,
   placeholder,
   morePlaceholder = 'Add more…',
-  bare = false,
   disabled = false,
   maxItems,
   validate,
@@ -140,8 +137,8 @@ export function TagInput({
     <div className={className}>
       <div
         className={cn(
-          'flex flex-wrap items-center gap-1.5',
-          bare ? 'py-0.5' : 'rounded-lg border border-slate-700 bg-slate-800/50 p-2',
+          'flex min-h-9 flex-wrap items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800/50 px-2.5 py-1.5',
+          'transition-colors focus-within:border-blue-500/60',
           disabled && 'opacity-50'
         )}
       >

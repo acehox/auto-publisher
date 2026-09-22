@@ -4,12 +4,16 @@ import { Copy } from '@ap/copy';
 import { Filter as FilterIcon, Loader2, Plus, RotateCcw, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ConditionRow } from '@/components/dashboard/condition-row';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { FilterChannelSelect } from '@/components/dashboard/filter-channel-select';
-import { filterValueError, MATCH_MODE_OPTIONS } from '@/components/dashboard/filter-meta';
+import {
+  filterValueError,
+  MATCH_MODE_OPTIONS,
+  type RolesStatus,
+} from '@/components/dashboard/filter-meta';
 import { useSiteConfig } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import { SegmentedControl } from '@/components/ui/segmented-control';
@@ -50,22 +54,54 @@ function serializeRule(matchMode: FilterMatchMode, conditions: FilterInput[]): s
  * entry, leaving Back meaning "leave Filters".
  */
 export function FilterManager({ guildId, channels }: FilterManagerProps) {
-  const [roles, setRoles] = useState<GuildRole[]>([]);
+  const [rolesState, setRolesState] = useState<{ status: RolesStatus; roles: GuildRole[] }>({
+    status: 'loading',
+    roles: [],
+  });
+  const { status: rolesStatus, roles } = rolesState;
   const rolesById = useMemo(() => Object.fromEntries(roles.map(role => [role.id, role])), [roles]);
 
-  useEffect(() => {
-    let cancelled = false;
-    // Roles power the mention picker + resolve role names for display. A failure
-    // is non-fatal — the UI falls back to raw IDs.
-    getGuildRoles(guildId)
-      .then(fetched => {
-        if (!cancelled) setRoles(fetched);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
+  // The read rides a Discord round trip behind a per-user rate limit, so a single
+  // blip is the common failure — retry once silently, then surface it with a way
+  // back. The outcome is tracked rather than swallowed: an empty list used to
+  // render identically to a failed one and, worse, made every saved role id look
+  // like a user id, so a failed fetch read as "my roles turned into numbers".
+  //
+  // `runId` is the cancellation token: bumping it retires every in-flight attempt
+  // and pending retry, which is what a guild switch, an unmount and a manual
+  // retry all need.
+  const runIdRef = useRef(0);
+  const loadRoles = useCallback(() => {
+    const runId = ++runIdRef.current;
+    const current = () => runId === runIdRef.current;
+
+    const attempt = (retriesLeft: number) => {
+      getGuildRoles(guildId)
+        .then(fetched => {
+          if (current()) setRolesState({ status: 'ready', roles: fetched });
+        })
+        .catch(() => {
+          if (!current()) return;
+          if (retriesLeft > 0) {
+            setTimeout(() => {
+              if (current()) attempt(retriesLeft - 1);
+            }, 1200);
+            return;
+          }
+          setRolesState({ status: 'error', roles: [] });
+        });
     };
+
+    setRolesState(previous => ({ status: 'loading', roles: previous.roles }));
+    attempt(1);
   }, [guildId]);
+
+  useEffect(() => {
+    loadRoles();
+    return () => {
+      runIdRef.current += 1;
+    };
+  }, [loadRoles]);
 
   const enabledChannels = channels.filter(channel => channel.enabled);
 
@@ -111,6 +147,8 @@ export function FilterManager({ guildId, channels }: FilterManagerProps) {
       channel={selected}
       roles={roles}
       rolesById={rolesById}
+      rolesStatus={rolesStatus}
+      onRetryRoles={loadRoles}
       selector={
         <FilterChannelSelect
           channels={enabledChannels}
@@ -137,12 +175,16 @@ function ChannelRuleEditor({
   channel,
   roles,
   rolesById,
+  rolesStatus,
+  onRetryRoles,
   selector,
 }: {
   guildId: string;
   channel: GuildChannel;
   roles: GuildRole[];
   rolesById: Record<string, GuildRole>;
+  rolesStatus: RolesStatus;
+  onRetryRoles: () => void;
   selector: ReactNode;
 }) {
   const router = useRouter();
@@ -251,6 +293,8 @@ function ChannelRuleEditor({
               condition={condition}
               roles={roles}
               rolesById={rolesById}
+              rolesStatus={rolesStatus}
+              onRetryRoles={onRetryRoles}
               onChange={next =>
                 setConditions(previous => previous.map((c, i) => (i === index ? next : c)))
               }

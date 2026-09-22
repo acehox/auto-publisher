@@ -334,6 +334,12 @@ export const GuildApi: Router = (() => {
         message: 'Roles retrieved successfully',
       } as APIResponse);
     } catch (error) {
+      // Same diagnostic as the guild-detail read: the picker degrades quietly on
+      // the client, so without this a failed roles read leaves no trace on
+      // either end.
+      const discordStatus =
+        error instanceof DiscordAPIError || error instanceof HTTPError ? error.status : undefined;
+      logger.warn({ err: error, guildId, discordStatus }, `Roles read failed for guild ${guildId}`);
       sendErrorResponse(res, error, 'Failed to retrieve roles');
     }
   });

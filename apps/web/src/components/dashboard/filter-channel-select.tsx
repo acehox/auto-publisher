@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import type { GuildChannel } from '@/lib/api/types';
 import { channelLabel } from '@/lib/utils';
 
@@ -39,23 +40,27 @@ export function FilterChannelSelect({ channels, selected, onSelect }: FilterChan
 
       <DropdownMenuContent
         align="start"
-        className="max-h-96 min-w-(--radix-dropdown-menu-trigger-width) overflow-y-auto"
+        className="min-w-(--radix-dropdown-menu-trigger-width) p-0"
       >
-        {channels.map(channel => (
-          <DropdownMenuItem
-            key={channel.channelId}
-            onSelect={() => onSelect(channel.channelId)}
-            className="gap-3"
-          >
-            <span className="min-w-0 flex-1 truncate">{channelLabel(channel.name)}</span>
-            <span className="shrink-0 text-[11px] text-slate-500">
-              {conditionSummary(channel.filters.length)}
-            </span>
-            {channel.channelId === selected.channelId && (
-              <Check className="size-3.5 shrink-0 text-blue-400" />
-            )}
-          </DropdownMenuItem>
-        ))}
+        <ScrollArea className="max-h-96">
+          <div className="p-1">
+            {channels.map(channel => (
+              <DropdownMenuItem
+                key={channel.channelId}
+                onSelect={() => onSelect(channel.channelId)}
+                className="gap-3"
+              >
+                <span className="min-w-0 flex-1 truncate">{channelLabel(channel.name)}</span>
+                <span className="shrink-0 text-[11px] text-slate-500">
+                  {conditionSummary(channel.filters.length)}
+                </span>
+                {channel.channelId === selected.channelId && (
+                  <Check className="size-3.5 shrink-0 text-blue-400" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </div>
+        </ScrollArea>
       </DropdownMenuContent>
     </DropdownMenu>
   );

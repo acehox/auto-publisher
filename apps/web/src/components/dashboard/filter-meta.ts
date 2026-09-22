@@ -68,3 +68,6 @@ export function filterValueError(type: FilterType, value: string): string | null
 export function roleColorHex(color: number): string | null {
   return color === 0 ? null : `#${color.toString(16).padStart(6, '0')}`;
 }
+
+/** Whether the guild's role list is known yet — the mention editor branches on it. */
+export type RolesStatus = 'loading' | 'ready' | 'error';
