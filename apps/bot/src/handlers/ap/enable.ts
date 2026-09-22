@@ -50,12 +50,12 @@ async function offerFilterChoice(
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new Button()
-      .setCustomId('enable_clear_filters')
+      .setCustomId('confirm_clear_filters')
       .setLabel(Copy.channels.filtersPremium.clearAction(filterCount))
       .setStyle(ButtonStyle.Danger),
     new Button()
-      .setCustomId('enable_keep_filters')
-      .setLabel(Copy.channels.filtersPremium.keepOff)
+      .setCustomId('cancel_clear_filters')
+      .setLabel(Copy.channels.filtersPremium.cancel)
       .setStyle(ButtonStyle.Secondary),
     Buttons.getPremium
   );
@@ -85,7 +85,7 @@ async function offerFilterChoice(
     return false;
   }
 
-  if (choice.customId !== 'enable_clear_filters') {
+  if (choice.customId !== 'confirm_clear_filters') {
     await choice.update(
       replyPayload(
         buildReply({

@@ -274,14 +274,10 @@ const channels = {
         count,
         'filter',
         'filters'
-      )} and this channel publishes every message. You can't get ${plural(
-        count,
-        'it',
-        'them'
-      )} back.`,
+      )} and this channel publishes every message. This action can't be undone.`,
     clearAction: (count: number): string =>
       `Remove ${plural(count, 'filter', 'filters')} and enable`,
-    keepOff: 'Keep it off',
+    cancel: 'Cancel',
   },
 
   /** Turning a channel off deletes its row, and the rule goes with it. */

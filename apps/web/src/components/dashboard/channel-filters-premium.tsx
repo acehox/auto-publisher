@@ -65,7 +65,7 @@ export function ChannelFiltersPremiumModal({
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            {Copy.channels.filtersPremium.keepOff}
+            {Copy.channels.filtersPremium.cancel}
           </Button>
           <Button asChild>
             <Link href={`/dashboard/${guildId}/subscription`}>Upgrade to Premium</Link>
