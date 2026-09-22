@@ -282,13 +282,13 @@ const channels = {
 
   /** Turning a channel off deletes its row, and the rule goes with it. */
   disableDeletesFilters: {
-    title: (count: number): string => `This also deletes ${countOf(count, 'filter')}`,
+    title: (count: number): string => `This channel has ${countOf(count, 'filter')}`,
     body: (subject: string, count: number): string =>
-      `Turning off ${subject} removes its ${plural(
+      `Disabling publishing for ${subject} also removes its ${plural(
         count,
         'filter',
         'filters'
-      )} for good. To pause publishing without losing them, revoke the bot's View Channel permission in Discord instead.`,
+      )}. To pause publishing without losing them, revoke the bot's View Channel permission in Discord instead.`,
     confirm: 'Turn off and delete',
   },
 } as const;
