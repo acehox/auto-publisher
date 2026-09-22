@@ -289,7 +289,7 @@ const channels = {
         'filter',
         'filters'
       )}. To pause publishing without losing them, revoke the bot's View Channel permission in Discord instead.`,
-    confirm: 'Turn off and delete',
+    confirm: 'Confirm',
   },
 } as const;
 
