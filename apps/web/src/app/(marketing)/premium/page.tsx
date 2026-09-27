@@ -1,4 +1,4 @@
-import { isPublicInstance, premiumTrialEnabled } from '@ap/config';
+import { isPublicInstance } from '@ap/config';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PricingPlans } from '@/components/marketing/pricing-plans';
@@ -25,10 +25,8 @@ export default function PremiumPage() {
         </p>
       </div>
 
-      {/* Read on the server, so a public instance with no trial prices configured advertises
-          none. Not routed through getSiteConfig() because this page and PricingPlans are
-          both server components. */}
-      <PricingPlans trialOffered={premiumTrialEnabled} />
+      {/* Review-only branch: always show the trial so /premium matches the Terms. */}
+      <PricingPlans trialOffered />
 
       <div className="text-center mt-8">
         <p className="text-slate-500 text-sm">

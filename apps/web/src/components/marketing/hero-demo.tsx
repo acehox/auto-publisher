@@ -4,7 +4,7 @@ import { Check, CheckCheck, Hash, LoaderCircle, Megaphone, Newspaper } from 'luc
 import { motion, useMotionValue, useSpring, useTransform } from 'motion/react';
 import Image from 'next/image';
 import type { PointerEvent } from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // Max tilt in degrees the mockup leans toward the pointer.
 const MAX_TILT = 9;
@@ -36,6 +36,13 @@ export function HeroDemo() {
     media.addEventListener('change', sync);
     return () => media.removeEventListener('change', sync);
   }, [px, py]);
+
+  // Set after mount: the page is prerendered at build, so a render-time clock would
+  // bake in the build's time and timezone and fail hydration.
+  const [postedAt, setPostedAt] = useState('');
+  useEffect(() => {
+    setPostedAt(new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }));
+  }, []);
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (!tiltEnabled.current) return;
@@ -113,13 +120,7 @@ export function HeroDemo() {
                   <div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-[13.5px] font-semibold text-slate-200">News bot</span>
-                      <span className="text-[11px] text-slate-500">
-                        Today at{' '}
-                        {new Date().toLocaleTimeString(undefined, {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
+                      <span className="text-[11px] text-slate-500">Today at {postedAt}</span>
                     </div>
                     <div className="mt-0.5 text-[13.5px] leading-normal text-slate-300">
                       Game update is live, huge thanks to everyone who tested! 🚀

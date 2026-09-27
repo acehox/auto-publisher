@@ -1,5 +1,4 @@
 import { ArrowRight, Check, Zap } from 'lucide-react';
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { PREMIUM_PLAN_FEATURES } from '@/lib/plans';
@@ -15,14 +14,11 @@ import {
 /**
  * The public /premium pricing: the two Premium billing options, Monthly and
  * Annual. Annual is the highlighted "Most Popular" plan (lower per-month price
- * + save badge). Neither CTA checks out — checkout is guild-scoped, so both
- * funnel into /dashboard?upgrade=<interval>: the flag's presence routes a free
- * guild straight to its subscription tab, and the value (month|year) preselects
- * that interval there.
+ * + save badge). On this review-only branch both CTAs are disabled: there is no
+ * dashboard to check out from.
  *
- * `trialOffered` comes from the server (`premiumTrialEnabled`), never a build constant, so
- * unsetting a trial price id removes every trial claim here in the same move that stops
- * checkout issuing one.
+ * `trialOffered` is hardcoded true by the /premium page on this branch so the page matches
+ * the Terms; normally it comes from the server (`premiumTrialEnabled`).
  *
  * This page is not guild-scoped and the visitor may not be logged in, so the copy says
  * "once per server" rather than asserting the reader still has one. The per-server truth is
@@ -81,13 +77,12 @@ export function PricingPlans({ trialOffered }: { trialOffered: boolean }) {
 
             <Button
               size="lg"
-              className="w-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 group"
-              asChild
+              disabled
+              aria-disabled="true"
+              className="w-full bg-linear-to-r from-blue-500 to-blue-600 text-white border-0 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-70"
             >
-              <Link href="/dashboard?upgrade=year">
-                Choose Annual
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              Choose Annual
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Card>
         </div>
@@ -121,10 +116,11 @@ export function PricingPlans({ trialOffered }: { trialOffered: boolean }) {
           <Button
             size="lg"
             variant="outline"
-            className="w-full bg-linear-to-r from-blue-900 to-blue-800 hover:from-blue-800 hover:to-blue-700 text-white border-0 group"
-            asChild
+            disabled
+            aria-disabled="true"
+            className="w-full bg-linear-to-r from-blue-900 to-blue-800 hover:text-white text-white border-0 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-70"
           >
-            <Link href="/dashboard?upgrade=month">Choose Monthly</Link>
+            Choose Monthly
           </Button>
         </Card>
       </div>

@@ -19,9 +19,3 @@ const routeLinks: NavLinkItem[] = [
 export const siteLinks: NavLinkItem[] = isPublicInstance
   ? routeLinks
   : routeLinks.filter(link => link.href !== '/premium');
-
-// MIGRATION: drop the migration guide with the rest of the migration UX at sunset.
-export const dashboardLinks: NavLinkItem[] = [
-  { href: '/migration', label: 'Migration Guide', external: false },
-  { href: links.discordSupportServer, label: 'Support Server', external: true },
-];

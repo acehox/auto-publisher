@@ -4,6 +4,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$"],
+      "env": ["DEPLOYMENT_MODE"],
       "outputs": ["dist/**", ".next/**"]
     },
     "clean": {

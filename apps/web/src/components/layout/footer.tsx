@@ -8,7 +8,6 @@ import { Logo } from './logo';
 
 const quickLinks = [
   { href: '/', label: 'Home' },
-  { href: '/dashboard', label: 'Dashboard' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/premium', label: 'Premium' },
   { href: links.githubRepo, label: 'GitHub' },
@@ -18,7 +17,6 @@ const quickLinks = [
 
 const supportLinks = [
   { href: links.discordSupportServer, label: 'Support Server' },
-  { href: '/migration', label: 'Migration Guide' },
   { href: '/legal#contact', label: 'Contact' },
 ];
 

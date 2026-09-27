@@ -80,9 +80,11 @@ export function NavbarBar({ variant, links, account, mobileAccount, brand }: Nav
           </div>
 
           <div className="flex shrink-0 items-center gap-3">
-            <div className={cn('items-center gap-3', inDashboard ? 'flex' : 'hidden sm:flex')}>
-              {account}
-            </div>
+            {account && (
+              <div className={cn('items-center gap-3', inDashboard ? 'flex' : 'hidden sm:flex')}>
+                {account}
+              </div>
+            )}
 
             <button
               type="button"
@@ -123,7 +125,7 @@ export function NavbarBar({ variant, links, account, mobileAccount, brand }: Nav
                 {link.label}
               </Link>
             ))}
-            <div className="pt-4">{mobileAccount}</div>
+            {mobileAccount && <div className="pt-4">{mobileAccount}</div>}
           </div>
         </div>
       )}

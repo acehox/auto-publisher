@@ -1,0 +1,44 @@
+# Marketing + legal site only, for Paddle domain review. Always run with `-f`:
+# a bare `docker compose` at the repo root targets project `auto-publisher`.
+name: auto-publisher-web-only
+
+x-prod-logging: &prod-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      args:
+        DEPLOYMENT_MODE: public
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - 127.0.0.1:3101:3100
+    logging: *prod-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Reaches http://web:3100 over the compose network; needs no host ports.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    depends_on:
+      - web
+    logging: *prod-logging

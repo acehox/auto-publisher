@@ -21,9 +21,10 @@ RUN --mount=type=cache,target=/bun-cache,sharing=locked \
 # Copy source code
 COPY . .
 
-# Build the project. No build arguments are needed: the dashboard reads its
-# configuration at runtime (see `getSiteConfig`), so one image works for any
-# deployment rather than baking a client id in at build time.
+# The dashboard reads its config at runtime (see `getSiteConfig`). The one
+# build arg exists because prerendered pages (legal, 404) evaluate
+# `isPublicInstance` at build; unset or empty means self-host.
+ARG DEPLOYMENT_MODE
 RUN bun run build --filter=web
 
 # Stage 2: Runtime
@@ -54,6 +55,6 @@ EXPOSE 3100
 # 127.0.0.1, not localhost: Next binds to HOSTNAME (0.0.0.0) which is IPv4-only,
 # while `localhost` resolves to [::1] first in this image and is refused.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3100/login || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3100/ || exit 1
 
 CMD ["node", "apps/web/server.js"]

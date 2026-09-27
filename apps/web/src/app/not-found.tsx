@@ -1,4 +1,4 @@
-import { LayoutDashboard, Megaphone } from 'lucide-react';
+import { House, Megaphone } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { BackButton } from '@/components/layout/back-button';
@@ -47,9 +47,9 @@ export default function NotFound() {
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <BackButton />
             <Button asChild size="lg">
-              <Link href="/dashboard">
-                <LayoutDashboard />
-                Dashboard
+              <Link href="/">
+                <House />
+                Home
               </Link>
             </Button>
           </div>
