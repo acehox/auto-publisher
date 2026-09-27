@@ -278,10 +278,9 @@ export const config = {
    * is server-only (it reads the environment at import), so the dashboard's
    * client components receive it through `getSiteConfig()`.
    *
-   * TODO(migration): replace with the real sunset date before v7 launch.
-   * Placeholder only. Removed with the rest of the legacy UX at sunset.
+   * Removed with the rest of the legacy UX at sunset.
    */
-  legacySunsetDate: '2026-12-31',
+  legacySunsetDate: '2027-12-31',
   /**
    * Application limits
    */
