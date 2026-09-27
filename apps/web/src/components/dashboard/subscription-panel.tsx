@@ -228,7 +228,7 @@ function BillingCard({
       <p className="text-xs leading-relaxed text-slate-500">
         Cancelling stops renewals at the end of the period.{' '}
         <Link href="/refunds" target="_blank" className="text-slate-400 hover:underline">
-          Refunds policy
+          Refunds &amp; Withdrawal Policy
         </Link>
       </p>
     </PremiumCard>
@@ -253,9 +253,9 @@ const BILLING_INTERVAL_OPTIONS: SegmentedOption<BillingInterval>[] = [
 
 /**
  * The free state. Legal items keep a fixed order — price, trial disclosure,
- * comparison, terms checkbox, hrvatski notice, CTA, payment reassurance — and
- * the CTA stays pressable when the box is unticked, stating the blocker
- * underneath: a disabled button hides its reason, especially on touch.
+ * comparison, terms checkbox, hrvatski notice, renewal terms, CTA, payment
+ * reassurance — and the CTA stays pressable when the box is unticked, stating
+ * the blocker underneath: a disabled button hides its reason, especially on touch.
  */
 function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: string }) {
   const { guild, data } = useGuild();
@@ -392,7 +392,7 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
               {billingInterval === 'year'
                 ? `${formatUsd(PREMIUM_PRICE_YEARLY_USD)} per year`
                 : `${formatUsd(PREMIUM_PRICE_MONTHLY_USD)} per month`}{' '}
-              is charged automatically and renews until you cancel.
+              is charged automatically.
             </p>
           )}
         </div>
@@ -444,7 +444,7 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
                 </Link>{' '}
                 and the{' '}
                 <Link href="/refunds" target="_blank" className="text-blue-400 hover:underline">
-                  Refunds &amp; Withdrawal policy
+                  Refunds &amp; Withdrawal Policy
                 </Link>
               </label>
             </div>
@@ -454,14 +454,8 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
                 sentence is simultaneously the Paddle acceptance disclosure and
                 must not be re-worded. */}
             <p className="pl-6.5 text-[11px] text-slate-500">
-              Croatian-language withdrawal notice:{' '}
-              <Link
-                href="/refunds#obavijest-na-hrvatskom-jeziku"
-                target="_blank"
-                hrefLang="hr"
-                lang="hr"
-                className="hover:underline"
-              >
+              Croatian-language consumer notice:{' '}
+              <Link href="/hr" target="_blank" hrefLang="hr" lang="hr" className="hover:underline">
                 hrvatski
               </Link>
             </p>
@@ -469,6 +463,12 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
         )}
 
         <div className="space-y-2">
+          {/* Duration and termination terms (ZZP čl. 74 st. 1 → čl. 60 st. 1 t. 21/22) are
+              owed right before the order in both states, so this line is not trial-gated. */}
+          <p className="text-center text-xs text-slate-400">
+            Renews every {billingInterval} until you cancel. Cancel any time; it takes effect at the
+            end of the current billing period.
+          </p>
           {termsError && (
             <p className="flex items-center justify-center gap-1.5 text-center text-xs text-red-400">
               <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
@@ -489,7 +489,9 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
               Premium plan is only available for migrated servers.
             </p>
           )}
-          <p className="text-center text-[11px] text-slate-500">Secure payment via Paddle</p>
+          <p className="text-center text-[11px] text-slate-500">
+            Secure payment via Paddle — card or another method available in your country.
+          </p>
         </div>
       </PremiumCard>
 

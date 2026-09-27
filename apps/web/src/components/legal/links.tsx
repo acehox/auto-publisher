@@ -36,10 +36,6 @@ export function SupportPhone() {
   return <a href={`tel:${entity.phone.replace(/\s/g, '')}`}>{entity.phone}</a>;
 }
 
-export function InfoEmail() {
-  return <a href={`mailto:${links.infoEmail}`}>{links.infoEmail}</a>;
-}
-
 /*
  * No support-server link here on purpose: a statutory contact has to accept written
  * notice, and a chat server does not. The footer and the marketing surfaces link it.

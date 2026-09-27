@@ -34,15 +34,15 @@ web (Paddle.js overlay)                    premium backend
    - Yearly (trial): same amount and period, **trial period 14 days** → `PADDLE_PRICE_ID_YEARLY_TRIAL`
 
    Four prices rather than a trial flag at checkout because in Paddle the trial belongs to the
-   **price**. That is load-bearing in two places: a trial subscriber keeps the trial price id for
-   the life of the subscription, so conversion to paid is _not_ a price change and
-   `isPlanChange` (`services/subscriptions.ts`) does not re-stamp `withdrawalPeriodStartsAt` —
-   the consumer does not get a fresh 14-day full-refund right over the first real charge. And the
-   trial length must be exactly **14 days**: the statutory withdrawal window runs 14 days from
-   contract conclusion, which for a trial subscription is Paddle's `started_at` (the trial start,
-   not `first_billed_at`), so both end together and the first charge lands with the window already
-   shut. A shorter trial bills inside the window (refundable in full); a longer one leaves paid
-   days with no withdrawal right, which is the direction that costs a fine.
+   **price**. That is load-bearing: a trial subscriber keeps the trial price id for the life of
+   the subscription, so conversion to paid is _not_ a price change and `isPlanChange`
+   (`services/subscriptions.ts`) does not re-stamp `withdrawalPeriodStartsAt` — the consumer does
+   not get a fresh 14-day full-refund right over the first real charge. The trial is **14 days**
+   to match `PREMIUM_TRIAL_DAYS`, which the legal pages render. It no longer keeps the first charge
+   outside the statutory window: the window runs from Paddle's `started_at` (the trial start, not
+   `first_billed_at`) to the end of the 14th day after that day, Zagreb time, so the first charge
+   normally lands on its last day and is refundable in full until midnight. Accepted (AUT-44):
+   Paddle's Refund Policy §2.2.2 grants a new 14-day period after a trial regardless.
 
    Set **both** trial prices or **neither** — the backend gate (`premiumTrialEnabled`) is
    both-or-nothing, because the buyer sees the "free for 14 days" disclosure before choosing an
@@ -91,7 +91,7 @@ web (Paddle.js overlay)                    premium backend
    `Refund recorded for guild` — that line also prints Paddle's retained fee, which is the only
    place the real figure surfaces.
 
-6. **Checkout → Checkout settings**: set default payment link to `http://localhost:3100` (sandbox allows localhost).
+6. **Checkout → Checkout settings**: set default payment link to `http://localhost:3100/checkout` (sandbox allows localhost). It must be `/checkout`: that is the only page that loads Paddle.js and opens `?_ptxn`.
 
 ### Local tunnel for webhooks
 
@@ -138,8 +138,8 @@ PADDLE_CLIENT_TOKEN = "test_..."              # client-side token; runtime, not 
    - `subscription` row exists in Postgres with the correct `guild_id` and `status = 'trialing'`
      (`'active'` when there was no trial). Both are entitled, so publishing switches over either way.
    - `withdrawal_period_starts_at` equals `started_at`, and both are the **trial start**, not the
-     first bill date. This is the whole reason the trial is 14 days: it means the statutory window
-     shuts at the same instant the trial ends, so the first charge is never refundable in full.
+     first bill date. The dashboard's withdrawal panel then reads "until" midnight Zagreb time at
+     the end of the 14th day after the trial-start day — normally after the first bill date.
    - Dashboard shows the Active Subscription card after refresh, with the **Trial** badge and
      **First Billing Date**; **Manage Billing** opens the Paddle portal.
    - Withdrawing during a trial reports "nothing to refund" rather than a pending refund
@@ -156,7 +156,7 @@ PADDLE_CLIENT_TOKEN = "test_..."              # client-side token; runtime, not 
 2. Recreate the catalog exactly as in sandbox (product + **four** prices: monthly/yearly, plain and 14-day-trial) — sandbox and live catalogs are separate; new `pri_...` IDs. Re-check the trial period reads 14 days on both trial prices: it is typed per price, so a live catalog can silently disagree with sandbox.
 3. Create a live API key and a live client-side token (`live_...`). Same permissions as the sandbox key
    in §1 step 3 — **adjustments included**, or withdrawal refunds fail in production.
-4. **Checkout settings**: set default payment link to `https://auto-publisher.gg`.
+4. **Checkout settings**: set default payment link to `https://auto-publisher.gg/checkout`.
 5. Notification destination: `https://<api-host>/webhooks/paddle` with the same event list; copy the live secret.
    **Re-check that `adjustment.created` and `adjustment.updated` are ticked** — event selections are
    per destination and do not carry over from sandbox, and the omission is invisible in production
@@ -198,7 +198,7 @@ PADDLE_CLIENT_TOKEN = "live_..."              # client-side token; runtime, not 
 - **Self-hosted instances** skip all of this: no Paddle client, no webhook route, no billing crons, no withdrawal flow (`DEPLOYMENT_MODE` unset or `self-host`). There is one backend, and it configures Paddle whenever `DEPLOYMENT_MODE=public` (ADR 0006).
 - **Missed webhooks**: the daily reconcile cron corrects Postgres from the Paddle API and enforces revocations; nothing needs manual replay.
 - **Re-subscribing**: a new Paddle subscription for the same guild replaces the local row (stale events from the old subscription are ignored). It also checks out at the **plain** price — the replaced row is what makes the guild trial-ineligible, and it is never deleted on cancellation, only overwritten. The only thing that restores eligibility is retention hard-deleting the row after the 11-year accounting window (`services/retention.ts`), which is not a limit worth engineering around.
-- **Free trial**: 14 days, card required, one per guild ever, regardless of which user buys. Cardless was rejected — no card means unlimited trials. The trial is not offered on the free plan's own terms: it exists so that a consumer exercising the statutory withdrawal inside the window has had nothing charged, which turns a full refund into a $0 event.
+- **Free trial**: 14 days, card required, one per guild ever, regardless of which user buys. Cardless was rejected — no card means unlimited trials. The trial is not offered on the free plan's own terms: it exists so that a consumer exercising the statutory withdrawal during the trial has had nothing charged, which turns a full refund into a $0 event. The window normally outlasts the trial by the rest of its last day, so a withdrawal after the first charge on that day is a real full refund (AUT-44).
 - **Turning the trial off** is clearing either trial price id — but that is only 90% of the job. Every trial claim in the _app_ is gated on `premiumTrialEnabled` and disappears with it; the claims in `apps/web/src/app/(legal)/{terms,refunds}/page.mdx` are **static prose and are not**. Leaving them up would promise a trial nobody gets, and under ZZP čl. 60 st. 2 pre-contractual information becomes part of the contract, so we would be bound to it. Pulling the trial therefore means: clear the two price ids, remove the trial paragraphs from those two pages, and bump `LEGAL_DOCUMENTS_VERSION`. Same in reverse when switching it on.
 - **Kick/guild delete does not cancel billing** by design — the subscription row has no FK to `guild`; re-inviting the bot restores service instantly. Customers cancel via the portal.
 - **Refunds** are issued from the Paddle dashboard; the resulting `subscription.canceled` webhook revokes access automatically. An **approved** full refund or a chargeback also stamps `subscription.last_refund_at` (via the adjustment events) and logs Paddle's retained fee at `info`. Partial refunds and credits deliberately do not: they are goodwill or proration, not a contract unwound. `last_refund_at` is the one column on `subscription` that is not mirrored Paddle state, so it survives a re-subscribe — see the comment on it in `packages/database/src/schema.ts`. **Nothing reads it yet**: it exists so that a re-purchase gate, if one is ever needed, can be designed against real data rather than a guess. Don't remove it as unused.

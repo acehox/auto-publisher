@@ -22,6 +22,16 @@ export const retention = {
   /** Auth.js JWT session cookie. apps/web/src/lib/auth.ts (maxAge 60*60*24*3). */
   session: '3 days',
 
+  /** Auth.js PKCE cookie: `COOKIE_TTL` in @auth/core lib/actions/callback/oauth/checks.js. */
+  signInCheck: 'up to 15 minutes',
+
+  /**
+   * The network provider's own retention (Cloudflare, Free plan), not configured by us:
+   * sampled request data and security events. Re-check on a plan change.
+   */
+  networkRequestSamples: 'up to 7 days',
+  networkSecurityEvents: 'up to 24 hours',
+
   /**
    * Ceiling for every short-lived server-side cache of Discord data: the profile and
    * guild-list caches and their last-known-good fallbacks (Redis DB 4,
@@ -39,12 +49,17 @@ export const retention = {
   webhookDedupe: '24 hours',
 
   /**
-   * BullMQ job records. apps/proxy/src/crosspost/queue.ts (completed 1h / failed 24h).
-   * Disclosed in Privacy Policy section 6 even though it is only a channel id and a
-   * message id: that section otherwise reads as "discarded immediately", and both ids
-   * resolve to the message author through our own bot token.
+   * BullMQ job records (server, channel and message id). apps/proxy/src/crosspost/queue.ts
+   * (`removeOnComplete` 1h / `removeOnFail` 24h, counted from the last attempt).
+   * Disclosed in Privacy Policy section 4 even though it holds only ids: that section
+   * otherwise reads as "discarded immediately", and the ids resolve to the message author
+   * through our own bot token.
+   *
+   * "About", not "up to": BullMQ trims by age lazily, when a later job lands in the same
+   * set, so a failed record can outlive 24h during a quiet spell. Publishing a hard
+   * ceiling would need a periodic `queue.clean` in the proxy.
    */
-  queueJobs: 'less than 24 hours',
+  queueJobs: 'about 24 hours',
 
   /**
    * Guild hard-delete cutoff after the last bot presence ends.
@@ -70,7 +85,7 @@ export const retention = {
    *
    * Enforced by `SUBSCRIBER_ID_RETENTION_MONTHS` in the same backend file.
    */
-  subscriberIdentifier: '24 months after the subscription ends',
+  subscriberIdentifier: '24 months after the Subscription ends',
 
   /**
    * A submitted statutory withdrawal (ZZP čl. 81.a) — the čl. 64 evidence, so it
@@ -88,4 +103,20 @@ export const retention = {
    * Erased together by `eraseExpiredWithdrawalIdentifiers`.
    */
   withdrawalIdentifiers: '24 months after the withdrawal is confirmed',
+
+  /**
+   * The support mailbox, including copies of messages we send (withdrawal confirmations,
+   * Subscriber notices). A practice, not code: purged by hand or by a mailbox retention
+   * rule. Written complaints are kept for {@link complaints} instead.
+   */
+  correspondence: '24 months after the matter it concerns is concluded',
+
+  /**
+   * Written complaints and our replies: ZZP čl. 10 st. 7 ("godinu dana od dana primitka
+   * pisanog prigovora"). The one entry with a Croatian form, because /hr states it too.
+   */
+  complaints: {
+    en: 'one year from its receipt',
+    hr: 'godinu dana od dana primitka prigovora',
+  },
 } as const;

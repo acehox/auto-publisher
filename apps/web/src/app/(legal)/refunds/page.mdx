@@ -1,141 +1,98 @@
 import { DocumentStatus } from '@/components/legal/document-status';
-import { SupportEmail } from '@/components/legal/links';
-import { entity, entityNameWithTranslation } from '@/lib/legal/entity';
+import { SupportEmail, SupportPhone } from '@/components/legal/links';
+import { entity } from '@/lib/legal/entity';
+import { PREMIUM_TRIAL_DAYS } from '@/lib/pricing';
 
 export const metadata = {
-  title: 'Refunds & Withdrawal | Auto Publisher',
+  title: 'Refunds & Withdrawal Policy | Auto Publisher',
   description:
-    'Your 14-day right of withdrawal, how to cancel a subscription, and how refunds are processed for Auto Publisher Premium.',
+    'The 14-day right of withdrawal from Auto Publisher Premium, refunds, and how cancellation differs from withdrawal.',
 };
 
-# Refunds & Withdrawal
+# Refunds & Withdrawal Policy
 
 <DocumentStatus document="/refunds" />
 
-This page explains your right to withdraw from a subscription, how to cancel, and how refunds are
-made. It forms part of our [Terms of Service](/terms).
+This Refunds & Withdrawal Policy (this "**Policy**") forms part of the [Terms of Service](/terms).
+Capitalised terms not defined in this Policy have the meanings given in the Terms of Service. Paddle
+sells each Subscription
+as Merchant of Record and makes every refund under this Policy (section 2 of the Terms).
 
-Payments and refunds are processed by **Paddle**, which is the merchant of record and seller of
-record for every order. Paddle issues your invoice and pays out any refund. We cannot take payment or
-issue a refund directly. The service itself is provided by {entityNameWithTranslation} — see our
-[Legal Notice](/legal).
+## 1. Right of withdrawal
 
-**Na hrvatskom jeziku:**
-[Obavijest o pravu na jednostrani raskid ugovora](#obavijest-na-hrvatskom-jeziku) — uvjeti, rok i
-postupak raskida te obrazac za raskid, na hrvatskom jeziku, na dnu ove stranice.
+If you purchased a Subscription as a Consumer, you may withdraw from it without giving any reason
+within a period that expires 14 days after the day on which the Subscription is concluded (the
+"**Withdrawal Period**"). A Subscription that begins with a Free Trial is concluded on the day on
+which the Free Trial starts.
 
-## 1. If you are a consumer: your 14-day right of withdrawal
+No charge is made during the {PREMIUM_TRIAL_DAYS} days of the Free Trial. **When the Free Trial
+ends, payment is required**, as set out in section 8 of the Terms.
 
-If you are an individual acting outside your trade, business, craft or profession, you have a
-statutory right to withdraw from your subscription **within 14 days**, without giving any reason.
+Neither the end of the Free Trial nor a renewal of the Subscription starts a new Withdrawal Period. A
+change between monthly and yearly billing concludes a new contract, with a new Withdrawal Period.
 
-The period runs for 14 days from the day the contract was concluded — that is, the day your
-subscription started. If your subscription began with a free trial, it was concluded on the day the
-**trial** started, not on the day the first payment was taken.
+The Paddle Refund Policy grants further rights, which are exercised against Paddle in accordance
+with it. They include, for purchases in the European Union, the European Economic Area, Switzerland
+and the United Kingdom, a further period of 14 calendar days to withdraw that begins when a Free
+Trial ends.
 
-**Renewing does not start a new 14-day period,** and neither does a free trial converting to a paid
-subscription. The right applies once, to the contract you concluded. If you later move to a different
-plan or a different billing interval, that is treated as a new contract and a new 14-day period
-begins.
+## 2. Exercise of the right of withdrawal
 
-### Free trials
+To withdraw, you must inform us of your decision by either of the following means:
 
-Your first subscription for a Discord server includes a **14-day free trial**, and you are not
-charged during it. **At the end of the trial, payment is required**: the subscription continues at
-the price shown at checkout and renews each billing period until you cancel. The trial is available
-once per server.
+- **Withdrawal Function.** By selecting **Withdraw from contract**, entering an email address in the
+  field **Email for the confirmation** and selecting **Confirm withdrawal**.
+- **Email or post.** By any other unequivocal statement of your decision, sent by email to
+  <SupportEmail /> or by post to {entity.name.short}, {entity.seat}. You may use the model
+  withdrawal form set out in section 6 (the "**Model Withdrawal Form**"), but its use is not
+  obligatory.
 
-The trial and the withdrawal period are both 14 days and begin on the same day, so they end together.
-If you withdraw during the trial, no payment has been taken and **there is nothing to refund** —
-withdrawing ends the contract before any charge falls due.
+Your withdrawal is in time if you send it before the Withdrawal Period expires.
 
-### How to withdraw
+## 3. Effects of withdrawal
 
-The quickest way is the **withdrawal button on the subscription page of your dashboard**. It is beside
-your other billing controls. It asks you for one thing — an email address to send your confirmation
-to — and then you press **Confirm withdrawal**. Nothing else is asked of you: no reason, no survey,
-no phone call. We email you a confirmation of receipt straight away, and that email is your record.
+The Subscription ends when we receive your withdrawal, and the Server returns to the Free Plan as set
+out in section 8 of the Terms.
 
-You can also withdraw any other way you like, as long as it is clear and it reaches us before the 14
-days are up:
+Paddle refunds all payments made for the Subscription, with no deduction for the period during which
+Premium was provided, without undue delay and in any event within **14 days** of the day on which we
+receive your withdrawal. The refund is made to the means of payment you used for the purchase, and
+you incur no fees for it. If you withdraw during the Free Trial, no charge has been made and no
+refund is due.
 
-- Email <SupportEmail /> — one line is sufficient; or
-- Use the model form in section 5 below.
+Using Premium during the Withdrawal Period does not affect your right of withdrawal, and we do not
+ask you to waive it.
 
-You do not have to use the form or the button, and you do not have to explain why. Sending your
-message before the deadline is enough — it does not matter when we receive it.
+## 4. Cancellation
 
-### What you get back
+Cancellation is distinct from withdrawal. Cancellation stops the automatic renewal of a
+Subscription, which then ends at the end of the current Billing Period with the consequences set out
+in section 8 of the Terms. Premium remains available until then, and the price paid for that Billing
+Period is not refunded. A Subscription cancelled during the Free Trial ends when the Free Trial ends,
+and no charge is made. Cancellation does not affect the right of withdrawal during the Withdrawal
+Period.
 
-**You get back the full amount you have paid.** We do not deduct anything for the time you had the
-service, even if the bot published for you the whole time. If you withdraw during the free trial,
-nothing has been charged, so there is nothing to return.
+The Subscriber may cancel at any time, through the **Cancel subscription** link in the Subscription
+tab of the Dashboard, which opens the Paddle Customer Portal, or by email to <SupportEmail />.
 
-We will reimburse you without undue delay, and in any event **within 14 days** of being told you are
-withdrawing. The refund is made by Paddle using the same payment method you used, at no cost to you.
+## 5. Other refunds
 
-The law does allow a trader to keep a proportionate amount for service already supplied — but only
-where the consumer expressly asked for performance to begin during the withdrawal period, as a
-separate and deliberate request. We do not ask you for that, so we do not make that deduction.
+A person who is not a Consumer has no right of withdrawal. Apart from the rights described in
+section 1, a refund is due only under sections 9 and 10 of the Terms, or if the Service supplied
+under a Subscription does not conform to its description and we do not bring it into conformity
+within a reasonable time; in that case you are entitled to a proportionate price reduction or to
+terminate the Subscription, and we arrange the resulting refund through Paddle. Any other refund is
+at our discretion. A Consumer's rights in respect of conformity are set out in section 5 of the
+Terms, and this Policy does not limit them.
 
-### What we do not claim
+## 6. Model Withdrawal Form
 
-Some digital products lose the withdrawal right once the customer starts using them. **We do not
-claim that.** Auto Publisher is supplied as an ongoing service rather than as a one-off download, so
-starting to use it does **not** cost you your withdrawal right, and we do not ask you to waive it.
+(Complete and return this form only if you wish to withdraw from the contract.)
 
-If you want to withdraw within 14 days, you can — whether or not the bot has already published
-anything for you.
-
-## 2. Cancelling a subscription
-
-Cancelling is not the same as withdrawing.
-
-- **Withdrawal** is the statutory right described above: it applies in the first 14 days and gets you
-  a full refund.
-- **Cancellation** can be done at any time. It stops the subscription renewing. The paid plan
-  stays available until the end of the period you have already paid for, and that period is **not**
-  refunded.
-
-Cancelling during a free trial stops the subscription before any payment falls due — you keep the
-paid features until the trial ends and are never charged.
-
-If you are the subscriber, the subscription page in your dashboard links you through to Paddle's
-customer portal, where you can cancel. You can always cancel by emailing <SupportEmail /> instead,
-and we will arrange it — use that route if the link is not there.
-
-When a paid subscription ends, the server returns to the free plan. The bot stays in your server and
-your channel configuration and publishing rules are kept in full — nothing needs setting up again.
-
-The free plan's limits apply again, so some channels stop publishing: any above the free limit of
-three, and any that use publishing rules, because rules are a paid feature and we pause those
-channels rather than publish messages you chose to filter out. Paused channels are shown as such in
-your dashboard and resume exactly as configured if you subscribe again. Nothing is deleted.
-
-## 3. Refunds outside the withdrawal period
-
-Beyond the 14-day withdrawal period, and for business customers, refunds are not automatic — but we
-are not going to hide behind that. If the service did not work as described, tell us. Where a fault
-is on our side and we cannot fix it within a reasonable time, you are entitled to a price reduction
-or to end the contract, and we will arrange the appropriate refund through Paddle.
-
-Consumers additionally have the conformity rights described in the [Terms of Service](/terms),
-section 4. Those rights are free of charge and are not limited by this page.
-
-## 4. If you are a business
-
-The right of withdrawal is a consumer right and does not apply to business customers. You can cancel
-at any time as described in section 2. Refunds outside that are at our discretion, except where the
-service failed to conform to what we agreed.
-
-## 5. Model withdrawal form
-
-You may, but do not have to, use this form.
-
-> **To:** {entity.name.short}, {entity.seat} — <SupportEmail />
+> To: {entity.name.short}, {entity.seat}, <SupportPhone />, <SupportEmail />
 >
-> I hereby give notice that I withdraw from my contract for the supply of the following service:
-> Auto Publisher Premium subscription.
+> I hereby give notice that I withdraw from my contract for the provision of the following service:
+> Auto Publisher Premium subscription for the Discord server \_\_\_\_\_\_\_\_\_\_\_\_
 >
 > Ordered on: \_\_\_\_\_\_\_\_\_\_\_\_
 >
@@ -143,115 +100,17 @@ You may, but do not have to, use this form.
 >
 > Address of consumer: \_\_\_\_\_\_\_\_\_\_\_\_
 >
-> Discord username or server: \_\_\_\_\_\_\_\_\_\_\_\_
->
 > Signature of consumer (only if this form is notified on paper): \_\_\_\_\_\_\_\_\_\_\_\_
 >
 > Date: \_\_\_\_\_\_\_\_\_\_\_\_
 
-## 6. Billing questions and complaints
+You can also exercise your right of withdrawal online, using the Withdrawal Function in the
+Subscription tab of the Dashboard for the Server concerned. If you use this online feature, we will
+send you an acknowledgement of receipt of the withdrawal on a durable medium (by email), including its
+content and the date and time of its submission, without undue delay.
 
-- **Invoices, payment methods, card charges and the mechanics of a refund** are handled by Paddle, as
-  merchant of record. Paddle's support can be reached at
-  [paddle.net](https://www.paddle.net) — the same portal shown on your receipt.
-- **Anything about the service itself**, including whether a refund is due, comes to us at
-  <SupportEmail />.
+## 7. Enquiries
 
-If you are a consumer and you complain in writing, **we will reply within 15 days**, and we keep a
-record of complaints and replies for one year, as Croatian consumer protection law requires. If our
-reply does not resolve matters, the out-of-court options are listed in the
-[Terms of Service](/terms), section 4.
-
-{/*
-  ZZP čl. 60 st. 9: the pre-contractual notice must be in Croatian and in Latin script; st. 9
-  expressly permits the simultaneous use of other languages, so a bilingual page is lawful on the
-  statute's own words. Scope is t. 9 (conditions, time limit, procedure, model form) and t. 10 (that
-  the withdrawal function exists and where it is) — those two together are what čl. 80 st. 1 keys
-  its 12-month extension to.
-
-  STANDING RULE: this section and the English above change in ONE commit. čl. 60 st. 2 makes
-  pre-contractual information part of the contract, so a drifted translation binds us to whichever
-  version is worse.
-
-  The heading carries an explicit id: rehype-slug's handling of č/š/ž is unverified here, and the
-  pointer above §1 depends on it resolving.
-*/}
-
-<section lang="hr">
-
-<h2 id="obavijest-na-hrvatskom-jeziku">Obavijest o pravu na jednostrani raskid ugovora</h2>
-
-Ova obavijest sadržava podatke iz članka 60. stavka 1. točaka 9. i 10. Zakona o zaštiti potrošača,
-napisane na hrvatskom jeziku i latiničnim pismom. Sadržajno odgovara odjeljcima 1. i 5. ove stranice.
-
-### Pravo na jednostrani raskid ugovora
-
-Ako ste potrošač — fizička osoba koja sklapa ugovor izvan svoje trgovačke, poslovne, obrtničke ili
-profesionalne djelatnosti — imate pravo, ne navodeći razloge za to, jednostrano raskinuti ugovor u
-roku od **14 dana**.
-
-Rok od 14 dana počinje teći od dana sklapanja ugovora, odnosno od dana kada je Vaša pretplata
-započela. Ako je Vaša pretplata započela besplatnim probnim razdobljem, ugovor je sklopljen na dan
-početka **probnog razdoblja**, a ne na dan naplate prvog iznosa.
-
-**Obnova pretplate ne pokreće novi rok od 14 dana**, kao ni prelazak s besplatnog probnog razdoblja
-na plaćenu pretplatu. Pravo se ostvaruje jednom, u odnosu na sklopljeni ugovor. Ako kasnije prijeđete
-na drugi paket ili na drugo razdoblje naplate, to se smatra novim ugovorom pa počinje teći novi rok
-od 14 dana.
-
-Vaša prva pretplata za pojedini Discord server uključuje **besplatno probno razdoblje od 14 dana**,
-tijekom kojeg Vam se ništa ne naplaćuje. **Po isteku probnog razdoblja naplata je obvezna**:
-pretplata se nastavlja po cijeni prikazanoj pri kupnji i obnavlja se svakim obračunskim razdobljem
-dok je ne otkažete. Probno razdoblje i rok za raskid traju 14 dana i počinju istog dana, pa istječu
-zajedno.
-
-### Kako raskinuti ugovor
-
-**Na stranici pretplate na Vašoj nadzornoj ploči nalazi se funkcija za jednostrani raskid ugovora**,
-smještena uz ostale postavke naplate. Traži od Vas samo adresu elektroničke pošte na koju ćemo poslati
-potvrdu, nakon čega pritisnete gumb za potvrdu raskida. Ništa se drugo od Vas ne traži: ni razlog, ni
-anketa, ni telefonski poziv. Potvrdu o primitku Vaše izjave šaljemo Vam bez odgađanja elektroničkom
-poštom i ta je potvrda Vaš dokaz.
-
-Ugovor možete raskinuti i na svaki drugi način, pod uvjetom da je izjava nedvosmislena i da nam je
-pošaljete prije isteka roka od 14 dana:
-
-- elektroničkom poštom na <SupportEmail /> — dovoljna je jedna rečenica; ili
-- korištenjem obrasca za jednostrani raskid ugovora iz članka 81. stavka 1. Zakona o zaštiti
-  potrošača, koji je naveden niže.
-
-Niste dužni koristiti obrazac ni navedenu funkciju i niste dužni obrazložiti svoju odluku. Dovoljno
-je da izjavu pošaljete prije isteka roka; nije važno kada je zaprimimo.
-
-### Povrat plaćenog iznosa
-
-**Vraćamo Vam cjelokupni plaćeni iznos.** Ne odbijamo razmjeran iznos za vrijeme u kojem ste se
-uslugom koristili, čak i ako je bot cijelo to vrijeme objavljivao za Vas. Ako ugovor raskinete
-tijekom besplatnog probnog razdoblja, ništa nije naplaćeno pa nema ni povrata.
-
-Povrat izvršavamo bez odgađanja, a najkasnije u roku od **14 dana** od dana kada ste nas obavijestili
-o raskidu. Povrat provodi Paddle istim sredstvom plaćanja kojim ste se koristili, bez ikakvih
-troškova za Vas.
-
-### Obrazac za jednostrani raskid ugovora
-
-Ovaj obrazac možete, ali ne morate koristiti.
-
-> **Prima:** {entity.name.short}, {entity.seat} — <SupportEmail />
->
-> Ja ovime izjavljujem da jednostrano raskidam ugovor o pružanju sljedeće usluge: pretplata Auto
-> Publisher Premium.
->
-> Datum sklapanja ugovora: \_\_\_\_\_\_\_\_\_\_\_\_
->
-> Ime i prezime potrošača: \_\_\_\_\_\_\_\_\_\_\_\_
->
-> Adresa potrošača: \_\_\_\_\_\_\_\_\_\_\_\_
->
-> Discord korisničko ime ili naziv servera: \_\_\_\_\_\_\_\_\_\_\_\_
->
-> Potpis potrošača (samo ako se obrazac dostavlja na papiru): \_\_\_\_\_\_\_\_\_\_\_\_
->
-> Datum: \_\_\_\_\_\_\_\_\_\_\_\_
-
-</section>
+Paddle handles enquiries about invoices, payment methods and charges at
+[paddle.net](https://www.paddle.net). Enquiries about this Policy, including whether a refund is due,
+may be sent to us at <SupportEmail />. Complaints are handled as set out in section 5 of the Terms.

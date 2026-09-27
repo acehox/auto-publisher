@@ -26,8 +26,8 @@ import type { WithdrawalResult, WithdrawalState } from '@/lib/api/types';
  * - The confirm button carries the statutory words and nothing else: no icon, no
  *   spinner, no second verb.
  * - Labels are English by choice; no article prescribes a language. ⚠️ Do not
- *   extend that to the /refunds disclosure naming this control — čl. 60 st. 9
- *   does bind it.
+ *   extend that to the disclosure naming this control — čl. 60 st. 9 binds it,
+ *   which is why /hr repeats it in Croatian.
  * - The contract is shown in labelled fields so there is something to confirm;
  *   the consumer's name is never asked for again.
  */
@@ -173,8 +173,8 @@ export function WithdrawalPanel({
                 {/* čl. 84 — full refund, nothing deducted. */}
                 <p className="text-slate-300">You are refunded in full. Nothing is deducted.</p>
                 <p className="text-red-300">
-                  This cannot be undone. Premium ends immediately and any channels over the Free
-                  limit pause — their setup is kept.
+                  This cannot be undone. Premium ends immediately, and channels that use filters or
+                  are over the Free limit pause — their setup is kept.
                 </p>
               </div>
 
@@ -225,7 +225,7 @@ function WithdrawalReceipt({ result }: { result: WithdrawalResult }) {
     {
       key: 'Channels',
       value:
-        'The bot stays in this server on the Free plan. Channels over the free limit and channels using rules are paused, kept exactly as configured, and resume if you subscribe again.',
+        'The bot stays in this server on the Free plan. Channels over the free limit and channels using filters are paused, kept exactly as configured, and resume if you subscribe again.',
     },
   ];
 

@@ -1,272 +1,332 @@
+import { config } from '@ap/config';
 import { DocumentStatus } from '@/components/legal/document-status';
-import { RepositoryLink, SupportEmail, InfoEmail } from '@/components/legal/links';
+import { RepositoryLink, SupportEmail, SupportPhone } from '@/components/legal/links';
+import { links } from '@/lib/constants';
 import { entity, entityNameWithTranslation } from '@/lib/legal/entity';
+import { retention } from '@/lib/legal/retention';
+import { PREMIUM_TRIAL_DAYS } from '@/lib/pricing';
 
 export const metadata = {
   title: 'Terms of Service | Auto Publisher',
   description:
-    'The agreement between you and the operator of Auto Publisher, covering the licence, subscriptions, your rights as a consumer, and how the service may be changed or ended.',
+    'The terms governing Auto Publisher on the Free Plan and under a Premium Subscription, including Paddle as Merchant of Record, consumer rights, renewal, changes and termination.',
 };
 
 # Terms of Service
 
 <DocumentStatus document="/terms" />
 
-These Terms are the agreement between you and {entityNameWithTranslation} ("**we**", "**us**",
-"**our**"),
-the company identified in full in our [Legal Notice](/legal). They cover the Auto Publisher Discord
-bot, the dashboard at this website, and the commands the bot provides ("**the Service**").
+These Terms of Service and the [Refunds & Withdrawal Policy](/refunds), which forms part of them
+(together, the "**Terms**"), are concluded between {entityNameWithTranslation}, whose registered
+particulars are set out in the [Legal Notice](/legal) ("**we**", "**us**", "**our**"), and each
+person who uses the Service, including as an Administrator or a Subscriber ("**you**", "**your**").
+They govern the use of the Service on the Free Plan and under a Subscription. Other capitalised terms
+are defined in section 1.
 
-They apply whether you use the free plan or a paid subscription. Section 4 explains what changes
-if you are a consumer, and section 5 what changes if you are a business.
+By adding the Bot to a Server, signing in to the Dashboard or otherwise using the Service, you agree
+to these Terms. A Subscription is concluded when you complete Paddle Checkout, after confirming in
+the Dashboard that you have read and agree to these Terms (section 8).
 
-If you do not accept these Terms, do not add the bot to a Discord server and do not use the
-dashboard.
+## 1. Definitions
 
-## 1. Who you are contracting with, and how payment works
+- "**Administrator**" means a person who holds the Discord permission required to configure the Bot
+  in a Server: Manage Server for the Dashboard, or Manage Channels for the Bot's commands;
+- "**Announcement Channel**" means a Discord channel of the announcement type;
+- "**Billing Period**" means each month or year, as selected at purchase, for which a Subscription
+  is charged in advance;
+- "**Bot**" means the Auto Publisher application for Discord, including its commands;
+- "**Consumer**" means a natural person acting for purposes outside their trade, business, craft or
+  profession;
+- "**Dashboard**" means the signed-in area of the Website in which Administrators configure the Bot
+  and manage Subscriptions;
+- "**Discord**" means the Discord platform, operated by Discord Inc. and its affiliates;
+- "**Enabled Channel**" means an Announcement Channel in which an Administrator has set the Bot to
+  Publish messages;
+- "**Filter**" means a set of one or more conditions, attached by an Administrator to an Enabled
+  Channel, that determines which of its messages the Bot Publishes;
+- "**Free Plan**" means the use of the Service for a Server without a Subscription, within the
+  limits in section 3;
+- "**Free Trial**" means the free period of {PREMIUM_TRIAL_DAYS} days with which the first
+  Subscription for a Server begins, available once per Server;
+- "**Merchant of Record**" means the party that sells a Subscription to you in its own name, which
+  is Paddle (section 2);
+- "**Paddle**" or "**Paddle.com**" means Paddle.com Market Limited (England and Wales, company
+  number 08172165), or the other Paddle company that the Paddle Buyer Terms identify as the
+  contracting entity for your location;
+- "**Paddle Buyer Terms**" means Paddle's terms of sale at
+  [paddle.com/legal/buyer-terms](https://www.paddle.com/legal/buyer-terms);
+- "**Paddle Checkout**" means Paddle's checkout form on the Website, through which a Subscription is
+  purchased;
+- "**Paddle Customer Portal**" means Paddle's page for managing a Subscription's payment method,
+  invoices and cancellation;
+- "**Paddle Refund Policy**" means Paddle's refund policy at
+  [paddle.com/legal/refund-policy](https://www.paddle.com/legal/refund-policy), which forms part of
+  the Paddle Buyer Terms;
+- "**Premium**" means the paid tier of the Service for one Server, with the features set out in
+  section 3 and on the [Premium page](/premium);
+- "**Publish**" means to deliver a message from an Announcement Channel to the channels that follow
+  it, using Discord's "Publish" function ("**Published**" and "**Publishing**" accordingly);
+- "**Server**" means a server on Discord (a "guild" in Discord's developer documentation);
+- "**Service**" means the Bot, the Dashboard and the Website;
+- "**Subscriber**" means the person who purchased a Subscription through Paddle Checkout;
+- "**Subscription**" means a contract for Premium for one Server, billed monthly or yearly, which
+  Paddle sells to you and we perform, including any Free Trial;
+- "**Website**" means the website on which these Terms are displayed, including the Dashboard;
+- "**Withdrawal Function**" means the function labelled "Withdraw from contract" in the Subscription
+  tab of the Dashboard, through which a Consumer may withdraw from a Subscription.
 
-We provide the Service to you directly. Your licence to use it, and our obligations to make it
-work, come from us and from this agreement.
+## 2. Paddle as Merchant of Record
 
-Payments are handled by a separate company. **Our order process is conducted by our online reseller
-Paddle.com. Paddle.com is the Merchant of Record for all our orders. Paddle provides all customer
-service inquiries and handles returns.** Paddle is the seller of record for the transaction, issues
-your invoice, and processes refunds.
+**Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of
+Record for all our orders. Paddle provides all customer service inquiries and handles returns.**
 
-In practice this means:
+As Merchant of Record, Paddle sells each Subscription to you in its own name under the Paddle Buyer
+Terms, collects the price and applicable taxes, issues invoices, processes refunds and handles
+enquiries and disputes concerning orders, payments and invoices. We provide the Service under these
+Terms: we grant the licence to use it (section 7), are responsible to Consumers for its conformity
+(section 5) and provide support for its use (section 3.5).
 
-- **Billing, invoices, payment methods, and refunds** are handled by Paddle. We cannot issue you an
-  invoice and we cannot take payment from you directly.
-- **The Service itself** — whether it works, what it does, and support for using it — is our
-  responsibility, not Paddle's.
-- Paddle's own terms govern the payment transaction between you and Paddle. Those terms are separate
-  from these, and we cannot enforce them against you.
+Nothing in these Terms or in the Paddle Buyer Terms excludes or limits any right that you have as a
+Consumer under mandatory law.
 
-Both relationships exist at once: we are your counterparty for the service, and Paddle is your
-counterparty for the sale. Being a consumer does not lose you any right against us because payment
-went through a reseller.
+## 3. The Service
 
-## 2. What the Service does
+The Bot Publishes the messages posted in each Enabled Channel or, where a Filter is attached to it,
+the messages that satisfy the Filter.
 
-Auto Publisher publishes messages posted in Discord announcement channels to the servers that follow
-them, automatically, so you do not have to press "Publish" on each message.
+- On the Free Plan, an Administrator may enable up to
+  **{config.limits.freeChannelsPerGuild} Announcement Channels per Server**; under a Subscription,
+  the number is unlimited. In a Server to which the Bot was added before Enabled Channels were
+  introduced, the Bot Publishes from every Announcement Channel until an Administrator selects
+  Enabled Channels ([details](/migration)).
+- Premium adds: Filters, whose conditions may refer to a message's text, author, mentions or posting
+  webhook; priority in the Publishing queue (section 3.1); and priority support (section 3.5).
 
-- You choose which announcement channels the bot publishes from.
-- On the paid plan you can add rules that decide which messages get published, based on the
-  message's text, its author, mentions it contains, and similar conditions.
-- The bot reads the content of messages in the channels you have enabled in order to apply those
-  rules. It does not store message content. See the [Privacy Policy](/privacy).
+### 3.1 Technical requirements
 
-### 2.1 Technical requirements
+The Service functions only if you have a Discord account, the Server has an Announcement Channel,
+the person configuring the Service is an Administrator, and the Bot holds the **View Channel**,
+**Send Messages** and **Manage Messages** permissions in each Enabled Channel. Publishing is subject
+to the following:
 
-The Service only works if all of the following are true. These are requirements of Discord's
-platform, not choices we make, and the Service cannot function without them:
+- **Discord permits no more than 10 messages per channel to be Published in any hour.** Further
+  messages in that hour are not Published.
+- One Bot serves every Server through a single Publishing queue. When messages are waiting, those
+  from Servers with Premium take priority over those from Servers on the Free Plan, and a limited
+  number of the first messages Published after the Bot is added to a Server, on either plan, take
+  priority over both.
+- If a message contains a link for which Discord has not yet generated a preview, the Bot delays
+  Publishing it by five seconds so that the preview can be generated.
 
-- You have a Discord account, and the server has an **announcement channel** (a channel Discord
-  itself designates as such).
-- To configure the Service for a server you need the **Manage Server** permission in that server.
-- In each channel the bot publishes from, the bot's role must have **View Channel**, **Send
-  Messages** and **Manage Messages**. Without Manage Messages, Discord will not allow publishing.
-- The free plan covers up to **3 channels per server**. The paid plan removes that limit.
-- **Discord permits a maximum of 10 published messages per channel per hour.** This is Discord's
-  limit. Once a channel reaches it, further messages in that hour are not published.
-- Both plans are published by the same bot through the same queue. What a paid subscription adds is
-  **priority within that queue**: when there is a backlog, paid servers' messages are published
-  before free servers'. We do not promise a delivery time on either plan — Discord's own rate limits
-  decide that, and a busy period can delay any message.
-- Where a message contains a link, we wait a few seconds before publishing so that Discord can
-  generate the link preview first. Followers would otherwise receive the message without it.
+### 3.2 Limitations
 
-We publish these requirements so you can check compatibility before subscribing. If your server does
-not meet them, the Service will not do what you expect.
+The Service depends on Discord, which we do not control, and on the service providers described in
+the [Privacy Policy](/privacy), and may be delayed, impaired or unavailable if Discord is
+unavailable, limits the rate of requests or changes its platform. We do not guarantee any
+delivery time, uninterrupted or error-free operation, or any level of service. This section does not
+limit your rights as a Consumer under section 5.
 
-### 2.2 What we do not promise
+### 3.3 Commencement
 
-We do not promise uninterrupted or error-free operation. The Service depends on Discord's API, which
-we do not control: if Discord is unavailable, rate-limits us, changes its platform, or removes a
-feature, the Service may be delayed, degraded or unavailable. We also rely on other providers listed
-in the [Privacy Policy](/privacy).
+The Free Plan applies to a Server once the Bot is present in it and holds the permissions listed in
+section 3.1, and the Server has at least one Enabled Channel. Premium applies from the start of the Subscription, including any
+Free Trial.
 
-We do not promise any particular publishing speed, and nothing on our website should be read as a
-guaranteed service level.
+### 3.4 Updates
 
-None of this displaces the rights described in sections 4 and 5.
+We will supply updates, including security updates, for the duration of the contract: on the Free
+Plan until these Terms cease to apply to you (section 10), and under a Subscription for each Billing
+Period until it ends.
 
-## 3. Your obligations
+### 3.5 Support
 
-You must:
+We provide support on both plans by email at <SupportEmail /> and in our <a href={links.discordSupportServer} target="_blank" rel="noopener noreferrer">support Server</a> on Discord.
+Requests concerning a Server with Premium are handled before those concerning a Server on the Free
+Plan.
+Complaints are handled under section 5. Misuse of the Service, including any breach of Discord's
+terms, may be reported to <SupportEmail />.
 
-- Comply with [Discord's Terms of Service](https://discord.com/terms) and
-  [Community Guidelines](https://discord.com/guidelines). Where Discord's terms conflict with ours,
-  Discord's terms prevail as between you and Discord.
-- Only enable the Service for servers you are authorised to configure.
-- Not use the Service to publish content that is unlawful, or to send spam or bulk unsolicited
-  messages.
-- Not attempt to interfere with, overload, reverse-engineer or circumvent the Service or its rate
-  limits, or use it through automated means other than the interfaces we provide.
+## 4. Your obligations
 
-You are responsible for what gets published from your server. The Service publishes what your
-server's members post; it does not review or moderate it.
+You must comply with [Discord's Terms of Service](https://discord.com/terms) and
+[Community Guidelines](https://discord.com/guidelines), use the Service only in Servers that you are
+authorised to configure, and be at least 13 years old or, where Discord sets a higher minimum age for
+your country, that age. You must not:
 
-**Age.** Discord requires all users to be at least 13, and older in some countries. You must meet
-Discord's minimum age for your country to use the Service.
+- use the Service to Publish unlawful content, spam or bulk unsolicited messages;
+- interfere with, overload, reverse-engineer or circumvent the Service or its rate limits, or access
+  it by automated means other than the interfaces we provide.
 
-## 4. If you are a consumer
+You are responsible for the messages Published from the Servers in which you configure the Service.
+We do not review or moderate them.
 
-You are a consumer if you are an individual acting outside your trade, business, craft or profession.
-This section gives you rights that cannot be signed away, and nothing elsewhere in these Terms limits
-them.
+## 5. Consumer rights
 
-- **Withdrawal and refunds.** You have a statutory right to withdraw from a subscription within 14
-  days. How it works, and how to exercise it, is set out in the
-  [Refunds & Withdrawal policy](/refunds).
-- **Conformity.** The Service must match its description, be fit for its purpose, and be supplied
-  with the functionality and features that a service of this kind normally has. If it does not, you
-  are entitled to have it brought into conformity, and to a price reduction or to end the contract
-  where that is not done within a reasonable time or is not possible. These remedies are free of
-  charge to you.
-- **Complaints.** You can complain in writing at any time to
-  <SupportEmail />. **We will reply within 15 days of receiving your
-  complaint**, and we keep a record of complaints and our replies for one year, as required by
-  Croatian consumer protection law.
-- **Out-of-court dispute resolution.** Consumer disputes can in general be settled out of court
-  through alternative dispute resolution. **We have not undertaken to use any particular dispute
-  resolution body**, and we are not required to. You can browse the bodies notified in Croatia and
-  across the EU in the European Commission's
-  [list of dispute resolution bodies](https://consumer-redress.ec.europa.eu/dispute-resolution-bodies).
-  If your complaint is about how we trade, you can also contact the Croatian State Inspectorate
-  (*Državni inspektorat*, [dirh.gov.hr](https://dirh.gov.hr)), which supervises consumer protection
-  including electronic commerce. **Note that your purchase itself is made from Paddle, not from us**
-  (see §1), so payment, invoicing and refund disputes are handled through Paddle's own process.
-  Nothing here removes your right to go to court.
-- **Nothing in these Terms** excludes or limits our liability for death or personal injury caused by
-  our negligence, for fraud, or for anything else that cannot lawfully be excluded.
+This section applies if you are a Consumer.
 
-Our liability to you is otherwise limited to loss that is a reasonably foreseeable consequence of our
-breach. We are not liable for loss that was not foreseeable at the time of contracting.
+**Withdrawal.** You may withdraw from a Subscription without giving any reason within a period that
+expires 14 days after the day on which the Subscription is concluded, using the Withdrawal Function or
+the other means set out in the [Refunds & Withdrawal Policy](/refunds).
 
-## 5. If you are a business
+**Conformity.** The Service must correspond to its description, be fit for its purpose and have the
+qualities and features normal for a service of its kind. If it does not, you are entitled to have it
+brought into conformity free of charge and, if that is impossible or is not done within a reasonable
+time, to a proportionate price reduction or to terminate the contract.
 
-If you use the Service for purposes related to your trade, business, craft or profession, you are not
-a consumer. Section 4 does not apply to you. Instead:
+**Complaints.** You may submit a complaint in writing, by email to <SupportEmail /> or by post to
+{entity.name.short}, {entity.seat}. **We will reply within 15 days of receiving your complaint**, and
+we keep a record of each complaint and our reply for {retention.complaints.en}.
 
-- The Service is provided **as is** and **as available**. To the fullest extent permitted by law we
-  exclude all implied terms, warranties and conditions.
-- We are not liable for loss of profit, loss of revenue, loss of business, loss of goodwill, loss or
-  corruption of data, or any indirect or consequential loss.
-- Our total liability arising out of or in connection with these Terms is limited to the greater of the
-  amounts paid for the Service in the 12 months before the claim arose — whether paid to us or to Paddle
-  on our behalf — or EUR 100.
-- **Neither the exclusion nor the limit above applies to our intentional acts or gross negligence**,
-  for which our liability is neither excluded nor capped.
-- You have **no withdrawal right** — that right belongs to consumers only. Our refund practice for
-  business customers is set out in the [Refunds & Withdrawal policy](/refunds).
-- You will indemnify us against claims arising from content published from your servers, or from your
-  use of the Service in breach of these Terms.
+**Alternative dispute resolution.** **We have not undertaken to participate in proceedings before
+any alternative dispute resolution body.** The European Commission maintains a
+[list of these bodies for each EU Member State](https://consumer-redress.ec.europa.eu/list-alternative-dispute-resolution-adr-bodies_en).
+A complaint about our trading practices may also be submitted to the Croatian State Inspectorate
+(*Državni inspektorat*, [dirh.gov.hr](https://dirh.gov.hr)).
 
-Nothing here excludes liability that cannot lawfully be excluded.
+**Liability.** Nothing in these Terms excludes or limits our liability for death or personal injury
+caused by our negligence, for fraud, or for any other liability that cannot lawfully be excluded or
+limited. Subject to that, we are liable only for loss that was a reasonably foreseeable consequence
+of our breach when the contract was concluded.
 
-## 6. Licence
+## 6. Persons who are not Consumers
 
-We grant you a non-exclusive, non-transferable, revocable licence to use the Service for as long as
-these Terms apply to you, for the purpose of publishing announcements in Discord servers you are
-authorised to configure. This licence comes from us directly — it is not granted or passed on by
-Paddle.
+If you are not a Consumer, section 5 does not apply, and:
 
-All intellectual property in the Service, including the bot, the dashboard, and our name and logo,
-stays with us. Nothing in these Terms transfers it. The source code is published separately at
-<RepositoryLink /> under the PolyForm Perimeter License 1.0.1 — a source-available licence, not an
-open-source one: it permits reading, modifying and running the code for your own purposes, but not
-providing it to others as a competing product or service, whether or not you charge for it. The
-terms of that licence govern the code; these Terms govern the hosted Service we operate.
+- the Service is provided **"as is"** and **"as available"**, and all implied terms, warranties and
+  conditions are excluded to the fullest extent permitted by law;
+- we are not liable for loss of profit, revenue, business or goodwill, for loss or corruption of
+  data, or for any indirect or consequential loss;
+- our total liability arising out of or in connection with these Terms is limited to the greater of
+  EUR 100 and the amounts paid for the Service, to us or to Paddle, in the 12 months before the claim
+  arose;
+- **these exclusions and limitations do not apply to liability for intent or gross negligence**, or
+  to any liability that cannot lawfully be excluded or limited;
+- you have **no right of withdrawal**, and refunds are governed by the
+  [Refunds & Withdrawal Policy](/refunds);
+- you must indemnify us against claims arising from content Published from the Servers in which you
+  configure the Service, or from your use of the Service in breach of these Terms.
 
-## 7. Subscriptions, price and renewal
+## 7. Licence
 
-- Current prices and what each plan includes are shown on our [Premium page](/premium) and at
-  checkout, before you pay.
-- Your first subscription for a server includes a **14-day free trial**, once per server. You are not
-  charged during the trial. **When it ends, payment is required** — the subscription continues at the
-  price shown at checkout and renews from then on, unless you cancel before the trial is over.
-- Subscriptions renew automatically for the interval you chose, at the price in force, until
-  cancelled.
-- **Prices are set at checkout by Paddle**, which also determines the taxes shown. The amount you
-  see at checkout before paying is the amount payable.
-- You can cancel at any time. Cancellation takes effect at the end of the paid period, and the paid
-  plan remains available until then. This is separate from withdrawal — see
-  [Refunds & Withdrawal](/refunds).
-- If a payment fails or a subscription lapses, the server returns to the free plan. The bot stays in
-  your server and your channel configuration and rules are kept in full, but the free plan's limits
-  apply again: channels above the free limit stop publishing, and so do channels that use publishing
-  rules, because rules are a paid feature and we pause those channels rather than publish messages
-  you chose to filter out. Paused channels are shown as such in the dashboard and resume exactly as
-  configured if you subscribe again. Nothing is deleted.
+We grant you a non-exclusive, non-transferable, revocable licence to use the Service, for as long as
+these Terms apply to you, to Publish messages in Servers that you are authorised to configure. The
+licence is granted by us, not by Paddle, and no other right in the Service is granted.
 
-## 8. Changes to the Service and to these Terms
+All intellectual property rights in the Service, including in the Bot, the Dashboard and our name
+and logo, remain with us. The source code is made available separately at <RepositoryLink /> under the
+PolyForm Perimeter License 1.0.1, a source-available licence that is not an open-source licence. That
+licence governs the source code; these Terms govern the Service as operated by us.
 
-We may modify the Service, and these Terms, **only for one of the following reasons**:
+## 8. Subscriptions, prices and renewal
 
-1. to comply with a change in law, regulation, or a decision of a court or regulator;
-2. to reflect a change in Discord's platform, terms or API that the Service depends on;
-3. to reflect a change in a provider we rely on to operate the Service;
+**Conclusion.** To purchase a Subscription, you open the Server's Subscription tab in the Dashboard,
+select monthly or yearly billing, confirm that you have read and agree to these Terms, and complete
+Paddle Checkout, in which you can review and correct your details before payment. These Terms and
+each Subscription are concluded in English.
+
+**Price and payment.** The price and features of Premium are displayed on the
+[Premium page](/premium) and in the Dashboard before Paddle Checkout opens. **The final price,
+including taxes and, where Paddle offers it, in your local currency, is set and displayed by Paddle
+in Paddle Checkout, and is the amount payable.** Payment is made by card or by another method that
+Paddle offers in your country.
+
+**Free Trial.** No charge is made during the Free Trial. **When the Free Trial ends, payment is
+required**: Paddle charges the price of the first Billing Period unless the Subscription has been
+cancelled before then.
+
+**Renewal and minimum term.** A Subscription renews automatically for successive Billing Periods of
+the same length, at the price in force, until it is cancelled. Its minimum term is one Billing
+Period.
+
+**Price increases.** We or Paddle will notify you of a price increase, by email to the address that
+Paddle holds for the Subscription, at least 30 days before the first Billing Period to which the new
+price applies. The Subscriber may cancel the Subscription before that Billing Period begins.
+
+**Cancellation.** The Subscriber may cancel a Subscription at any time, as set out in the
+[Refunds & Withdrawal Policy](/refunds), with effect from the end of the current Billing Period;
+Premium remains available until then. Cancellation is distinct from withdrawal (section 5).
+
+**End of a Subscription.** When a Subscription ends, including where Paddle ends it because a
+payment could not be collected, the Server returns to the Free Plan: the Bot remains and no
+configuration is deleted, but Enabled Channels with a Filter are paused, and so are Enabled Channels
+in excess of the Free Plan limit, the most recently enabled first. They are marked as paused in the
+Dashboard and resume Publishing, as configured, when Premium applies to the Server again.
+
+## 9. Changes to the Service and to these Terms
+
+We may change the Service or these Terms, at no additional cost to you, **only for one of the
+following reasons**:
+
+1. to comply with a change in law or regulation, or with a decision of a court or authority;
+2. to reflect a change in Discord's platform, terms or programming interface;
+3. to reflect a change in a service provider on which we rely to operate the Service;
 4. for security reasons, including to address a vulnerability or abuse;
-5. to add, improve or retire a feature, or to change how it works, without materially reducing what
-   a paid subscription provides.
+5. to add, improve or withdraw a feature, or change how it works, without materially reducing what
+   Premium provides.
 
-We will tell you in advance of any change that materially and adversely affects your use of the paid
-plan, by a notice in the dashboard or by email where we have your address, and in good time before
-it takes effect. If you are a consumer and such a change materially and adversely affects you, you
-may end the contract free of charge within 30 days of being told, or of the change taking effect,
-whichever is later.
+We will inform Subscribers clearly, by email to the address that Paddle holds for the Subscription,
+of every change to Premium other than one needed to keep the Service in conformity. We will give
+notice of a change to these Terms that is to your disadvantage, or of a change that negatively
+affects your access to or use of Premium, at least 30 days before it takes effect: to Subscribers by
+that email and, for a change to these Terms, to everyone by making the updated Terms available on
+the Website with their effective date. The notice will state what is changing, when, and your right
+to terminate. Where a shorter period is required by law or by a decision of a competent authority,
+or is needed to address a security risk (reasons 1 and 4 above), we will give notice as early as
+possible.
 
-Continuing to use the Service after a change takes effect means you accept the amended Terms. If you
-do not accept them, remove the bot from your servers and stop using the dashboard.
+If a change affects a Subscription to your disadvantage in more than a minor way, you may terminate
+the Subscription free of charge within 30 days of receiving the notice or of the change taking
+effect, whichever is later, and we will refund, through Paddle, the part of the price paid for the
+period after termination.
 
-## 9. Suspension and termination
+If you continue to use the Service after a change takes effect, the amended Terms apply to you. If
+you do not accept a change, you may terminate these Terms before it takes effect (section 10).
 
-You can stop using the Service at any time by removing the bot from your server. Cancelling a paid
-subscription is described in section 7.
+## 10. Suspension and termination
 
-We may suspend or end your access if you materially breach these Terms, if we are required to by law
-or by Discord, or if your use threatens the security or stability of the Service or of other users.
-Where it is reasonable and lawful to do so, we will warn you first and give you a chance to put
-things right. If we end your access without you being at fault, we will refund the unused part of any
-period you have paid for, through Paddle.
+You may terminate these Terms at any time by removing the Bot from your Servers and ceasing to use
+the Dashboard. This does not cancel a Subscription, which is cancelled under section 8.
 
-## 10. Your configuration and your data
+We may suspend or terminate your access to the Service if you materially breach these Terms, if the
+law or Discord requires it, or if your use endangers the security or stability of the Service or its
+use by others. Where the circumstances and the law permit, we will notify you in advance and give you
+a reasonable opportunity to remedy the breach. If we terminate your access for a reason not
+attributable to you, we will refund, through Paddle, the part of the price paid for the period after
+termination.
 
-Your channel configuration and publishing rules belong to you. **Ask us at <SupportEmail /> and we
-will send you a copy in a machine-readable format**, free of charge.
+## 11. Your configuration and data
 
-If you stop using the Service, or your subscription ends, we keep and delete your configuration as
-described in the [Privacy Policy](/privacy). Personal data is handled as set out there, and the
-rights described there apply regardless of these Terms.
+You retain all rights in the channel configuration and Filters that you create. **On request to
+<SupportEmail />, we will provide a copy of them in a machine-readable format, free of charge.** The
+[Privacy Policy](/privacy) states how long we retain them after you stop using the Service and how
+we process personal data.
 
-## 11. Governing law and jurisdiction
+## 12. Governing law and jurisdiction
 
-These Terms are governed by the laws of the Republic of Croatia. **If you are a consumer, this choice
-of law does not deprive you of the protection afforded by the mandatory provisions of the law of your
-country of habitual residence.**
+These Terms are governed by the laws of the Republic of Croatia. **If you are a Consumer, this choice
+of law does not deprive you of the protection afforded to you by the mandatory provisions of the law
+of your country of habitual residence.**
 
-**If you are a business customer, the courts of the Republic of Croatia have exclusive jurisdiction** over
+**If you are not a Consumer, the courts of the Republic of Croatia have exclusive jurisdiction** over
 any dispute arising out of or in connection with these Terms.
 
-**If you are a consumer, you may bring proceedings either before the competent Croatian courts or in the
-courts of your country of residence, and we will bring proceedings against you only in the courts of your
-country of residence.** This follows Articles 17 to 19 of Regulation (EU) No 1215/2012, which we cannot
-vary by agreement — so nothing in these Terms narrows it. Nothing here limits your right to complain to a
-competent consumer protection authority.
+**If you are a Consumer, you may bring proceedings before the competent Croatian courts or the courts
+of your country of residence, and we may bring proceedings against you only in the courts of your
+country of residence**, in accordance with Articles 17 to 19 of Regulation (EU) No 1215/2012.
 
-## 12. Other terms
+## 13. General provisions
 
-- If any provision of these Terms is found unenforceable, the rest continues to apply.
-- Our failure to enforce a provision is not a waiver of it.
-- You may not transfer your rights under these Terms without our consent. We may transfer ours as
-  part of a transfer of our business, provided your rights are not reduced.
-- These Terms, together with the [Privacy Policy](/privacy) and the
-  [Refunds & Withdrawal policy](/refunds), are the whole agreement between us about the Service.
+- **Entire agreement.** These Terms and the plan details displayed on the Premium page, in the
+  Dashboard and in Paddle Checkout when a Subscription is concluded are the entire agreement between
+  you and us concerning the Service, except where mandatory law provides otherwise.
+- **Severability.** If a provision of these Terms is held invalid or unenforceable, the remaining
+  provisions continue to apply.
+- **No waiver.** A failure or delay in enforcing a provision of these Terms is not a waiver of it.
+- **Assignment.** You may transfer your rights and obligations under these Terms only with our prior
+  consent. We may transfer ours as part of a transfer of our business, provided that your rights are
+  not reduced.
 
-## 13. Contact
+## 14. Contact
 
-{entity.name.short} — full registered particulars in the [Legal Notice](/legal).
-
-Email: <InfoEmail />
+We can be contacted by email at <SupportEmail /> and by telephone at <SupportPhone />. Our
+registered particulars are set out in the [Legal Notice](/legal).

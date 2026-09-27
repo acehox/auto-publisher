@@ -1,0 +1,258 @@
+import { config } from '@ap/config';
+import { DocumentStatus } from '@/components/legal/document-status';
+import { SupportEmail, SupportPhone } from '@/components/legal/links';
+import { links } from '@/lib/constants';
+import { entity } from '@/lib/legal/entity';
+import { retention } from '@/lib/legal/retention';
+import { PREMIUM_TRIAL_DAYS } from '@/lib/pricing';
+
+export const metadata = {
+  title: 'Obavijest potrošačima | Auto Publisher',
+  description:
+    'Obavijesti prije sklapanja ugovora za Auto Publisher: trgovac, Usluga, cijena, trajanje i otkaz Pretplate, pravo na jednostrani raskid ugovora s obrascem te prigovori.',
+};
+
+<div lang="hr">
+
+# Obavijest potrošačima
+
+<DocumentStatus document="/hr" lang="hr" />
+
+Ova obavijest sadržava podatke koje Vam kao potrošaču, odnosno fizičkoj osobi koja sklapa pravni posao
+ili djeluje na tržištu izvan svoje trgovačke, poslovne, obrtničke ili profesionalne djelatnosti,
+dajemo u skladu s člankom 60. stavkom 1. Zakona o zaštiti potrošača (»Narodne novine«, broj 19/22,
+59/23, 59/26). Ugovor uređuju dokument [Terms of Service](/terms) i njegov sastavni dio, dokument
+[Refunds & Withdrawal Policy](/refunds) (u daljnjem tekstu zajedno: **„Uvjeti”**). Uvjeti i svaka Pretplata sklapaju se na engleskom jeziku.
+
+## Trgovac
+
+Trgovac je {entity.name.full} ({entity.name.short}), sa sjedištem na adresi
+{entity.seat.replace(', Croatia', ', Hrvatska')} (u daljnjem tekstu: **„mi”**). Telefon:
+<SupportPhone />; e-pošta: <SupportEmail />. Ostali podaci o nama navedeni su u dokumentu
+[Legal Notice](/legal).
+
+## Pojmovi
+
+- **„Administrator”** je osoba koja na Serveru ima dopuštenje **Manage Server** (za Nadzornu ploču)
+  ili **Manage Channels** (za naredbe Bota);
+- **„Besplatni paket”** je korištenje Usluge za Server bez Pretplate, u granicama iz odjeljka Usluga;
+- **„Bot”** je aplikacija Auto Publisher za Discord, uključujući njezine naredbe;
+- **„Filtar”** je skup uvjeta kojim Administrator za Uključeni kanal određuje koje poruke tog kanala
+  Bot objavljuje;
+- **„Funkcija za jednostrani raskid”** je funkcija s oznakom **Withdraw from contract** na kartici
+  **Subscription** Nadzorne ploče;
+- **„Kanal za najave”** je kanal na Discordu vrste *announcement*;
+- **„Nadzorna ploča”** je dio ove mrežne stranice dostupan nakon prijave, u kojem Administratori
+  podešavaju Bot i upravljaju Pretplatama;
+- **„objaviti”** (engl. *Publish*) znači Discordovom funkcijom „Publish” dostaviti poruku iz Kanala za
+  najave u kanale koji ga prate;
+- **„Obračunsko razdoblje”** je mjesec ili godina, prema odabiru pri kupnji, za koje se Pretplata
+  naplaćuje unaprijed;
+- **„Paddle”** je Paddle.com Market Limited (Engleska i Wales, broj društva 08172165) ili drugo
+  društvo iz grupe Paddle koje Paddleovi uvjeti za kupce određuju kao ugovornu stranu za Vašu
+  lokaciju;
+- **„Paddle Checkout”** je Paddleov obrazac za plaćanje na ovoj mrežnoj stranici;
+- **„Paddleovi uvjeti za kupce”** su Paddleovi uvjeti prodaje
+  ([paddle.com/legal/buyer-terms](https://www.paddle.com/legal/buyer-terms)), čiji su dio
+  **„Paddleova pravila o povratu novca”**
+  ([paddle.com/legal/refund-policy](https://www.paddle.com/legal/refund-policy));
+- **„Premium”** je plaćeni paket Usluge za jedan Server, sa značajkama iz odjeljka Usluga i sa
+  stranice [Premium](/premium);
+- **„Pretplata”** je ugovor o Premiumu za jedan Server, uključujući Probno razdoblje ako ga ima, koji
+  Vam prodaje Paddle, a izvršavamo mi;
+- **„Pretplatnik”** je osoba koja je Pretplatu kupila putem Paddle Checkouta;
+- **„Probno razdoblje”** je besplatno razdoblje od {PREMIUM_TRIAL_DAYS} dana kojim počinje prva
+  Pretplata za pojedini Server, jednom po Serveru;
+- **„Server”** je server na Discordu;
+- **„Uključeni kanal”** je Kanal za najave u kojem je Administrator Botu odredio da objavljuje
+  poruke;
+- **„Usluga”** obuhvaća Bot, Nadzornu ploču i ovu mrežnu stranicu.
+
+## Paddle kao prodavatelj
+
+Paddle je naš internetski preprodavatelj i prodavatelj (engl. *Merchant of Record*) u svim našim
+narudžbama: svaku Pretplatu prodaje Vam u vlastito ime u skladu s Paddleovim uvjetima za kupce,
+naplaćuje cijenu i poreze, izdaje račune, izvršava povrate novca te rješava upite i sporove o
+narudžbama, plaćanjima i računima ([paddle.net](https://www.paddle.net)). Uslugu pružamo mi: dajemo
+licenciju za njezino korištenje, odgovaramo za njezinu usklađenost s ugovorom i pružamo korisničku
+podršku. Ni Uvjeti ni Paddleovi uvjeti za kupce ne isključuju niti ograničavaju prava koja kao
+potrošač imate na temelju prisilnih propisa.
+
+## Usluga
+
+Bot objavljuje poruke poslane u pojedini Uključeni kanal ili, ako mu je pridružen Filtar, poruke koje
+ispunjavaju uvjete Filtra.
+
+- Na Besplatnom paketu Administrator može uključiti najviše
+  **{config.limits.freeChannelsPerGuild} Kanala za najave po Serveru**; uz Pretplatu njihov broj nije
+  ograničen. Na Serveru na koji je Bot dodan prije uvođenja Uključenih kanala Bot objavljuje poruke iz
+  svih Kanala za najave dok Administrator ne odabere Uključene kanale ([pojedinosti](/migration)).
+- Premium dodatno uključuje: Filtre, čiji se uvjeti mogu odnositi na tekst, autora, spominjanja ili
+  webhook kojim je poruka poslana; prednost u redu za objavu te prioritetnu korisničku podršku.
+
+### Tehnički zahtjevi
+
+Usluga funkcionira samo ako imate račun na Discordu, Server ima Kanal za najave, osoba koja podešava
+Uslugu je Administrator, a Bot u svakom Uključenom kanalu ima dopuštenja **View Channel**,
+**Send Messages** i **Manage Messages**. Usluga ovisi o Discordu, kojim ne upravljamo, te može biti
+odgođena, otežana ili nedostupna ako Discord nije dostupan, ograniči broj zahtjeva ili promijeni svoju
+platformu.
+
+- **Discord dopušta objavu najviše 10 poruka po kanalu unutar jednog sata.** Ostale poruke iz tog
+  sata ne objavljuju se.
+- Jedan Bot poslužuje sve Servere putem jednog reda za objavu. Poruke sa Servera s Premiumom imaju
+  prednost pred porukama sa Servera na Besplatnom paketu, a ograničen broj prvih poruka objavljenih
+  nakon dodavanja Bota na Server, na bilo kojem paketu, ima prednost pred objema skupinama.
+- Ako poruka sadrži poveznicu za koju Discord još nije izradio pregled, Bot odgađa njezinu objavu za
+  pet sekundi kako bi se pregled mogao izraditi.
+
+### Početak pružanja, ažuriranja softvera i korisnička podrška
+
+Besplatni paket primjenjuje se na Server kada je Bot na njemu prisutan i ima navedena dopuštenja, a
+Server ima barem jedan Uključeni kanal. Premium se primjenjuje od početka Pretplate, uključujući
+Probno razdoblje.
+
+Ažuriranja softvera, uključujući sigurnosna ažuriranja, pružamo dok traje ugovor: na Besplatnom
+paketu dok se Uvjeti na Vas ne prestanu primjenjivati, a uz Pretplatu za svako Obračunsko razdoblje
+do njezina prestanka.
+
+Korisničku podršku na oba paketa pružamo e-poštom na <SupportEmail /> i na našem <a href={links.discordSupportServer} target="_blank" rel="noopener noreferrer">Serveru za podršku</a> na Discordu.
+Zahtjeve koji se odnose na Server s Premiumom rješavamo prije zahtjeva koji se odnose na Server na
+Besplatnom paketu.
+
+## Sklapanje Pretplate, cijena i plaćanje
+
+**Sklapanje.** Na kartici **Subscription** Servera na Nadzornoj ploči odabirete mjesečno ili godišnje
+Obračunsko razdoblje, potvrđujete da ste pročitali Uvjete i da ih prihvaćate te dovršavate Paddle
+Checkout, u kojem prije plaćanja možete provjeriti i ispraviti svoje podatke.
+
+**Cijena.** Cijena i značajke Premiuma prikazani su na stranici [Premium](/premium) i na Nadzornoj
+ploči prije otvaranja Paddle Checkouta. **Konačnu cijenu, uključujući poreze i, ako je Paddle nudi,
+u Vašoj lokalnoj valuti, utvrđuje i prikazuje Paddle u Paddle Checkoutu; taj se iznos plaća.**
+Plaćanje se obavlja karticom ili drugim sredstvom plaćanja koje Paddle nudi u Vašoj državi.
+
+**Probno razdoblje.** Tijekom Probnog razdoblja ne naplaćuje se nikakav iznos. **Po isteku Probnog
+razdoblja plaćanje je obvezno**: Paddle naplaćuje cijenu prvog Obračunskog razdoblja, osim ako je
+Pretplata prije toga otkazana.
+
+## Trajanje, otkaz i prestanak
+
+- **Produženje i minimalno trajanje.** Pretplata se automatski produžuje za uzastopna Obračunska
+  razdoblja jednakog trajanja, po cijeni koja je tada na snazi, dok ne bude otkazana. Minimalni rok u
+  kojem ste vezani ugovorom jedno je Obračunsko razdoblje.
+- **Povećanje cijene.** Obavijest o povećanju cijene šaljemo mi ili je šalje Paddle, e-poštom na
+  adresu koju Paddle ima za Pretplatu, najmanje 30 dana prije početka prvog Obračunskog razdoblja na
+  koje se nova cijena primjenjuje. Pretplatnik može otkazati Pretplatu prije početka tog Obračunskog
+  razdoblja.
+- **Otkaz.** Pretplatnik može otkazati Pretplatu u bilo kojem trenutku, putem poveznice
+  **Cancel subscription** na kartici **Subscription** Nadzorne ploče ili e-poštom na
+  <SupportEmail />. Otkaz zaustavlja automatsko produženje: Pretplata prestaje istekom tekućeg
+  Obračunskog razdoblja, do kada je Premium dostupan, a cijena plaćena za to razdoblje ne vraća se.
+  Pretplata otkazana tijekom Probnog razdoblja prestaje njegovim istekom, bez naplate. Otkaz ne utječe
+  na pravo na jednostrani raskid ugovora.
+- **Prestanak Pretplate.** Kada Pretplata prestane, uključujući slučaj kada je Paddle okonča zbog
+  neuspjele naplate, Server se vraća na Besplatni paket: Bot ostaje i nijedna se postavka ne briše,
+  ali se pauziraju Uključeni kanali s Filtrom te Uključeni kanali iznad ograničenja Besplatnog
+  paketa, počevši od posljednje uključenih. Ponovno objavljuju poruke kada se na Server ponovno
+  primijeni Premium.
+- **Prestanak primjene Uvjeta.** Primjenu Uvjeta možete u bilo kojem trenutku okončati tako da
+  uklonite Bot sa svojih Servera i prestanete koristiti Nadzornu ploču; time se ne otkazuje Pretplata.
+- **Obustava i ukidanje pristupa.** Pristup Usluzi možemo obustaviti ili ukinuti ako bitno
+  povrijedite Uvjete, ako to zahtijevaju propisi ili Discord ili ako Vaše korištenje ugrožava
+  sigurnost ili stabilnost Usluge. Kada okolnosti i propisi to dopuštaju, prethodno ćemo Vas
+  obavijestiti i dati Vam razumnu priliku da povredu otklonite. Ako pristup ukinemo iz razloga koji se
+  ne može pripisati Vama, putem Paddlea vraćamo dio cijene plaćen za razdoblje nakon ukidanja.
+
+## Izmjene Usluge i Uvjeta
+
+Uslugu i Uvjete možemo mijenjati bez dodatnih troškova za Vas, samo iz razloga navedenih u odjeljku 9.
+dokumenta [Terms of Service](/terms). O svakoj izmjeni Premiuma koja nije potrebna za održavanje
+usklađenosti Usluge s ugovorom Pretplatnike obavještavamo e-poštom na adresu koju Paddle ima za
+Pretplatu. O izmjeni Uvjeta na Vašu štetu i o izmjeni koja negativno utječe na pristup Premiumu ili
+njegovo korištenje obavještavamo najmanje 30 dana prije njezina stupanja na snagu: Pretplatnike tom
+e-poštom, a o izmjeni Uvjeta i objavom izmijenjenih Uvjeta s datumom stupanja na snagu na ovoj
+mrežnoj stranici. Obavijest navodi što se mijenja, od kada i Vaše pravo na raskid ugovora. Kraći rok
+primjenjujemo samo ako ga nalaže zakon ili odluka nadležnog tijela ili ako je potreban radi
+otklanjanja sigurnosnog rizika, i tada obavještavamo što je ranije moguće.
+
+Ako izmjena negativno utječe na Pretplatu u mjeri koja nije neznatna, Pretplatu možete besplatno
+raskinuti u roku od 30 dana od primitka obavijesti ili od stupanja izmjene na snagu, ovisno o tome što
+nastupi kasnije, uz povrat dijela cijene plaćenog za razdoblje nakon raskida, putem Paddlea.
+
+## Usklađenost Usluge s ugovorom
+
+Usluga mora odgovarati svojem opisu, biti prikladna za svoju svrhu i imati svojstva i obilježja
+uobičajena za uslugu te vrste. Ako Usluga nije usklađena s ugovorom, imate pravo zahtijevati da je
+besplatno uskladimo, a ako to nije moguće ili se ne učini u razumnom roku, pravo na razmjerno
+sniženje cijene ili na raskid ugovora.
+
+## Pravo na jednostrani raskid ugovora
+
+Ako ste Pretplatu kupili kao potrošač, ugovor možete jednostrano raskinuti u roku od 14 dana bez
+navođenja razloga. Rok za jednostrani raskid iznosi 14 dana od dana sklapanja ugovora; Pretplata koja
+počinje Probnim razdobljem sklopljena je na dan njegova početka. Istek Probnog razdoblja i produženje
+Pretplate ne pokreću novi rok, a promjenom mjesečnog Obračunskog razdoblja u godišnje ili obrnuto
+sklapa se novi ugovor, s novim rokom.
+
+Paddleova pravila o povratu novca daju i dodatna prava, koja se ostvaruju prema Paddleu u skladu s
+tim pravilima. Za kupnje u Europskoj uniji, Europskom gospodarskom prostoru, Švicarskoj i Ujedinjenoj
+Kraljevini ona uključuju dodatni rok od 14 kalendarskih dana za jednostrani raskid ugovora, koji
+počinje teći istekom Probnog razdoblja.
+
+### Ostvarivanje prava
+
+Da biste ostvarili pravo na jednostrani raskid ugovora, morate nas prije isteka roka obavijestiti o
+svojoj odluci na jedan od sljedećih načina:
+
+- **Funkcijom za jednostrani raskid**: odabirom **Withdraw from contract**, unosom adrese e-pošte u
+  polje **Email for the confirmation** i odabirom **Confirm withdrawal**;
+- **e-poštom ili poštom**: bilo kojom drugom nedvosmislenom izjavom, poslanom na <SupportEmail /> ili
+  na adresu {entity.name.short}, {entity.seat.replace(', Croatia', ', Hrvatska')}. Možete koristiti i
+  obrazac iz odjeljka Obrazac za jednostrani raskid ugovora, ali to nije obvezno.
+
+Rok je poštovan ako izjavu o jednostranom raskidu ugovora pošaljete prije njegova isteka.
+
+### Učinci jednostranog raskida ugovora
+
+Pretplata prestaje kada zaprimimo Vašu izjavu, a Server se vraća na Besplatni paket kako je opisano
+pod naslovom Prestanak Pretplate. Paddle Vam vraća sva plaćanja izvršena za Pretplatu, bez umanjenja
+za razdoblje u kojem je Premium bio pružan, bez odgađanja, a najkasnije u roku od **14 dana** od
+dana kada smo zaprimili Vašu izjavu, na isti način na koji ste izvršili uplatu i bez troškova za Vas.
+Ako ugovor jednostrano raskinete tijekom Probnog razdoblja, ništa nije naplaćeno i povrat novca se ne
+duguje. Korištenje Premiuma tijekom roka za jednostrani raskid ne utječe na to pravo i ne tražimo da
+ga se odreknete.
+
+## Obrazac za jednostrani raskid ugovora
+
+> 1. Ime, prezime i adresa potrošača \_\_\_\_\_\_\_\_\_\_\_\_.
+> 2. Prima: {entity.name.short}, {entity.seat.replace(', Croatia', ', Hrvatska')}, <SupportPhone />, <SupportEmail />
+> 3. Ja \_\_\_\_\_\_\_\_\_\_\_\_ ovim izjavljujem da jednostrano raskidam Ugovor za pružanje sljedeće
+>    usluge: pretplate Auto Publisher Premium za Discord server \_\_\_\_\_\_\_\_\_\_\_\_, naručene dana
+>    \_\_\_\_\_\_\_\_\_\_\_\_.
+>
+> – potpis potrošača (samo ako se ovaj obrazac ispunjava na papiru),
+>
+> – datum.
+
+Pravo na jednostrani raskid ugovora možete ostvariti i mrežnim putem na [Nadzornoj ploči](/dashboard),
+na kartici **Subscription** Servera na koji se Pretplata odnosi (Funkcija za jednostrani raskid). Ako
+upotrijebite opisanu mrežnu funkciju, poslat ćemo vam bez odgađanja potvrdu o zaprimanju Vaše izjave
+o jednostranom raskidu ugovora na trajnom mediju (npr. e-poštom), uključujući njezin sadržaj te datum
+i vrijeme podnošenja.
+
+## Prigovori
+
+Prigovor možete podnijeti u pisanom obliku, e-poštom na <SupportEmail /> ili poštom na adresu
+{entity.name.short}, {entity.seat.replace(', Croatia', ', Hrvatska')}. **Na prigovor ćemo odgovoriti
+u roku od 15 dana od dana zaprimanja prigovora**, a evidenciju prigovora i naših odgovora čuvamo
+{retention.complaints.hr}.
+
+## Izvansudsko rješavanje sporova
+
+**Nismo se obvezali sudjelovati u postupcima pred tijelima za alternativno rješavanje potrošačkih
+sporova.** Europska komisija vodi
+[popis tih tijela za svaku državu članicu EU-a](https://consumer-redress.ec.europa.eu/list-alternative-dispute-resolution-adr-bodies_en).
+Predstavku koja se odnosi na našu poslovnu praksu možete podnijeti i Državnom inspektoratu
+([dirh.gov.hr](https://dirh.gov.hr)).
+
+</div>

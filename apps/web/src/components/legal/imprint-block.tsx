@@ -20,7 +20,7 @@ import { CompanyEmail, SupportPhone } from './links';
  * for the service *provider*. Documents that promise a reply use `SupportEmail`
  * instead — the split is explained in ./links.tsx and must not be collapsed.
  *
- * The telephone number in the contact tail is the one item here that is NOT statutory —
+ * The telephone number in the contact tail is the one item here ZTD cl. 21 does NOT require —
  * it rides along because ZEIT cl. 6 wants details permitting rapid contact, and it costs
  * nothing to include. Its actual driver is Paddle's seller policy, which is why the
  * prominent copy lives in the Contact section of /legal: a muted grey paragraph is not

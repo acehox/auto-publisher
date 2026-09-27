@@ -58,10 +58,10 @@ export const entity = {
    * website"; the MSA reaches it through cl. 9.2 plus cl. 9.6(iii), which lets Paddle
    * suspend sales for unremedied non-compliance.
    *
-   * NOT part of the ZTD cl. 21 registered-particulars set — nothing statutory requires it
-   * in the imprint, so do not treat its presence there as mandatory. Whether EU consumer
-   * law independently requires a telephone number is UNVERIFIED; the Paddle requirement is
-   * not evidence of a statutory one.
+   * NOT part of the ZTD cl. 21 registered-particulars set, so its presence in the imprint
+   * is not mandatory. It is statutory elsewhere: ZZP čl. 60 st. 1 t. 2 (= CRD Art 6(1)(c))
+   * requires it before any distance contract, so /legal, /hr and the model withdrawal form
+   * must keep it.
    *
    * Stored in display format with spaces. The `tel:` href is derived, not stored twice.
    */

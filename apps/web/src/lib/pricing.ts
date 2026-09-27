@@ -10,11 +10,7 @@
 export const PREMIUM_PRICE_MONTHLY_USD = 4.99;
 export const PREMIUM_PRICE_YEARLY_USD = 49.99;
 
-/**
- * Display only; the real value is `trial_period` on the Paddle trial prices. Must stay
- * 14 so the statutory withdrawal window closes before the first charge — both run from
- * the day the trial starts.
- */
+/** Display only (the legal pages render it); must match `trial_period` on the Paddle trial prices. */
 export const PREMIUM_TRIAL_DAYS = 14;
 
 export const PREMIUM_YEARLY_PER_MONTH_USD = PREMIUM_PRICE_YEARLY_USD / 12;

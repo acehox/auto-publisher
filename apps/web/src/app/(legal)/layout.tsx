@@ -4,8 +4,8 @@ import { SiteShell } from '@/components/layout/site-shell';
 import { legalDocuments } from '@/lib/legal/documents';
 
 /**
- * Shared chrome for the four legal documents. Holds no operative text: everything
- * binding lives in the .mdx files, so there is exactly one copy of each statement and
+ * Shared chrome for the legal documents. Holds no operative text: everything
+ * binding lives in the .mdx files, so each English statement has exactly one copy and
  * the documents cross-reference instead of duplicating clauses. The imprint block, for
  * instance, is stated once at /legal — ZEIT cl. 6 requires it be permanently accessible,
  * which a referenced ungated page satisfies.
@@ -23,6 +23,8 @@ export default function LegalLayout({
             <Link
               key={document.href}
               href={document.href}
+              lang={document.lang}
+              hrefLang={document.lang}
               className="text-slate-400 hover:text-blue-400 transition-colors"
             >
               {document.label}

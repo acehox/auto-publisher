@@ -1,3 +1,4 @@
+import { config } from '@ap/config';
 import { db, type Subscription, type Withdrawal, withdrawal } from '@ap/database';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
@@ -15,7 +16,7 @@ import { Subscriptions } from './subscriptions.js';
  */
 
 const WINDOW_DAYS = 14;
-const DAY_MS = 24 * 60 * 60 * 1000;
+const WINDOW_TIME_ZONE = 'Europe/Zagreb';
 
 /**
  * Contract conclusion — čl. 79 st. 5 runs the 14 days from it, and C-565/22
@@ -28,9 +29,55 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const contractConcludedAt = (sub: Subscription): Date =>
   sub.withdrawalPeriodStartsAt ?? sub.startedAt ?? sub.createdAt;
 
-/** Last instant the consumer may submit the statement (st. 7 measures submission). */
-const windowEndsAt = (sub: Subscription): Date =>
-  new Date(contractConcludedAt(sub).getTime() + WINDOW_DAYS * DAY_MS);
+const zonedClock = new Intl.DateTimeFormat('en-US', {
+  timeZone: WINDOW_TIME_ZONE,
+  hourCycle: 'h23',
+  year: 'numeric',
+  month: 'numeric',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: 'numeric',
+  second: 'numeric',
+});
+
+/** The zone's wall-clock reading of `instant`, as if that reading were UTC. */
+const wallClockAsUtc = (instant: number): number => {
+  const parts = zonedClock.formatToParts(instant);
+  const field = (type: Intl.DateTimeFormatPartTypes): number =>
+    Number(parts.find(part => part.type === type)?.value);
+  return Date.UTC(
+    field('year'),
+    field('month') - 1,
+    field('day'),
+    field('hour'),
+    field('minute'),
+    field('second')
+  );
+};
+
+/** Inverse of {@link wallClockAsUtc}; the second pass corrects a guess that straddled a DST change. */
+const zonedToInstant = (wallClock: number): number => {
+  const guess = wallClock - (wallClockAsUtc(wallClock) - wallClock);
+  return wallClock - (wallClockAsUtc(guess) - guess);
+};
+
+/**
+ * Exclusive end of the window: midnight Zagreb time after the 14th day following
+ * conclusion. Reg 1182/71 (CRD recital 41) does not count the day of conclusion and
+ * ends a period of days with the last hour of its last day, so a flat 14 × 24h
+ * closed up to a day early. The one rule for eligibility, timeliness and display.
+ */
+const windowDeadline = (concludedAt: Date): Date => {
+  const local = new Date(wallClockAsUtc(concludedAt.getTime()));
+  return new Date(
+    zonedToInstant(
+      Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() + WINDOW_DAYS + 1)
+    )
+  );
+};
+
+/** Submissions before this instant are in time (st. 7 measures submission). */
+const windowEndsAt = (sub: Subscription): Date => windowDeadline(contractConcludedAt(sub));
 
 /**
  * Keyed to the window and nothing else — never status, never a scheduled
@@ -138,11 +185,11 @@ const composeAcknowledgement = (record: Withdrawal): { subject: string; text: st
     // ("returns to the free plan") would leave an admin unable to tell which of
     // their channels went quiet.
     'Your Premium subscription ends now. The bot stays in your server and your channel',
-    'configuration and publishing rules are kept in full — nothing needs setting up again.',
+    'configuration and filters are kept in full — nothing needs setting up again.',
     '',
-    'Your server returns to the free plan, so some channels stop publishing: any beyond the',
-    'free limit of three, and any that use publishing rules (rules are a Premium feature, and',
-    'we pause those channels rather than publish messages you chose to filter out). They are',
+    'Your server returns to the Free Plan, so some channels stop publishing: any beyond the',
+    `Free Plan limit of ${config.limits.freeChannelsPerGuild}, and any that use filters (filters are a Premium feature, and we`,
+    'pause those channels rather than publish messages you chose to filter out). They are',
     'listed as paused on your dashboard and resume exactly as configured if you subscribe',
     'again. Nothing is deleted.',
     '',
@@ -282,8 +329,8 @@ const acknowledge = async (record: Withdrawal): Promise<boolean> => {
  * Raises the refund and records the outcome. Never throws — the withdrawal already happened.
  *
  * Three-valued: a Paddle adjustment status when money is moving, `'none'` when there was no
- * payment to return (a withdrawal inside the free trial — the common case, since the window
- * sits entirely within it), and `null` only when raising the refund failed.
+ * payment to return (a withdrawal inside the free trial — the common case, since the trial
+ * runs into the window's last day), and `null` only when raising the refund failed.
  */
 const refund = async (record: Withdrawal, sub: Subscription): Promise<string | null> => {
   // Hoisted out of the try so a failure still records WHICH transaction needs

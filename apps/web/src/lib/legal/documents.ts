@@ -1,14 +1,24 @@
+export type LegalLanguage = 'en' | 'hr';
+
+interface LegalDocument {
+  href: string;
+  label: string;
+  /** Unset = English. Set so the link carries `lang`/`hrefLang` for a page in another language. */
+  lang?: LegalLanguage;
+}
+
 /**
- * The four published legal documents, in the order a reader most likely needs them.
+ * The five published legal documents, in the order a reader most likely needs them.
  * Single source for the legal route group's nav and the site footer, so a renamed route
  * cannot leave a dead footer link behind.
  */
-export const legalDocuments = [
+export const legalDocuments: readonly LegalDocument[] = [
   { href: '/terms', label: 'Terms of Service' },
   { href: '/privacy', label: 'Privacy Policy' },
-  { href: '/refunds', label: 'Refunds & Withdrawal' },
+  { href: '/refunds', label: 'Refunds & Withdrawal Policy' },
   { href: '/legal', label: 'Legal Notice' },
-] as const;
+  { href: '/hr', label: 'Hrvatski', lang: 'hr' },
+];
 
 /**
  * Effective dates, kept here rather than inside each .mdx file so there is one place to
@@ -23,15 +33,17 @@ export const legalEffectiveDates: Record<string, string | null> = {
   '/privacy': null,
   '/refunds': null,
   '/legal': null,
+  '/hr': null,
 };
 
 /**
- * Version identifier for the Terms + Refunds pair as presented at checkout, recorded
+ * Version identifier for the documents presented at checkout — the Terms + Refunds pair
+ * and the Croatian notice (/hr) that restates their pre-contractual information — recorded
  * with every purchase so we can show *which* wording a given buyer accepted.
  *
  * Deliberately a standalone constant rather than a read of `legalEffectiveDates`:
  * those are `null` until launch, and the acceptance gate has to produce a usable
- * version string in draft too. Bump this whenever either document changes materially;
+ * version string in draft too. Bump this whenever any of the three changes materially;
  * set it to the effective date when the documents go live.
  *
  * Not mirrored server-side on purpose. The backend records what the client asserts
@@ -40,4 +52,4 @@ export const legalEffectiveDates: Record<string, string | null> = {
  * failure mode without adding any evidential weight. The gate that matters is the
  * server requiring acceptance at all.
  */
-export const LEGAL_DOCUMENTS_VERSION = '2026-09-09';
+export const LEGAL_DOCUMENTS_VERSION = '2026-09-25';

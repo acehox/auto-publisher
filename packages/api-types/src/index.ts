@@ -107,7 +107,7 @@ export interface SubscriptionSubscriber {
 export interface WithdrawalState {
   /** Keyed to the 14-day window ONLY — never status or a scheduled cancellation. */
   eligible: boolean;
-  /** End of the withdrawal window; null when the contract start is unknown. */
+  /** Exclusive end of the withdrawal window; null when the contract start is unknown. */
   windowEndsAt: string | null;
   consumerName: string;
   contractReference: string;

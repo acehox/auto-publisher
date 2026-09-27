@@ -7,8 +7,7 @@ import { formatNumberFull } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Premium | Auto Publisher',
-  description:
-    'Support the development & unlock unlimited channels and advanced controls for your server.',
+  description: 'Unlock unlimited channels and advanced controls for your server.',
 };
 
 export default function PremiumPage() {
@@ -22,7 +21,7 @@ export default function PremiumPage() {
           Upgrade your publishing with Premium
         </h1>
         <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto">
-          Support the development & unlock unlimited channels and advanced controls for your server
+          Unlock unlimited channels and advanced controls for your server
         </p>
       </div>
 

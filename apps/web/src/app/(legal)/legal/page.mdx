@@ -1,51 +1,40 @@
 import { DocumentStatus } from '@/components/legal/document-status';
 import { ImprintBlock } from '@/components/legal/imprint-block';
 import { SupportEmail, SupportPhone } from '@/components/legal/links';
+import { entity, entityNameWithTranslation } from '@/lib/legal/entity';
 
 export const metadata = {
   title: 'Legal Notice | Auto Publisher',
-  description:
-    'Registered particulars of the company operating Auto Publisher, published under the Croatian Electronic Commerce Act and Companies Act.',
+  description: 'Registered particulars and contact details of the company that operates Auto Publisher.',
 };
 
 # Legal Notice
 
 <DocumentStatus document="/legal" />
 
-The company identified at the foot of this page operates Auto Publisher. It is your counterparty
-under the [Terms of Service](/terms) and the controller of the personal data described in the
-[Privacy Policy](/privacy).
+Auto Publisher is operated by {entityNameWithTranslation} ("**we**", "**us**"), a limited liability
+company established under Croatian law, whose registered particulars are set out below. We are the
+contracting party under the [Terms of Service](/terms) and the controller of the personal data
+described in the [Privacy Policy](/privacy). Subscriptions are sold by Paddle as Merchant of Record
+(section 2 of the Terms of Service). Capitalised terms have the meanings given in section 1 of the
+Terms of Service.
 
 ## Contact
 
-Write to <SupportEmail /> for any matter concerning the service, including data protection requests
-and complaints. This is a monitored address and reaches us directly.
+Email: <SupportEmail /> · Telephone: <SupportPhone /> · Post: {entity.name.short}, {entity.seat}
 
-You can also reach us by telephone on <SupportPhone />. Email is the faster route, and anything that
-needs a written record — data protection requests, complaints, and notices of withdrawal — should be
-sent in writing.
-
-We answer complaints in writing within 15 days of receipt, as required by Article 10 of the Croatian
-Consumer Protection Act (*Zakon o zaštiti potrošača*). Routes for consumer disputes, including
-out-of-court options, are set out in the [Terms of Service](/terms).
+Complaints, requests concerning personal data, notices of withdrawal and other written communications
+may be sent by email or by post. Complaints are handled as set out in section 5 of the Terms of
+Service.
 
 ## Data protection supervisory authority
 
-You may lodge a complaint about our handling of your personal data with the Croatian Personal Data
-Protection Agency (*Agencija za zaštitu osobnih podataka*), Ulica Metela Ožegovića 16, HR-10000
-Zagreb, Croatia — [azop.hr](https://azop.hr), azop@azop.hr, +385 (0)1 4609-000 — or with the
-supervisory authority of your own country of residence or place of work. AZOP asks that you raise
-the matter with us first, so please write to <SupportEmail />.
-
-## Payments
-
-Subscriptions are sold by our payment partner Paddle, which acts as the merchant of record and is
-the seller of record for those transactions. Paddle issues the invoice and handles payment, billing
-and refunds. The service itself is provided to you by the company named below. See the
-[Terms of Service](/terms) and the [Refunds & Withdrawal policy](/refunds).
+Our data protection supervisory authority is the Croatian Personal Data Protection Agency
+(*Agencija za zaštitu osobnih podataka*, "**AZOP**"), Ulica Metela Ožegovića 16, HR-10000 Zagreb,
+Croatia; [azop.hr](https://azop.hr); azop@azop.hr; +385 (0)1 4609-000.
 
 ---
 
-## Service provider
+## Registered particulars
 
 <ImprintBlock />

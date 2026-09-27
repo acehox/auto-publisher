@@ -19,6 +19,7 @@ const quickLinks = [
 const supportLinks = [
   { href: links.discordSupportServer, label: 'Support Server' },
   { href: '/migration', label: 'Migration Guide' },
+  { href: '/legal#contact', label: 'Contact' },
 ];
 
 export function Footer() {
@@ -89,7 +90,12 @@ export function Footer() {
                       |
                     </span>
                   )}
-                  <Link href={document.href} className="hover:text-slate-300 transition-colors">
+                  <Link
+                    href={document.href}
+                    lang={document.lang}
+                    hrefLang={document.lang}
+                    className="hover:text-slate-300 transition-colors"
+                  >
                     {document.label}
                   </Link>
                 </li>
