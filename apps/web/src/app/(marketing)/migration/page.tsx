@@ -9,6 +9,7 @@ import {
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { MigrationCheck } from '@/components/marketing/migration-check';
 import { Button } from '@/components/ui/button';
 import { legacySunsetLabel, links } from '@/lib/constants';
 import { getSiteConfig } from '@/lib/site-config';
@@ -17,6 +18,13 @@ export const metadata: Metadata = {
   title: 'Migration Guide | Auto Publisher',
   description:
     'Auto Publisher is entering a New Era. See what is changing and follow a few quick steps to keep your announcements publishing without interruption.',
+};
+
+const sections = {
+  why: { id: 'why', title: 'Why we are changing' },
+  whatsNew: { id: 'whats-new', title: 'What is new' },
+  yourServer: { id: 'your-server', title: 'What happens to my server?' },
+  howToMigrate: { id: 'how-to-migrate', title: 'How to migrate' },
 };
 
 const whatsNew = [
@@ -77,6 +85,16 @@ const steps: { title: string; description: ReactNode }[] = [
 ];
 
 export default function MigrationPage() {
+  const { isPublicInstance, legacySunsetDate } = getSiteConfig();
+  const sunsetLabel = legacySunsetLabel(legacySunsetDate);
+  // The server check is about the free cap, the retiring bots and Premium, none of which a self-host has.
+  const contents = [
+    sections.why,
+    sections.whatsNew,
+    ...(isPublicInstance ? [sections.yourServer] : []),
+    sections.howToMigrate,
+  ];
+
   return (
     <>
       <section className="relative pt-32 pb-4 text-center">
@@ -97,19 +115,40 @@ export default function MigrationPage() {
           </p>
           <div className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3">
             <span className="text-base sm:text-lg text-amber-200">
-              Legacy mode ends on{' '}
-              <span className="font-bold text-white">
-                {legacySunsetLabel(getSiteConfig().legacySunsetDate)}
-              </span>
-              . Migrate before then to keep publishing.
+              Legacy mode ends on <span className="font-bold text-white">{sunsetLabel}</span>.
+              Migrate before then to keep publishing.
             </span>
           </div>
+
+          <nav
+            aria-label="On this page"
+            className="mt-10 rounded-xl border border-slate-800 bg-slate-900/50 p-4 text-left backdrop-blur-sm"
+          >
+            <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              On this page
+            </p>
+            <ol className="grid gap-1 sm:grid-cols-2">
+              {contents.map((section, index) => (
+                <li key={section.id}>
+                  <a
+                    href={`#${section.id}`}
+                    className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800/60 hover:text-white"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-xs font-semibold text-blue-400">
+                      {index + 1}
+                    </span>
+                    {section.title}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </nav>
         </div>
       </section>
 
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <section id={sections.why.id} className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">Why we are changing</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">{sections.why.title}</h2>
         </div>
         <div className="space-y-4 text-slate-300 leading-relaxed">
           <p>
@@ -131,9 +170,11 @@ export default function MigrationPage() {
         </div>
       </section>
 
-      <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <section id={sections.whatsNew.id} className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">What is new</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+            {sections.whatsNew.title}
+          </h2>
           <p className="text-slate-400 max-w-2xl mx-auto">
             A quick look at what the New Era brings to your server.
           </p>
@@ -156,9 +197,32 @@ export default function MigrationPage() {
         </div>
       </section>
 
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      {isPublicInstance && (
+        <section
+          id={sections.yourServer.id}
+          className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-20"
+        >
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+              {sections.yourServer.title}
+            </h2>
+            <p className="text-slate-400 max-w-2xl mx-auto">
+              Answer a few quick questions to see what changes on {sunsetLabel}, and whether you
+              need to do anything.
+            </p>
+          </div>
+          <MigrationCheck />
+        </section>
+      )}
+
+      <section
+        id={sections.howToMigrate.id}
+        className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20"
+      >
         <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">How to migrate</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+            {sections.howToMigrate.title}
+          </h2>
           <p className="text-slate-400 max-w-2xl mx-auto">
             It only takes a moment, and publishing keeps working the whole time.
           </p>
