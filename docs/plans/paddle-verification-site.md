@@ -15,7 +15,7 @@ Branch `v7/web-only` is throwaway: deploy, get verified, delete. Never merged, s
 | `/migration` | Delete the page + its links | Written for dashboard users; every CTA goes to `/dashboard`. Irrelevant to Paddle. |
 | Login / NextAuth | Remove from the navbar entirely | Then no `AUTH_SECRET`, no `DISCORD_CLIENT_*`, no `/api/auth`. |
 | `/status` | Delete | Mock data. Already 404s, but gone is simpler. |
-| Legal dates | `2026-09-29` (go-live, Tuesday), set now | A future date renders fine ("Effective from September 29, 2026"). If go-live slips past the 29th, nothing breaks; if it moves earlier, move the date too. |
+| Legal dates | `2026-09-28` (go-live, Monday) | Went live a day early; dates moved to match. |
 | Dead code | Leave `lib/auth.ts`, `lib/api/*`, `components/dashboard/*` etc. in place | Still compiles; nothing bundles it. Deleting cascades. |
 
 ## Work chunks
@@ -39,7 +39,7 @@ All paths under `apps/web/src/`.
 2. `app/(marketing)/premium/page.tsx`: pass `trialOffered={true}` (hardcoded, with a one-line comment that this branch is review-only).
 3. `app/(legal)/terms/page.mdx:101`: remove the `([details](/migration))` link, keep the sentence.
 4. `app/(legal)/hr/page.mdx:89`: remove `([pojedinosti](/migration))`; `:237`: turn `[Nadzornoj ploči](/dashboard)` into plain text.
-5. `lib/legal/documents.ts`: all five `legalEffectiveDates` and `LEGAL_DOCUMENTS_VERSION` → `'2026-09-29'`.
+5. `lib/legal/documents.ts`: all five `legalEffectiveDates` and `LEGAL_DOCUMENTS_VERSION` → `'2026-09-28'`.
 
 ### Chunk 3: Web-only deploy files (≈30 min)
 
@@ -66,7 +66,7 @@ All paths under `apps/web/src/`.
 4. Browser click-through: `/`, `/how-it-works`, `/premium`, `/terms`, `/privacy`, `/refunds`, `/legal`, `/hr`, a random 404. Every header/footer link and every button resolves; Premium link present on legal pages; invite button opens the Discord authorize URL for the v6 bot; no console errors; mobile width.
 5. `grep -rn "/dashboard\|/login\|/checkout\|/migration" apps/web/src` → only dead files match.
 
-## Deploy (you, ≈45 min, Tuesday 2026-09-29)
+## Deploy (you, ≈45 min, Monday 2026-09-28)
 
 1. Cloudflare Zero Trust → Networks → Tunnels → create tunnel (Docker connector), copy the token. Public hostname `auto-publisher.gg` → service `http://web:3100`. The domain's DNS must be on Cloudflare; the tunnel creates the CNAME.
 2. Nothing serves `auto-publisher.gg` today, and the tunnel needs no open ports.
@@ -91,4 +91,4 @@ Teardown after approval: `docker compose -f scripts/web-only/docker-compose.yml 
 
 ## Unresolved questions
 
-None. Answered 2026-09-27: disabled pricing buttons, trial wording on, `/migration` deleted, nothing on the domain today, Cloudflare Tunnel, bot id `739823232651100180`, go-live Tue 2026-09-29.
+None. Answered 2026-09-27: disabled pricing buttons, trial wording on, `/migration` deleted, nothing on the domain today, Cloudflare Tunnel, bot id `739823232651100180`, go-live Mon 2026-09-28.
