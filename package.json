@@ -23,7 +23,8 @@
     "prod:start": "sh ./scripts/bot/prod/start.sh",
     "prod:stop": "sh ./scripts/bot/prod/stop.sh",
     "prod:logs": "sh ./scripts/bot/prod/logs.sh",
-    "prod:ps": "sh ./scripts/bot/prod/ps.sh"
+    "prod:ps": "sh ./scripts/bot/prod/ps.sh",
+    "web:only": "docker compose -f scripts/web-only/docker-compose.yml up --build -d"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
