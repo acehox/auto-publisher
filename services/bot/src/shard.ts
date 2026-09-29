@@ -1,5 +1,5 @@
 import { getInfo } from 'discord-hybrid-sharding';
-import { GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
+import { ActivityType, GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
 import { BotClient } from '#structures/Client';
 import { logger } from '#utils/logger';
 
@@ -40,6 +40,10 @@ const client = new BotClient({
   }),
   intents: [IntentBits.Guilds, IntentBits.GuildMessages, IntentBits.DirectMessages, IntentBits.MessageContent],
   partials: [Partials.Channel, Partials.GuildMember],
+  // Set at identify so it survives reconnects; setPresence() after ready is lost on a fresh session
+  presence: {
+    activities: [{ name: '🔴 ACTION NEEDED →', type: ActivityType.Custom }],
+  },
   shards: getInfo().SHARD_LIST,
   shardCount: getInfo().TOTAL_SHARDS,
   rest: {
