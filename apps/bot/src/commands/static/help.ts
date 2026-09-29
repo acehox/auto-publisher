@@ -59,6 +59,17 @@ export class HelpCommand extends Command {
           .setButtonAccessory(Buttons.supportServer)
       );
 
+    const { guildId } = interaction;
+    if (guildId) {
+      replyContainer.addSectionComponents(section =>
+        section
+          .addTextDisplayComponents(textDisplay =>
+            textDisplay.setContent('Manage your channels from the dashboard.')
+          )
+          .setButtonAccessory(Buttons.dashboard(guildId))
+      );
+    }
+
     return interaction.reply({
       flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       components: [replyContainer],
