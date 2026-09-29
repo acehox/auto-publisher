@@ -3,7 +3,6 @@ import { Channel } from './channel.js';
 import { Crosspost } from './crosspost.js';
 import { Info } from './info.js';
 import { Permissions } from './permissions.js';
-import { Presence } from './presence.js';
 
 export const Services = {
   AdminCommands,
@@ -11,5 +10,4 @@ export const Services = {
   Crosspost,
   Info,
   Permissions,
-  Presence,
 };

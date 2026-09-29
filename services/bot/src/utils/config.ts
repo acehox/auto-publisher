@@ -1,12 +1,11 @@
 import 'dotenv/config';
-import { cleanEnv, num, str, url } from 'envalid';
+import { cleanEnv, num, str } from 'envalid';
 import { levels as loggerLevels } from 'pino';
 
 export const env = cleanEnv(process.env, {
   // Common
   NODE_ENV: str({ default: 'development', choices: ['development', 'production', 'test'] }),
   LOGGER_LEVEL: str({ default: 'info', choices: Object.values(loggerLevels.labels) }),
-  MONGO_URI: url(),
   DISCORD_TOKEN: str({ default: '' }),
 
   // Bot

@@ -67,7 +67,7 @@ Boost keys left in DB 3 are inert and expire on their own.
 
 ## Deployment notes
 
-The three production instances are three separate bot applications, each running its own full compose stack including its own Redis. They share only MongoDB, for presence aggregation. A boost key seeded on instance A is invisible to B and C — harmless, since a guild lives under exactly one application, but **seed and consume must happen on the same instance** and there is no shared store to aggregate metrics across.
+The three production instances are three separate bot applications, each running its own full compose stack including its own Redis. They share nothing. A boost key seeded on instance A is invisible to B and C — harmless, since a guild lives under exactly one application, but **seed and consume must happen on the same instance** and there is no shared store to aggregate metrics across.
 
 Regression check after deploy (queue is on **DB 0**):
 
