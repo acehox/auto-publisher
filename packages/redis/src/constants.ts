@@ -1,37 +1,43 @@
+// Redis ships 16 DBs (0-15); an id past 15 needs `--databases` on every
+// compose file, the self-host one included. A DB is named for what its keys
+// identify; the key prefix names what the value means.
 export enum DatabaseIDs {
-  Channels = 0,
-  CrosspostQueue = 1,
-  SublimitCounter = 2,
-  BlockedChannels = 3,
-  DiscordAuth = 4,
-  // MIGRATION: retired at sunset (v6→v7 migration markers, derived from guild.migratedAt)
-  MigratedGuilds = 5,
+  CrosspostQueue = 0,
+  EnabledChannels = 1,
+  GatedChannels = 2,
+  Guilds = 3,
+  Alerts = 4,
+  DashboardAuth = 5,
   PaddleWebhookDedupe = 6,
-  // 7 retired — legacy canPublish maps recompute from the backend's in-memory
-  // Discord read cache (ADR 0007)
-  Alerts = 8,
-  // 9-12 retired — unused ids, never reused.
-  // Per-guild publish-state hash (backend-owned; the bot pushes, the dashboard reads)
-  PublishState = 13,
-  // Per-guild queue-priority state, backend-written and proxy-read at enqueue:
-  // the onboarding boost budget (`boost:{guildId}`, remaining priority
-  // publishes, 90d TTL) and the Premium marker (`premium:{guildId}`, no TTL).
-  // One DB because they answer the same question — which tier does this guild's
-  // next crosspost enter at — and the proxy reads both on the same hot path.
-  QueuePriority = 14,
 }
 
 export enum Keys {
-  Channel = 'channel',
-  Sublimit = 'channel:sublimit',
-  Blocked = 'channel:blocked',
-  // MIGRATION: removed at sunset with the MigratedGuilds DB
-  MigratedGuild = 'migrated_guild',
-  PaddleEvent = 'paddle_event',
+  Enabled = 'enabled',
+  Sublimited = 'sublimited',
+  Blocked = 'blocked',
+  Premium = 'premium',
+  Boosted = 'boosted',
+  Migrated = 'migrated', // MIGRATION: removed at sunset, with a one-off SCAN + DEL of `migrated:*`
+  ChannelPermissions = 'channel_permissions',
   Alert = 'alert',
-  PublishState = 'publish_state',
-  Boost = 'boost',
-  // Presence = the guild is entitled to Premium. Written by
-  // `Plans.reconcileChannelServing`, the one place entitlement is resolved.
-  PremiumGuild = 'premium',
+  PaddleEvent = 'paddle_event',
 }
+
+// The one place a key is spelled, so a writer and its reader cannot drift apart.
+const keyFor = (prefix: Keys) => (id: string) => `${prefix}:${id}`;
+
+export const RedisKeys = {
+  enabled: keyFor(Keys.Enabled),
+  sublimited: keyFor(Keys.Sublimited),
+  blocked: keyFor(Keys.Blocked),
+  premium: keyFor(Keys.Premium),
+  boosted: keyFor(Keys.Boosted),
+  migrated: keyFor(Keys.Migrated),
+  channelPermissions: keyFor(Keys.ChannelPermissions),
+  alert: keyFor(Keys.Alert),
+  paddleEvent: keyFor(Keys.PaddleEvent),
+} as const;
+
+export const keyPattern = (prefix: Keys) => `${prefix}:*`;
+
+export const idFromKey = (prefix: Keys, key: string) => key.slice(prefix.length + 1);

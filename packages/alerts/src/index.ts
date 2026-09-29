@@ -1,6 +1,6 @@
 import { env } from '@ap/config';
 import type { Logger } from '@ap/logger';
-import { Keys, type RedisClient } from '@ap/redis';
+import { type RedisClient, RedisKeys } from '@ap/redis';
 
 /** Same alert key is suppressed for 30 minutes (cross-process, restart-proof) */
 const THROTTLE_TTL_SECONDS = 30 * 60;
@@ -42,7 +42,7 @@ export const createAlerter = (options: {
 
       void (async () => {
         const claimed = await redis.set(
-          `${Keys.Alert}:${key}`,
+          RedisKeys.alert(key),
           '1',
           'EX',
           THROTTLE_TTL_SECONDS,

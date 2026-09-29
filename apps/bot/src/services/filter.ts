@@ -1,8 +1,8 @@
 import { anyKeywordMatches } from '@ap/utils';
 import { type Filter, FilterMatchMode, FilterType } from '@ap/validations';
-import type { Message, NewsChannel } from 'discord.js';
+import type { Message } from 'discord.js';
 import { extractMessageText } from 'utils/messageText.js';
-import { Services } from './index.js';
+import type { ChannelRule } from './channel.js';
 
 /**
  * Evaluate whether a message passes a channel's filter rule.
@@ -17,19 +17,15 @@ import { Services } from './index.js';
  * allowlist this reads. A serving channel with conditions is, by construction,
  * a Premium guild's channel.
  * @param message Discord message
- * @param channel Announcement channel
+ * @param rule The channel's rule, from `Services.Channel.getRule`
  * @returns true if the message should be published, false otherwise
  */
-const evaluate = async (message: Message, channel: NewsChannel): Promise<boolean> => {
+const evaluate = (
+  message: Message,
+  { filters: conditions, filterMode: matchMode }: ChannelRule
+): boolean => {
+  if (conditions.length === 0) return true;
   try {
-    const channelStatus = await Services.Channel.getStatus(channel.id);
-
-    if (!channelStatus || !channelStatus.filters || channelStatus.filters.length === 0) {
-      return true;
-    }
-
-    const conditions = channelStatus.filters;
-    const matchMode = channelStatus.filterMode || FilterMatchMode.All;
     // Embeds and Components V2 text included — see extractMessageText. Not lowercased:
     // the keyword patterns are case-insensitive, so a copy of the whole message text
     // would buy nothing.

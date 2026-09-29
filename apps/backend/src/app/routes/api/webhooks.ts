@@ -1,5 +1,5 @@
 import { type APIResponse, StatusCodes } from '@ap/express';
-import { Keys } from '@ap/redis';
+import { RedisKeys } from '@ap/redis';
 import { EventName } from '@paddle/paddle-node-sdk';
 import { Data } from 'data/index.js';
 import express, { type Request, type Response, type Router } from 'express';
@@ -12,14 +12,14 @@ const IDEMPOTENCY_TTL = 86_400; // 24 hours
 
 const isEventProcessed = async (eventId: string): Promise<boolean> => {
   const exists = await Data.Drivers.Redis.PaddleWebhookDedupe.exists(
-    `${Keys.PaddleEvent}:${eventId}`
+    RedisKeys.paddleEvent(eventId)
   );
   return exists === 1;
 };
 
 const markEventProcessed = async (eventId: string): Promise<void> => {
   await Data.Drivers.Redis.PaddleWebhookDedupe.set(
-    `${Keys.PaddleEvent}:${eventId}`,
+    RedisKeys.paddleEvent(eventId),
     '1',
     'EX',
     IDEMPOTENCY_TTL

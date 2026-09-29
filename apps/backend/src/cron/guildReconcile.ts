@@ -230,6 +230,13 @@ const reconcileGuilds = async () => {
   }
 
   await purgeAbandonedGuilds();
+
+  // Reads subscriptions, not presence, so it runs whether or not the sweep completed.
+  try {
+    await Services.Plans.syncPriorityMarkers();
+  } catch (error) {
+    logger.warn(error, 'Guild reconcile: priority marker sync failed');
+  }
 };
 
 export const runGuildReconcile = async (): Promise<void> => {

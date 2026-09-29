@@ -1,4 +1,4 @@
-import { Keys, type RedisClient } from '@ap/redis';
+import { Keys, keyPattern, type RedisClient, RedisKeys, scanKeys } from '@ap/redis';
 import { logger } from '../logger.js';
 
 const REDIS_TIMEOUT_MS = 500;
@@ -32,32 +32,43 @@ const withTimeout = async <T>(
   }
 };
 
-export type SublimitCounter = {
-  isOverLimit(channelId: string): Promise<boolean>;
+export type GateState = { blocked: boolean; sublimited: boolean };
+
+export type GatedChannels = {
+  check(channelId: string): Promise<GateState>;
   increment(channelId: string): Promise<void>;
   lock(channelId: string, retryAfterSec: number): Promise<void>;
-  size(): Promise<number>;
+  block(channelId: string): Promise<void>;
+  unblock(channelId: string): Promise<void>;
+  counts(): Promise<{ sublimited: number; blocked: number }>;
 };
 
-export const createSublimitCounter = (redis: RedisClient): SublimitCounter => {
-  const key = (channelId: string) => `${Keys.Sublimit}:${channelId}`;
-
-  const getCount = async (channelId: string): Promise<number> => {
-    const value = await withTimeout(redis.get(key(channelId)), null, {
-      op: 'sublimit.get',
-      channelId,
-    });
-    return value ? Number(value) : 0;
+export const createGatedChannels = (redis: RedisClient): GatedChannels => {
+  const countKeys = async (prefix: Keys): Promise<number> => {
+    try {
+      return (await scanKeys(redis, keyPattern(prefix))).length;
+    } catch {
+      return 0;
+    }
   };
 
   return {
-    isOverLimit: async channelId => (await getCount(channelId)) >= SUBLIMIT_COUNT,
+    // One round trip for both gate inputs; a timeout fails open on both, as the
+    // two separate reads did.
+    check: async channelId => {
+      const [blocked, sent] = await withTimeout(
+        redis.mget(RedisKeys.blocked(channelId), RedisKeys.sublimited(channelId)),
+        [null, null],
+        { op: 'gate.check', channelId }
+      );
+      return { blocked: blocked === '1', sublimited: Number(sent ?? 0) >= SUBLIMIT_COUNT };
+    },
     increment: async channelId => {
       try {
         await redis
           .multi()
-          .incr(key(channelId))
-          .expire(key(channelId), SUBLIMIT_DEFAULT_TTL_SEC, 'NX')
+          .incr(RedisKeys.sublimited(channelId))
+          .expire(RedisKeys.sublimited(channelId), SUBLIMIT_DEFAULT_TTL_SEC, 'NX')
           .exec();
       } catch (error) {
         logger.warn({
@@ -71,66 +82,38 @@ export const createSublimitCounter = (redis: RedisClient): SublimitCounter => {
     lock: async (channelId, retryAfterSec) => {
       const ttl = Math.max(1, Math.ceil(retryAfterSec));
       try {
-        await redis.set(key(channelId), String(SUBLIMIT_COUNT), 'EX', ttl);
+        await redis.set(RedisKeys.sublimited(channelId), String(SUBLIMIT_COUNT), 'EX', ttl);
       } catch (error) {
         logger.warn({ event: 'redis.write_failed', op: 'sublimit.lock', channelId, err: error });
       }
     },
-    size: async () => {
+    block: async channelId => {
       try {
-        return await redis.dbsize();
-      } catch {
-        return 0;
-      }
-    },
-  };
-};
-
-export type BlockedCache = {
-  set(channelId: string): Promise<void>;
-  isBlocked(channelId: string): Promise<boolean>;
-  clear(channelId: string): Promise<void>;
-  size(): Promise<number>;
-};
-
-export const createBlockedCache = (redis: RedisClient): BlockedCache => {
-  const key = (channelId: string) => `${Keys.Blocked}:${channelId}`;
-
-  return {
-    set: async channelId => {
-      try {
-        await redis.set(key(channelId), '1', 'EX', BLOCKED_TTL_SEC);
+        await redis.set(RedisKeys.blocked(channelId), '1', 'EX', BLOCKED_TTL_SEC);
       } catch (error) {
         logger.warn({ event: 'redis.write_failed', op: 'blocked.set', channelId, err: error });
       }
     },
-    isBlocked: async channelId => {
-      const value = await withTimeout(redis.get(key(channelId)), null, {
-        op: 'blocked.get',
-        channelId,
-      });
-      return value === '1';
-    },
-    clear: async channelId => {
+    unblock: async channelId => {
       try {
-        await redis.del(key(channelId));
+        await redis.del(RedisKeys.blocked(channelId));
       } catch (error) {
         logger.warn({ event: 'redis.write_failed', op: 'blocked.clear', channelId, err: error });
       }
     },
-    size: async () => {
-      try {
-        return await redis.dbsize();
-      } catch {
-        return 0;
-      }
+    counts: async () => {
+      const [sublimited, blocked] = await Promise.all([
+        countKeys(Keys.Sublimited),
+        countKeys(Keys.Blocked),
+      ]);
+      return { sublimited, blocked };
     },
   };
 };
 
 /**
  * The two per-guild signals that pick a crosspost's queue tier, both
- * backend-written and read here at enqueue (Redis DB `QueuePriority`):
+ * backend-written and read here at enqueue (Redis DB `Guilds`):
  *
  * - the onboarding boost budget — remaining priority publishes for a
  *   newly-joined guild, seeded by `registerNewGuild` only. Key presence IS the
@@ -145,15 +128,12 @@ export type QueuePriorityState = {
 };
 
 export const createQueuePriorityState = (redis: RedisClient): QueuePriorityState => {
-  const key = (guildId: string) => `${Keys.Boost}:${guildId}`;
-  const premiumKey = (guildId: string) => `${Keys.PremiumGuild}:${guildId}`;
-
   return {
     // Fails CLOSED, unlike the gate caches above: a Redis blip that fell open
     // would promote every guild in the system to the boosted tier at once,
     // which is the one failure mode that makes the tier meaningless.
     isBoosted: async guildId => {
-      const value = await withTimeout(redis.get(key(guildId)), null, {
+      const value = await withTimeout(redis.get(RedisKeys.boosted(guildId)), null, {
         op: 'boost.get',
         guildId,
       });
@@ -164,7 +144,7 @@ export const createQueuePriorityState = (redis: RedisClient): QueuePriorityState
     // meant to distinguish. A paying guild losing priority for one message
     // during an outage is the cheaper error.
     isPremium: async guildId => {
-      const value = await withTimeout(redis.get(premiumKey(guildId)), null, {
+      const value = await withTimeout(redis.get(RedisKeys.premium(guildId)), null, {
         op: 'premium.get',
         guildId,
       });
@@ -174,8 +154,8 @@ export const createQueuePriorityState = (redis: RedisClient): QueuePriorityState
       try {
         // DECR leaves the seed TTL untouched, so the 90-day safety window runs
         // from the join and does not slide with usage.
-        const remaining = await redis.decr(key(guildId));
-        if (remaining <= 0) await redis.del(key(guildId));
+        const remaining = await redis.decr(RedisKeys.boosted(guildId));
+        if (remaining <= 0) await redis.del(RedisKeys.boosted(guildId));
       } catch (error) {
         logger.warn({ event: 'redis.write_failed', op: 'boost.consume', guildId, err: error });
       }

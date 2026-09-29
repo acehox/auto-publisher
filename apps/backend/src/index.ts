@@ -48,9 +48,12 @@ app.use('/internal', App.Routes.Internal);
 app.get('/health', createHealthRoute);
 
 // Public API routes (with CORS + Discord auth)
-const discordAuth = createDiscordAuth(Data.Drivers.Redis.DiscordAuth, logger);
-const requireGuildPermission = createRequireGuildPermission(Data.Drivers.Redis.DiscordAuth, logger);
-const readRateLimit = createApiRateLimit(Data.Drivers.Redis.DiscordAuth, 60_000, 60);
+const discordAuth = createDiscordAuth(Data.Drivers.Redis.DashboardAuth, logger);
+const requireGuildPermission = createRequireGuildPermission(
+  Data.Drivers.Redis.DashboardAuth,
+  logger
+);
+const readRateLimit = createApiRateLimit(Data.Drivers.Redis.DashboardAuth, 60_000, 60);
 
 app.use('/api', createCorsMiddleware());
 app.use('/api/user', discordAuth, readRateLimit, App.Routes.Api.User);

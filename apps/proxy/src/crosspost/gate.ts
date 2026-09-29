@@ -1,6 +1,6 @@
 import type { Alerter } from '@ap/alerts';
 import type { InvalidRequestsTracker } from '../gateway/invalidRequests.js';
-import type { BlockedCache, SublimitCounter } from './caches.js';
+import type { GatedChannels } from './caches.js';
 
 export type GateRejectReason = 'invalid_requests' | 'blocked' | 'sublimit';
 
@@ -12,8 +12,7 @@ export type Gate = {
 
 export const createGate = (deps: {
   invalidRequests: InvalidRequestsTracker;
-  blocked: BlockedCache;
-  sublimit: SublimitCounter;
+  gatedChannels: GatedChannels;
   alerter?: Alerter;
 }): Gate => ({
   evaluate: async channelId => {
@@ -26,8 +25,9 @@ export const createGate = (deps: {
       });
       return { kind: 'reject', reason: 'invalid_requests' };
     }
-    if (await deps.blocked.isBlocked(channelId)) return { kind: 'reject', reason: 'blocked' };
-    if (await deps.sublimit.isOverLimit(channelId)) return { kind: 'reject', reason: 'sublimit' };
+    const { blocked, sublimited } = await deps.gatedChannels.check(channelId);
+    if (blocked) return { kind: 'reject', reason: 'blocked' };
+    if (sublimited) return { kind: 'reject', reason: 'sublimit' };
     return { kind: 'allow' };
   },
 });

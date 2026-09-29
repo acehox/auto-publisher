@@ -19,25 +19,24 @@ const isCrosspostable = (message: Message): boolean => {
  * Pipeline:
  *  1. crosspostable bit-flag check
  *  2. sync permission check (cache-only)
- *  3. allowlist gate for migrated guilds (Redis: MigratedGuilds + Channels)
+ *  3. allowlist gate + filter eval for migrated guilds, one Redis read of the
+ *     channel's rule (Redis: `Guilds` migrated marker + `EnabledChannels`)
  *     MIGRATION: at sunset every guild is allowlist-model — this becomes an
- *     unconditional Channels check ("allowlist gate", MigratedGuilds dropped)
- *  4. filter eval (HTTP to backend; Premium guilds only have conditions)
- *  5. 5s delay if URL without embed (lets Discord generate embeds first)
- *  6. fire-and-forget to proxy
+ *     unconditional `EnabledChannels` read (migrated marker dropped)
+ *  4. 5s delay if URL without embed (lets Discord generate embeds first)
+ *  5. fire-and-forget to proxy
  */
 const handle = async (message: Message, channel: NewsChannel) => {
   if (!isCrosspostable(message)) return;
   if (!Services.Permissions.canCrosspostInChannel(channel)) return;
 
-  // MIGRATION: at sunset drop the `isMigrated` wrapper — the allowlist check
-  // runs unconditionally (legacy guilds no longer exist).
+  // MIGRATION: at sunset drop the `isMigrated` wrapper — the allowlist read
+  // runs unconditionally. A legacy guild has no channel rows, so no rule either.
   if (await Services.Guild.isMigrated(channel.guildId)) {
-    if (!(await Services.Channel.isEnabled(channel.id))) return;
+    const rule = await Services.Channel.getRule(channel.id);
+    if (!rule) return;
+    if (!Services.Filter.evaluate(message, rule)) return;
   }
-
-  const passesFilters = await Services.Filter.evaluate(message, channel);
-  if (!passesFilters) return;
 
   if (!message.content) return push(message, channel.guildId);
 

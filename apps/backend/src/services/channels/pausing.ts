@@ -12,7 +12,7 @@ import { logger } from 'utils/logger.js';
  * deliberately does not import).
  *
  * Serving iff `pausedAt IS NULL`. A paused channel keeps its row + filters but
- * is dropped from the `Channels` Redis allowlist (bot hot path) and excluded
+ * is dropped from the `EnabledChannels` Redis allowlist (bot hot path) and excluded
  * from the per-guild limit count.
  */
 

@@ -14,7 +14,7 @@ export const guild = pgTable('guild', {
   // Discord snowflakes are immutable and never reused — safe natural PK.
   guildId: text('guild_id').primaryKey(),
   // NULL = legacy guild (auto-publishes all announcement channels, pre-v7 model).
-  // MIGRATION: dropped together with the MigratedGuilds Redis DB at sunset.
+  // MIGRATION: dropped together with the `migrated:` Redis keys at sunset.
   migratedAt: timestamp('migrated_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true })

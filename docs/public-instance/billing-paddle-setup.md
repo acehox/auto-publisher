@@ -13,7 +13,7 @@ web (Paddle.js overlay)                    premium backend
   │ … customer pays in overlay …
   │                            Paddle ──POST /webhooks/paddle──► backend
   │                                             │ verify Paddle-Signature
-  │                                             │ dedupe eventId (Redis DB 6)
+  │                                             │ dedupe eventId (Redis `PaddleWebhookDedupe`)
   │                                             │ upsert Postgres subscription
   │                                             │ entitled→revoked ⇒ bot leaves guild
 ```

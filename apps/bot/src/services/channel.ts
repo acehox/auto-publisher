@@ -1,4 +1,4 @@
-import type { Filter, FilterMatchMode } from '@ap/validations';
+import { type Filter, FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import {
   ChannelType,
@@ -181,11 +181,26 @@ const getGuildChannels = async (guildId: Snowflake) => {
   }
 };
 
-const isEnabled = async (channelId: Snowflake) => {
+export interface ChannelRule {
+  filters: Filter[];
+  filterMode: FilterMatchMode;
+}
+
+/**
+ * A serving channel's rule, read from the `EnabledChannels` cache. `null` means
+ * not enabled — and also Redis unreachable, which fails closed like the
+ * allowlist always has.
+ */
+const getRule = async (channelId: Snowflake): Promise<ChannelRule | null> => {
   try {
-    return await Data.Cache.Channels.isEnabled(channelId);
+    const cached = await Data.Cache.EnabledChannels.get(channelId);
+    if (!cached) return null;
+    return {
+      filters: cached.filters ?? [],
+      filterMode: cached.filterMode || FilterMatchMode.All,
+    };
   } catch {
-    return false;
+    return null;
   }
 };
 
@@ -222,7 +237,7 @@ export const Channel = {
   disable,
   getStatus,
   getGuildChannels,
-  isEnabled,
+  getRule,
   invalidateGuildCache,
   invalidateGuildRoles,
 };

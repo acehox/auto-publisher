@@ -2,11 +2,7 @@ import process from 'node:process';
 import { createAlerter } from '@ap/alerts';
 import { assertRequiredEnv, config, env } from '@ap/config';
 import { createRedisClient, DatabaseIDs, disconnectAllRedis } from '@ap/redis';
-import {
-  createBlockedCache,
-  createQueuePriorityState,
-  createSublimitCounter,
-} from './crosspost/caches.js';
+import { createGatedChannels, createQueuePriorityState } from './crosspost/caches.js';
 import { createGate } from './crosspost/gate.js';
 import { createCrosspostQueue } from './crosspost/queue.js';
 import { buildGateway } from './gateway/index.js';
@@ -20,38 +16,32 @@ const PROXY_PORT = 8080;
 const main = async () => {
   assertRequiredEnv();
 
-  const [sublimitRedis, blockedRedis, alertsRedis, priorityRedis] = await Promise.all([
-    createRedisClient(DatabaseIDs.SublimitCounter, logger),
-    createRedisClient(DatabaseIDs.BlockedChannels, logger),
+  const [gatedRedis, alertsRedis, guildsRedis] = await Promise.all([
+    createRedisClient(DatabaseIDs.GatedChannels, logger),
     createRedisClient(DatabaseIDs.Alerts, logger),
-    createRedisClient(DatabaseIDs.QueuePriority, logger),
+    createRedisClient(DatabaseIDs.Guilds, logger),
   ]);
 
-  const sublimit = createSublimitCounter(sublimitRedis);
-  const blocked = createBlockedCache(blockedRedis);
-  // Sibling dep rather than a member of `caches`: `caches` is also handed to
-  // createApp/info, which reports each entry's dbsize, and the priority signals
-  // are neither a gate input nor a proxy-owned DB.
-  const queuePriority = createQueuePriorityState(priorityRedis);
-  const caches = { sublimit, blocked };
+  const gatedChannels = createGatedChannels(gatedRedis);
+  const queuePriority = createQueuePriorityState(guildsRedis);
   const alerter = createAlerter({ redis: alertsRedis, service: 'proxy', logger });
 
   const gateway = buildGateway({
     token: config.discordToken,
     invalidRequestsThreshold: INVALID_REQUESTS_THRESHOLD,
   });
-  const gate = createGate({ invalidRequests: gateway.invalidRequests, blocked, sublimit, alerter });
+  const gate = createGate({ invalidRequests: gateway.invalidRequests, gatedChannels, alerter });
   const crosspost = createCrosspostQueue({
     rest: gateway.rest,
     gate,
-    caches,
+    gatedChannels,
     queuePriority,
     redisUri: env.REDIS_URI,
     queueDatabaseId: DatabaseIDs.CrosspostQueue,
     concurrency: WORKER_CONCURRENCY,
   });
 
-  const app = createApp({ gateway, crosspost, caches });
+  const app = createApp({ gateway, crosspost, gatedChannels });
   const server = app.listen(PROXY_PORT, () => {
     logger.info(
       { event: 'proxy.listening', port: PROXY_PORT },

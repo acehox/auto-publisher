@@ -1,4 +1,4 @@
-import { Keys } from '@ap/redis';
+import { RedisKeys } from '@ap/redis';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import type { APIChannel } from 'discord-api-types/v10';
@@ -12,14 +12,12 @@ import { BotPermissions, type PublishEntry } from './botPermissions.js';
  * `BotPermissions.getPublishMap` is the write-back fallback for fields the bot
  * hasn't reported yet.
  *
- * Key: `publish_state:{guildId}` → fields `{channelId}` = `{c, m}` JSON. A
+ * Key: `channel_permissions:{guildId}` → fields `{channelId}` = `{c, m}` JSON. A
  * 14-day TTL backstops orphans from events missed while the bot was offline;
  * the bot's full sweep on reconnect replaces every field (self-heal).
  */
 
 const TTL_SEC = 14 * 24 * 60 * 60;
-
-const key = (guildId: Snowflake) => `${Keys.PublishState}:${guildId}`;
 
 type StoredEntry = { c: boolean; m: string[] };
 
@@ -45,8 +43,8 @@ const writeGuild = async (
   entries: { channelId: Snowflake; canPublish: boolean; missing: string[] }[],
   full: boolean
 ): Promise<void> => {
-  const redis = Data.Drivers.Redis.PublishState;
-  const hashKey = key(guildId);
+  const redis = Data.Drivers.Redis.Guilds;
+  const hashKey = RedisKeys.channelPermissions(guildId);
   try {
     if (full) {
       const existing = await redis.hkeys(hashKey);
@@ -82,7 +80,7 @@ const getMap = async (
 
   let stored: Record<string, string> = {};
   try {
-    stored = await Data.Drivers.Redis.PublishState.hgetall(key(guildId));
+    stored = await Data.Drivers.Redis.Guilds.hgetall(RedisKeys.channelPermissions(guildId));
   } catch (error) {
     logger.warn(error, `Failed to read publish-state for guild ${guildId}`);
   }

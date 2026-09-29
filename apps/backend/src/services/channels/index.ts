@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { config } from '@ap/config';
 import { channel as channelTable, db, guild } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
+import { RedisKeys } from '@ap/redis';
 import { type CreateFilter, type Filter, FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
@@ -79,9 +80,9 @@ const initialize = async () => {
       .where(isNotNull(guild.migratedAt));
 
     if (migratedGuilds.length > 0) {
-      const pipeline = Data.Drivers.Redis.MigratedGuilds.multi();
+      const pipeline = Data.Drivers.Redis.Guilds.multi();
       for (const g of migratedGuilds) {
-        pipeline.set(`migrated_guild:${g.guildId}`, '1');
+        pipeline.set(RedisKeys.migrated(g.guildId), '1');
       }
       await pipeline.exec();
       logger.info(`Phase 2 complete: cached ${migratedGuilds.length} migrated guilds`);
@@ -208,7 +209,7 @@ const get = async (channelId: Snowflake) => {
  *
  * Not redundant with the hot path's own type re-check: a forged row still
  * migrates a legacy guild off auto-publish and burns a free-cap slot, and a
- * foreign channelId would be force-published, since `Channel.isEnabled` is
+ * foreign channelId would be force-published, since the `enabled:` key is
  * keyed on channelId alone.
  *
  * Throws (never admits) when Discord is unreachable.
@@ -327,7 +328,7 @@ const add = async (
 
     // MIGRATION: Mark guild as migrated (first channel enable)
     // TODO: Remove this call after migration period (6 months)
-    await Data.Drivers.Redis.MigratedGuilds.set(`migrated_guild:${guildId}`, '1');
+    await Data.Drivers.Redis.Guilds.set(RedisKeys.migrated(guildId), '1');
 
     logger.debug(`Added channel ${channelId} for guild ${guildId}`);
   } catch (error) {

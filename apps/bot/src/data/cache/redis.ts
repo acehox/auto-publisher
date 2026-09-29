@@ -1,13 +1,12 @@
 import { createRedisClient, DatabaseIDs, type RedisClient } from '@ap/redis';
 import { logger } from 'utils/logger.js';
 
-const channelsClient = await createRedisClient(DatabaseIDs.Channels, logger);
-// MIGRATION: MigratedGuilds client removed at sunset (DB 5 retired).
-const migratedGuildsClient = await createRedisClient(DatabaseIDs.MigratedGuilds, logger);
+const enabledChannelsClient = await createRedisClient(DatabaseIDs.EnabledChannels, logger);
+const guildsClient = await createRedisClient(DatabaseIDs.Guilds, logger);
 export const Redis: {
-  Channels: RedisClient;
-  MigratedGuilds: RedisClient;
+  EnabledChannels: RedisClient;
+  Guilds: RedisClient;
 } = {
-  Channels: channelsClient,
-  MigratedGuilds: migratedGuildsClient,
+  EnabledChannels: enabledChannelsClient,
+  Guilds: guildsClient,
 };

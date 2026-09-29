@@ -12,7 +12,7 @@ The obvious fix is to prune the excess on the revocation webhook. That destroys 
 
 ## Decision
 
-- **Disable, never delete — soft-pause via `channel.pausedAt`** (nullable timestamp, mirroring `bot_presence.leftAt`). A channel is *serving* iff `pausedAt IS NULL`. Paused rows keep all config (filters, filter mode) but are absent from the `Channels` Redis allowlist and excluded from the per-guild limit count — the limit counts *serving* channels, not raw rows. This matches the universal SaaS norm ("switched off, not deleted") and makes re-subscribing a lossless restore.
+- **Disable, never delete — soft-pause via `channel.pausedAt`** (nullable timestamp, mirroring `bot_presence.leftAt`). A channel is *serving* iff `pausedAt IS NULL`. Paused rows keep all config (filters, filter mode) but are absent from the `EnabledChannels` Redis allowlist and excluded from the per-guild limit count — the limit counts *serving* channels, not raw rows. This matches the universal SaaS norm ("switched off, not deleted") and makes re-subscribing a lossless restore.
 
 - **The trigger is the plan, and `Plans.reconcileChannelServing` is the only place it fires.** Premium reactivates every paused row; free pauses the guild down to the free shape — **every filtered channel first**, then the newest excess beyond the cap, keeping the 3 oldest by `createdAt`. It is idempotent and a no-op when already consistent, which is what lets the Paddle webhook (both directions), the nightly reconcile backstop, a guild join and the dashboard presence self-heal all call it unconditionally ([ADR 0006](./0006-one-bot-one-backend-one-queue.md)).
 
@@ -32,7 +32,7 @@ The obvious fix is to prune the excess on the revocation webhook. That destroys 
 
 ## Consequences
 
-- Every limit check and the startup `Channels` cache sync must filter `pausedAt IS NULL`; otherwise a restart silently re-serves paused channels and a downgraded guild reads as permanently over-limit.
+- Every limit check and the startup `EnabledChannels` cache sync must filter `pausedAt IS NULL`; otherwise a restart silently re-serves paused channels and a downgraded guild reads as permanently over-limit.
 - "Enable" is register-or-unpause (clearing `pausedAt`), not a plain insert that 409s on an existing row.
 - The feature only ever touches migrated guilds — the migration-before-premium gate guarantees a legacy guild can never be entitled, so it can never accumulate premium channels. No legacy interaction.
 - `pausedAt` and its enforcement are permanent; they outlive the v7 migration sunset.

@@ -38,7 +38,7 @@ export const User: Router = (() => {
       // retries in place. Presence/subscription below are composed live from
       // Postgres, so only the raw Discord list is cached — derived flags never
       // go stale.
-      const guildsResult = await fetchUserGuilds(Data.Drivers.Redis.DiscordAuth, token, logger);
+      const guildsResult = await fetchUserGuilds(Data.Drivers.Redis.DashboardAuth, token, logger);
 
       if (!guildsResult.ok) {
         const status =

@@ -1,16 +1,14 @@
-// MIGRATION: entire module removed at sunset (MigratedGuilds Redis DB 5 retired;
-// the bot's allowlist gate becomes unconditional).
-import { Keys } from '@ap/redis';
+// MIGRATION: entire module removed at sunset (`migrated:` keys in the `Guilds`
+// Redis DB dropped; the bot's allowlist gate becomes unconditional).
+import { RedisKeys } from '@ap/redis';
 import type { Snowflake } from 'discord.js';
 import { Redis } from './redis.js';
 
-const client = Redis.MigratedGuilds;
-
-const _key = (guildId: Snowflake) => `${Keys.MigratedGuild}:${guildId}`;
+const client = Redis.Guilds;
 
 const isMigrated = async (guildId: Snowflake): Promise<boolean> => {
   try {
-    return (await client.exists(_key(guildId))) === 1;
+    return (await client.exists(RedisKeys.migrated(guildId))) === 1;
   } catch {
     return false;
   }

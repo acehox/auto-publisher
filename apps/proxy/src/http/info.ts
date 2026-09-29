@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import type { BlockedCache, SublimitCounter } from '../crosspost/caches.js';
+import type { GatedChannels } from '../crosspost/caches.js';
 import type { CrosspostQueueModule } from '../crosspost/queue.js';
 import type { Gateway } from '../gateway/index.js';
 import { logger } from '../logger.js';
@@ -8,21 +8,20 @@ export const createInfoHandler =
   (deps: {
     gateway: Gateway;
     crosspost: CrosspostQueueModule;
-    caches: { blocked: BlockedCache; sublimit: SublimitCounter };
+    gatedChannels: GatedChannels;
   }): RequestHandler =>
   async (_req, res) => {
     try {
-      const [queueStats, sublimitCount, blockedCount] = await Promise.all([
+      const [queueStats, gated] = await Promise.all([
         deps.crosspost.stats(),
-        deps.caches.sublimit.size(),
-        deps.caches.blocked.size(),
+        deps.gatedChannels.counts(),
       ]);
       res.status(200).json({
         data: {
           rest: deps.gateway.stats(),
           queue: queueStats,
-          sublimitCount,
-          blockedCount,
+          sublimitCount: gated.sublimited,
+          blockedCount: gated.blocked,
         },
       });
     } catch (error) {

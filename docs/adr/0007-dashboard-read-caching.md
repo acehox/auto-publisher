@@ -12,7 +12,7 @@ The dashboard felt slow, worst on a cold first load of a guild page. Tracing bot
 - `GET /api/user/guilds` is one Discord call plus three sequential Postgres queries.
 - The web layer had no caching at all: every navigation refetched cold.
 
-A query-result cache (Drizzle's `$withCache`) is the wrong tool on two counts: it caches the backend's own `db.select()` reads, which are under 10% of the latency, and it cannot serve the bot's hot-path caches (`Channels`, `MigratedGuilds`), which the bot reads from Redis by explicit key and never through Drizzle.
+A query-result cache (Drizzle's `$withCache`) is the wrong tool on two counts: it caches the backend's own `db.select()` reads, which are under 10% of the latency, and it cannot serve the bot's hot-path caches (`enabled:` and `migrated:` keys), which the bot reads from Redis by explicit key and never through Drizzle.
 
 ## Decision
 
@@ -21,7 +21,7 @@ Fix the latency in the layers where the work happens, and **do not add a query-r
 ### Lever A — structural dedup
 
 - Dependent branches that share a prior batch run in parallel, and the sequential Postgres reads are parallelized or collapsed.
-- **Cross-endpoint `/users/@me/guilds` dedup.** On a guild-page load the layout calls `getUserGuilds()` (`GET /api/user/guilds`) and `getGuildDashboard()` (`GET /api/guild/:guildId`), and the latter's `requireGuildPermission` middleware makes its **own** `/users/@me/guilds` fetch to check `MANAGE_GUILD`. Those are two separate web→backend requests, so React `cache()` can never dedup them — the middleware's fetch runs in the backend, out of React's reach. Instead `GET /api/user/guilds` **reads through and warms** the same per-token key the middleware reads (`discordGuildsCacheKey(token)` → `discord_guilds:{tokenHash}`, `DiscordAuth` Redis DB, 60s TTL, shared from `@ap/express`). Because the layout awaits `getUserGuilds()` first, the middleware read-hits the warm entry and skips its Discord call. This is a *user*-token call direct to Discord, so the win is latency and user-token headroom, not bot invalid-request budget.
+- **Cross-endpoint `/users/@me/guilds` dedup.** On a guild-page load the layout calls `getUserGuilds()` (`GET /api/user/guilds`) and `getGuildDashboard()` (`GET /api/guild/:guildId`), and the latter's `requireGuildPermission` middleware makes its **own** `/users/@me/guilds` fetch to check `MANAGE_GUILD`. Those are two separate web→backend requests, so React `cache()` can never dedup them — the middleware's fetch runs in the backend, out of React's reach. Instead `GET /api/user/guilds` **reads through and warms** the same per-token key the middleware reads (`discordGuildsCacheKey(token)` → `discord_guilds:{tokenHash}`, `DashboardAuth` Redis DB, 60s TTL, shared from `@ap/express`). Because the layout awaits `getUserGuilds()` first, the middleware read-hits the warm entry and skips its Discord call. This is a *user*-token call direct to Discord, so the win is latency and user-token headroom, not bot invalid-request budget.
 
 ### Lever B — backend in-memory Discord-response cache
 

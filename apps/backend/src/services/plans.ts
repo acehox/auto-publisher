@@ -1,5 +1,6 @@
 import { config, isPublicInstance } from '@ap/config';
-import { Keys } from '@ap/redis';
+import { db, guild } from '@ap/database';
+import { idFromKey, Keys, keyPattern, RedisKeys, scanKeys } from '@ap/redis';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { logger } from 'utils/logger.js';
@@ -29,7 +30,7 @@ const channelLimit = async (guildId: Snowflake): Promise<number> =>
   (await isPremium(guildId)) ? 0 : config.limits.freeChannelsPerGuild;
 
 /**
- * Mirror a guild's Premium entitlement into the `QueuePriority` Redis DB, where
+ * Mirror a guild's Premium entitlement into the `Guilds` Redis DB, where
  * the proxy reads it at enqueue to pick the `PREMIUM` tier (ADR 0011).
  *
  * Presence IS the state, so a downgrade deletes rather than writing a falsy
@@ -38,10 +39,10 @@ const channelLimit = async (guildId: Snowflake): Promise<number> =>
  * message is cosmetic next to failing an entitlement change.
  */
 const syncPriorityMarker = async (guildId: Snowflake, premium: boolean): Promise<void> => {
-  const key = `${Keys.PremiumGuild}:${guildId}`;
+  const key = RedisKeys.premium(guildId);
   try {
-    if (premium) await Data.Drivers.Redis.QueuePriority.set(key, '1');
-    else await Data.Drivers.Redis.QueuePriority.del(key);
+    if (premium) await Data.Drivers.Redis.Guilds.set(key, '1');
+    else await Data.Drivers.Redis.Guilds.del(key);
   } catch (error) {
     logger.warn(error, `Failed to sync queue-priority marker for guild ${guildId}`);
   }
@@ -61,10 +62,11 @@ const syncPriorityMarker = async (guildId: Snowflake, premium: boolean): Promise
  * a downgrade would otherwise start publishing exactly what an admin
  * deliberately filtered out — unrecoverable, where not publishing is not.
  *
- * This is also the ONE place the queue-priority marker is written, deliberately:
+ * This is also where a plan CHANGE writes the queue-priority marker, deliberately:
  * every path that can change a guild's entitlement — the Paddle webhook, the
  * nightly backstop, a join, a dashboard self-heal — already routes through here,
  * so the marker cannot drift from the channels it is meant to agree with.
+ * `syncPriorityMarkers` is the only other writer, repairing a lost Redis.
  */
 const reconcileChannelServing = async (guildId: Snowflake): Promise<void> => {
   const premium = await isPremium(guildId);
@@ -77,6 +79,37 @@ const reconcileChannelServing = async (guildId: Snowflake): Promise<void> => {
   }
 
   await syncPriorityMarker(guildId, premium);
+};
+
+/**
+ * Rebuild every `premium:` marker from Postgres. `reconcileChannelServing` only
+ * runs on a plan change, so a guild that stays Premium would never get its
+ * marker back after Redis loses it.
+ *
+ * Only the guilds whose marker disagrees are touched, each re-read through
+ * `isPremium` so a webhook landing mid-run is not overwritten with the stale set.
+ */
+const syncPriorityMarkers = async (): Promise<void> => {
+  const entitled = new Set(
+    isPublicInstance
+      ? await Subscriptions.getEntitledGuildIds()
+      : (await db.select({ guildId: guild.guildId }).from(guild)).map(row => row.guildId)
+  );
+  const marked = new Set(
+    (await scanKeys(Data.Drivers.Redis.Guilds, keyPattern(Keys.Premium))).map(key =>
+      idFromKey(Keys.Premium, key)
+    )
+  );
+  const drifted = [
+    ...[...entitled].filter(guildId => !marked.has(guildId)),
+    ...[...marked].filter(guildId => !entitled.has(guildId)),
+  ];
+  for (const guildId of drifted) {
+    await syncPriorityMarker(guildId, await isPremium(guildId));
+  }
+  if (drifted.length > 0) {
+    logger.info(`Priority markers: repaired ${drifted.length} of ${entitled.size} Premium guilds`);
+  }
 };
 
 /** `reconcileChannelServing` over many guilds; one guild's failure never stops the rest. */
@@ -95,4 +128,5 @@ export const Plans = {
   channelLimit,
   reconcileChannelServing,
   reconcileChannelServingMany,
+  syncPriorityMarkers,
 };

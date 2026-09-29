@@ -10,12 +10,12 @@ The dashboard needs to know whether the bot can actually crosspost in each regis
 
 ## Decision
 
-The bot is the source of truth for per-channel publish capability. It computes `canPublish` plus the missing-permission set from its gateway cache and **pushes** it to the backend on those permission events (batched per guild) and on a full sweep at shard `ready` and `guildCreate`. The backend stores it in a per-guild Redis hash (`publish_state:{guildId}`, DB 13, fields keyed by `channelId`, 14d TTL); the dashboard **reads** that hash instead of computing via REST. REST (`getCanPublishMap`) survives only as a write-back fallback for a channel whose state is missing — freshly enabled, or post-flush.
+The bot is the source of truth for per-channel publish capability. It computes `canPublish` plus the missing-permission set from its gateway cache and **pushes** it to the backend on those permission events (batched per guild) and on a full sweep at shard `ready` and `guildCreate`. The backend stores it in a per-guild Redis hash (`channel_permissions:{guildId}` in the `Guilds` DB, fields keyed by `channelId`, 14d TTL); the dashboard **reads** that hash instead of computing via REST. REST (`getCanPublishMap`) survives only as a write-back fallback for a channel whose state is missing — freshly enabled, or post-flush.
 
 ## Considered options
 
 - **Backend pulls via REST on demand**, 5-minute cached. Rejected: spends 2+ Discord GETs per guild per window on the dashboard hot path to re-derive data the bot holds for free, with freshness capped at the TTL.
-- **Derive from the `BlockedChannels` denylist.** Rejected as a primary signal: reactive and lossy — only populated after a real crosspost 401/403s and self-clearing on a 1h TTL, so a never-posted or freshly-mis-permissioned channel shows nothing.
+- **Derive from the proxy's `blocked:` denylist.** Rejected as a primary signal: reactive and lossy — only populated after a real crosspost 401/403s and self-clearing on a 1h TTL, so a never-posted or freshly-mis-permissioned channel shows nothing.
 
 ## Consequences
 

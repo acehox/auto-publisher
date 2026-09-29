@@ -1,6 +1,6 @@
 import { botPresence, channel, db, guild } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
-import { Keys } from '@ap/redis';
+import { RedisKeys } from '@ap/redis';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
@@ -183,10 +183,12 @@ const purge = async (guildId: Snowflake, cutoff: Date): Promise<boolean> => {
     if (channelIds.length > 0) {
       await Data.Channels.Cache.removeMany(channelIds);
     }
-    // MIGRATION: After transition (6 months), remove the marker delete
-    await Data.Drivers.Redis.MigratedGuilds.del(`migrated_guild:${guildId}`);
-    await Data.Drivers.Redis.QueuePriority.del(`${Keys.Boost}:${guildId}`);
-    await Data.Drivers.Redis.QueuePriority.del(`${Keys.PremiumGuild}:${guildId}`);
+    // MIGRATION: drop `RedisKeys.migrated` from this list at sunset
+    await Data.Drivers.Redis.Guilds.del(
+      RedisKeys.migrated(guildId),
+      RedisKeys.boosted(guildId),
+      RedisKeys.premium(guildId)
+    );
 
     logger.debug(`Purged guild ${guildId} and ${channelIds.length} associated channels`);
     return true;
@@ -245,8 +247,8 @@ const BOOST_TTL_SEC = 90 * 24 * 60 * 60;
  */
 const seedOnboardingBoost = async (guildId: Snowflake): Promise<void> => {
   try {
-    await Data.Drivers.Redis.QueuePriority.set(
-      `${Keys.Boost}:${guildId}`,
+    await Data.Drivers.Redis.Guilds.set(
+      RedisKeys.boosted(guildId),
       String(BOOST_PUBLISHES),
       'EX',
       BOOST_TTL_SEC
@@ -319,8 +321,8 @@ const registerNewGuild = async (
     // bare marker write: a re-invited guild must get its channel entries back
     // even if Redis lost them while the guild had no bot.
     // MIGRATION: at sunset drop the `rows[0]?.migratedAt` guard (this runs
-    // unconditionally — the Channels allowlist cache is permanent, so the
-    // channel-entry rebuild stays); only the `MigratedGuilds` marker write
+    // unconditionally — the `EnabledChannels` cache is permanent, so the
+    // channel-entry rebuild stays); only the `migrated:` marker write
     // inside syncMigratedGuildCache goes away.
     if (rows[0]?.migratedAt) {
       await syncMigratedGuildCache(guildId);
@@ -346,7 +348,7 @@ const registerNewGuild = async (
 
 /**
  * Rebuild the derived Redis state for a migrated guild from DB: channel cache
- * entries first, `MigratedGuilds` marker last (the marker is the behavioral
+ * entries first, `migrated:` marker last (the marker is the behavioral
  * commit point — until it is set the bot treats the guild as fully legacy).
  * Idempotent; startup cache-sync is the crash backstop.
  * @param guildId ID of the guild
@@ -366,7 +368,7 @@ const syncMigratedGuildCache = async (guildId: Snowflake): Promise<void> => {
     );
   }
 
-  await Data.Drivers.Redis.MigratedGuilds.set(`migrated_guild:${guildId}`, '1');
+  await Data.Drivers.Redis.Guilds.set(RedisKeys.migrated(guildId), '1');
 };
 
 /**

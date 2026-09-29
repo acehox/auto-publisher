@@ -1,3 +1,4 @@
-export { createChannelsCache } from './channelsCache.js';
+export { createEnabledChannelsCache } from './channelsCache.js';
 export { createRedisClient, disconnectAllRedis, type RedisClient } from './client.js';
-export { DatabaseIDs, Keys } from './constants.js';
+export { DatabaseIDs, idFromKey, Keys, keyPattern, RedisKeys } from './constants.js';
+export { scanKeys } from './scan.js';

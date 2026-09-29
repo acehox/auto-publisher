@@ -4,7 +4,7 @@ import { Routes, type Snowflake } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import { Redis } from 'ioredis';
 import { logger } from '../logger.js';
-import type { BlockedCache, QueuePriorityState, SublimitCounter } from './caches.js';
+import type { GatedChannels, QueuePriorityState } from './caches.js';
 import { type CrosspostOutcome, classify } from './classifier.js';
 import type { Gate } from './gate.js';
 
@@ -64,7 +64,7 @@ export type CrosspostQueueModule = {
 export const createCrosspostQueue = (deps: {
   rest: REST;
   gate: Gate;
-  caches: { blocked: BlockedCache; sublimit: SublimitCounter };
+  gatedChannels: GatedChannels;
   queuePriority: QueuePriorityState;
   redisUri: string;
   queueDatabaseId: number;
@@ -92,15 +92,15 @@ export const createCrosspostQueue = (deps: {
     const { channelId, messageId } = job.data;
     switch (outcome.kind) {
       case 'already_done':
-        await deps.caches.sublimit.increment(channelId);
+        await deps.gatedChannels.increment(channelId);
         logger.debug({ event: 'crosspost.already', channelId, messageId });
         return;
       case 'blocked':
-        await deps.caches.blocked.set(channelId);
+        await deps.gatedChannels.block(channelId);
         logger.info({ event: 'crosspost.blocked', channelId, messageId, status: outcome.status });
         return;
       case 'sublimit':
-        await deps.caches.sublimit.lock(channelId, outcome.retryAfterMs / 1_000);
+        await deps.gatedChannels.lock(channelId, outcome.retryAfterMs / 1_000);
         logger.info({
           event: 'crosspost.sublimit',
           channelId,
@@ -161,11 +161,11 @@ export const createCrosspostQueue = (deps: {
 
     try {
       await deps.rest.post(Routes.channelMessageCrosspost(channelId, messageId));
-      await deps.caches.sublimit.increment(channelId);
+      await deps.gatedChannels.increment(channelId);
       // Gated on the job's OWN priority, not on a fresh budget read: an
       // unconditional DECR would mint a negative key for every guild in the
-      // system, which is real memory inside the allkeys-lru budget and would
-      // evict keys that matter.
+      // system, which is real memory under the `noeviction` cap, where a full
+      // Redis rejects every write, the queue's included.
       if (job.opts.priority === PRIORITY.BOOSTED) {
         await deps.queuePriority.consume(job.data.guildId);
       }
@@ -269,7 +269,7 @@ export const createCrosspostQueue = (deps: {
       res.status(400).end();
       return;
     }
-    await deps.caches.blocked.clear(channelId);
+    await deps.gatedChannels.unblock(channelId);
     res.status(204).end();
   });
 
