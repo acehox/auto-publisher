@@ -243,7 +243,7 @@ channel {
   channelId (text, pk — natural key)
   guildId (text, FK → guilds.guildId, cascade delete)
   filters (jsonb, array of ChannelFilter)
-  filterMode (text, default 'any')
+  filterMode (text, not null, default 'all')
   createdAt, updatedAt
 }
 

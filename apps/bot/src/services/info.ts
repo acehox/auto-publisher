@@ -16,8 +16,9 @@ export type ProxyInfo = {
     prioritized: number;
     active: number;
   };
-  sublimitCount: number;
-  blockedCount: number;
+  /** `null` when the proxy's count failed */
+  sublimitCount: number | null;
+  blockedCount: number | null;
 };
 
 export type BackendInfo = {

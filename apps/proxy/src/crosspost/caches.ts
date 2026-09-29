@@ -40,15 +40,17 @@ export type GatedChannels = {
   lock(channelId: string, retryAfterSec: number): Promise<void>;
   block(channelId: string): Promise<void>;
   unblock(channelId: string): Promise<void>;
-  counts(): Promise<{ sublimited: number; blocked: number }>;
+  /** `null` = the count failed, so a Redis error never reads as "none" */
+  counts(): Promise<{ sublimited: number | null; blocked: number | null }>;
 };
 
 export const createGatedChannels = (redis: RedisClient): GatedChannels => {
-  const countKeys = async (prefix: Keys): Promise<number> => {
+  const countKeys = async (prefix: Keys): Promise<number | null> => {
     try {
       return (await scanKeys(redis, keyPattern(prefix))).length;
-    } catch {
-      return 0;
+    } catch (error) {
+      logger.warn({ event: 'redis.read_failed', op: 'gated.count', prefix, err: error });
+      return null;
     }
   };
 

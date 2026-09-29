@@ -1,15 +1,16 @@
 import type { ChannelFilter } from '@ap/database';
-import { FilterMatchMode } from '@ap/validations';
+import type { FilterMatchMode } from '@ap/validations';
 import type { Snowflake } from 'discord-api-types/globals';
 import type { RedisClient } from './client.js';
 import { idFromKey, Keys, keyPattern, RedisKeys } from './constants.js';
 import { scanKeys } from './scan.js';
 
 export const createEnabledChannelsCache = (client: RedisClient) => {
+  // No default mode: an omitted one would store a mode the dashboard does not show.
   const set = async (
     channelId: Snowflake,
-    filters: ChannelFilter[] = [],
-    filterMode: FilterMatchMode = FilterMatchMode.Any
+    filters: ChannelFilter[],
+    filterMode: FilterMatchMode
   ) => {
     const value = JSON.stringify({ filters, filterMode });
     return await client.set(RedisKeys.enabled(channelId), value);
@@ -49,7 +50,7 @@ export const createEnabledChannelsCache = (client: RedisClient) => {
   const updateFilters = async (
     channelId: Snowflake,
     filters: unknown[],
-    filterMode: FilterMatchMode = FilterMatchMode.Any
+    filterMode: FilterMatchMode
   ) => {
     const value = JSON.stringify({ filters, filterMode });
     return await client.set(RedisKeys.enabled(channelId), value);

@@ -101,7 +101,7 @@ const reactivateGuild = async (guildId: Snowflake): Promise<number> => {
     paused.map(p => ({
       channelId: p.channelId,
       filters: p.filters,
-      filterMode: (p.filterMode as FilterMatchMode) || FilterMatchMode.Any,
+      filterMode: (p.filterMode as FilterMatchMode) || FilterMatchMode.All,
     }))
   );
 

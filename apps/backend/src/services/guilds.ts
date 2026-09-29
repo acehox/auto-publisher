@@ -363,7 +363,7 @@ const syncMigratedGuildCache = async (guildId: Snowflake): Promise<void> => {
       records.map(r => ({
         channelId: r.channelId,
         filters: r.filters,
-        filterMode: (r.filterMode as FilterMatchMode) || FilterMatchMode.Any,
+        filterMode: (r.filterMode as FilterMatchMode) || FilterMatchMode.All,
       }))
     );
   }
