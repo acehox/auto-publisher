@@ -1,53 +1,43 @@
-[![Auto Publisher](https://cdn.discordapp.com/app-icons/739823232651100180/afc7325d445543050505179799e8fb7d.png)](https://discord.com/api/oauth2/authorize?client_id=739823232651100180&permissions=10240&scope=bot "Auto Publisher bot")
+<img src=".github/assets/banner.png" alt="Auto Publisher" width="580"/>
 
-# Discord Auto Publisher
+# Auto Publisher
 
-**Automatically publish messages or news in your announcement channels!**
+Auto Publisher publishes messages in your [announcement channels](https://support.discord.com/hc/en-us/articles/360032008192-Announcement-Channels-) automatically, whether they came from your team, a bot or a webhook. Publish everything, or only what matches your filters.
 
-A lightweight command-less bot that will automatically publish every new message in your [announcement/news channels](https://support.discord.com/hc/en-us/articles/360032008192-Announcement-Channels-) to other servers who follow it. An excellent solution for servers who rely on bots (such as RSS feeds) or webhooks to publish their news, allowing your moderators to get some rest from manual publishing. Unlike most other bots who can publish messages, this bot utilizes advanced URL detection algorithm that will ensure all your messages containing URLs will be published properly with no embeds missing!
+Visit [auto-publisher.gg](https://auto-publisher.gg) to find out more.
 
-![](https://media.giphy.com/media/KxgsmVFc4nMF7U50UF/giphy.gif)
+## Get started
 
-## How to set up?
+It takes less than a minute to automate your first channel:
 
-1. Invite the bot to your server: https://invite.auto-publisher.gg/
-2. Navigate to your announcement channel's settings and give the bot following permissions: `View Channel`, `Send Messages`, `Manage Messages`.
-3. Repeat step 2. for every channel where you want auto-publishing
+1. [Invite the bot](https://invite.auto-publisher.gg/) to your server.
+2. Pick the channels to publish from, in the [dashboard](https://auto-publisher.gg/dashboard) or with `/ap enable #channel`.
+3. In each of those channels, give the bot `View Channel`, `Send Messages` and `Manage Messages`.
 4. Done!
 
-That's the whole setup — the bot starts publishing straight away. To choose specific channels
-instead of all of them, use the [dashboard](https://auto-publisher.gg/dashboard) or the
-slash commands:
+`/ap overview` or the dashboard shows what is publishing and which permissions are missing.
 
-| Command                | What it does                                        |
-| ---------------------- | --------------------------------------------------- |
-| `/ap overview`         | What's publishing, and any missing permissions      |
-| `/ap enable #channel`  | Publish only from the channels you pick             |
-| `/ap disable #channel` | Stop publishing from a channel                      |
-| `/ap filters #channel` | Per-channel rules for what gets published (Premium) |
+Need help? Join the [support server](https://discord.gg/xcEeJkdQX8).
 
-### Keep in mind...
+## Commands
 
-- The bot can only publish 10 messages per hour per channel (just as users), this is rate limited by Discord!
-- If you want to temporarily stop the bot from publishing messages in any of your announcement channels, just disable its' `View Channel` permission in a desired channel and enable it back when you're ready.
-- **IMPORTANT:** If one of your announcement channels is very spammy, your server will get blacklisted from using the bot! Please be sensible when using the bot and don't make your moderation log channels or general chat into an announcement channel. If your chanel has a high message flow, it shouldn't be an announcement channel.
+| Command                | What it does                                   |
+| ---------------------- | ---------------------------------------------- |
+| `/ap overview`         | What's publishing, and any missing permissions |
+| `/ap enable #channel`  | Start publishing from a channel                |
+| `/ap disable #channel` | Stop publishing from a channel                 |
+| `/ap filters #channel` | Choose which messages get published            |
 
-### Need help? Join our Discord support server!
+## Good to know
 
-https://discord.gg/xcEeJkdQX8
-
----
-
-Did the bot help you or do you simply want to support my work? ❤️
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/acehox)
+- Discord allows 10 published messages per hour per channel, for bots and people alike.
+- A channel with heavy traffic (chat, moderation logs) should not be an announcement channel.
+- Servers set up before v7 keep publishing every announcement channel until they pick channels. The [migration guide](https://auto-publisher.gg/migration) explains what changes.
 
 ## Self-hosting
 
-The code is published here for transparency, and to help other developers implement the same functionality in their own bots.
+The code is public for transparency and to help other developers build the same thing into their own bots. The hosted bot is free and is the right choice for almost everyone.
 
-Adding the publicly-hosted bot is free and will be enough for almost everyone, so that is the recommended route unless you have a specific reason not to take it — reading the code, experimenting with it, or running your own copy in servers you look after.
+You can run your own copy for servers you look after. No support is given for self-hosted copies. Hosting a copy for other people, whether by publishing an invite link, or adding it to servers you don't run, is not allowed by the [licence](LICENSE).
 
-You're welcome to host it on your own machine, but please keep in mind that no support is provided for self-hosted instances (do it at your own risk). Hosting an instance for other people — publishing an invite link, or adding your copy to servers you don't run — is not permitted by the [licence](LICENSE), whether or not you charge for it.
-
-Instructions: **[Self-hosting guide](docs/self-hosting.md)**
+Guide: **[Self-hosting](docs/self-hosting.md)**

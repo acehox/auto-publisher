@@ -49,9 +49,9 @@ export function Hero() {
             transition={{ duration: 0.2, delay: 0.4 }}
             className="mb-10 max-w-2xl text-lg text-slate-300 sm:text-xl lg:mx-0 mx-auto"
           >
-            Auto Publisher watches your announcement channels and publishes your messages
-            automatically, so your announcements reach your followers on their own. No manual
-            clicks, ever.
+            Auto Publisher publishes messages in your announcement channels automatically, whether
+            they came from your team, a bot or a webhook. Publish everything, or only what matches
+            your filters.
           </motion.p>
 
           {/* CTAs */}
