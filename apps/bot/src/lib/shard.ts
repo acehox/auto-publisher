@@ -3,13 +3,15 @@ import { ActivityType, GatewayIntentBits as IntentBits, Options, Partials } from
 import { getInfo } from 'discord-hybrid-sharding';
 import { BotClient } from 'lib/structures/client.js';
 import { logger } from 'utils/logger.js';
-import { links } from './constants/index.js';
+// import { links } from './constants/index.js';
 
 export const client = new BotClient({
   presence: {
     activities: [
       {
-        name: `${links.projectHostname} | /help`,
+        name: '🔴 ACTION NEEDED →',
+        // MIGRATION: remove once the legacy bot sunset is complete and the migration UX is removed.
+        // name: `${links.projectHostname} | /help`,
         type: ActivityType.Custom,
       },
     ],
