@@ -1,5 +1,5 @@
 import { config } from '@ap/config';
-import { botPresence, channel, db, guild } from '@ap/database';
+import { channel, db, guild } from '@ap/database';
 import { CronJob } from 'cron';
 import type { Snowflake } from 'discord-api-types/globals';
 import { type RESTGetAPICurrentUserGuildsResult, Routes } from 'discord-api-types/v10';
@@ -55,7 +55,7 @@ const fetchLiveGuildIds = async (): Promise<Set<Snowflake>> => {
 };
 
 /**
- * Keep the presence rows honest against Discord (missed gateway events, DB
+ * Keep guild presence honest against Discord (missed gateway events, DB
  * resets): insert unknown guilds as legacy with an active presence, restore
  * presences the bot still has, soft-delete presences it lost. Returns the
  * inserted + restored guild IDs, whose channel serving is re-applied after.
@@ -67,12 +67,8 @@ const sweepPresence = async (): Promise<Snowflake[]> => {
   const liveIds = await fetchLiveGuildIds();
 
   const rows = await db
-    .select({
-      guildId: botPresence.guildId,
-      joinedAt: botPresence.joinedAt,
-      leftAt: botPresence.leftAt,
-    })
-    .from(botPresence);
+    .select({ guildId: guild.guildId, joinedAt: guild.joinedAt, leftAt: guild.leftAt })
+    .from(guild);
   const knownIds = new Set(rows.map(r => r.guildId));
 
   // Unknown guilds have been running legacy since the missed guildCreate —
@@ -82,10 +78,6 @@ const sweepPresence = async (): Promise<Snowflake[]> => {
   for (const batch of chunk(toInsert, BATCH_SIZE)) {
     await db
       .insert(guild)
-      .values(batch.map(guildId => ({ guildId })))
-      .onConflictDoNothing();
-    await db
-      .insert(botPresence)
       .values(batch.map(guildId => ({ guildId, joinedAt: sweepStart })))
       .onConflictDoNothing();
   }
@@ -96,7 +88,7 @@ const sweepPresence = async (): Promise<Snowflake[]> => {
     .filter(r => r.leftAt !== null && liveIds.has(r.guildId))
     .map(r => r.guildId);
   for (const batch of chunk(toRestore, BATCH_SIZE)) {
-    await db.update(botPresence).set({ leftAt: null }).where(inArray(botPresence.guildId, batch));
+    await db.update(guild).set({ leftAt: null }).where(inArray(guild.guildId, batch));
   }
 
   // Soft-delete presences not in the live set, with rails:
@@ -120,9 +112,9 @@ const sweepPresence = async (): Promise<Snowflake[]> => {
   if (!deletionsAborted) {
     for (const batch of chunk(toSoftDelete, BATCH_SIZE)) {
       await db
-        .update(botPresence)
+        .update(guild)
         .set({ leftAt: sweepStart })
-        .where(and(inArray(botPresence.guildId, batch), isNull(botPresence.leftAt)));
+        .where(and(inArray(guild.guildId, batch), isNull(guild.leftAt)));
     }
   }
 
@@ -184,9 +176,9 @@ const purgeAbandonedGuilds = async (): Promise<void> => {
   const purgeCutoff = new Date(Date.now() - PURGE_AFTER_MS);
 
   const toPurge = await db
-    .select({ guildId: botPresence.guildId })
-    .from(botPresence)
-    .where(and(isNotNull(botPresence.leftAt), lt(botPresence.leftAt, purgeCutoff)));
+    .select({ guildId: guild.guildId })
+    .from(guild)
+    .where(and(isNotNull(guild.leftAt), lt(guild.leftAt, purgeCutoff)));
 
   let purgedCount = 0;
   for (const row of toPurge) {
@@ -213,13 +205,13 @@ const reconcileGuilds = async () => {
       logger.error(error, 'Guild reconcile sweep failed');
       alerter.send('guild-reconcile-failed', {
         title: 'Guild reconcile sweep aborted',
-        description: `The sweep failed before completion (pagination or DB error): ${error instanceof Error ? error.message : String(error)}. Presence rows were not reconciled today.`,
+        description: `The sweep failed before completion (pagination or DB error): ${error instanceof Error ? error.message : String(error)}. Guild presence was not reconciled today.`,
       });
     }
   }
 
   // Both steps read the reconciled rows: acting on a half-swept snapshot could
-  // pause a paying guild's channels off a presence row that is simply stale.
+  // pause a paying guild's channels off a presence that is simply stale.
   if (sweepCompleted) {
     await Services.Plans.reconcileChannelServingMany(swept);
     await enforceChannelLimitBackstop();

@@ -1,5 +1,5 @@
 import { env, premiumTrialEnabled } from '@ap/config';
-import { botPresence, db, guild, type Subscription, subscription } from '@ap/database';
+import { db, guild, type Subscription, subscription } from '@ap/database';
 import { and, eq, inArray, isNull, lt, notInArray, or } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
@@ -299,11 +299,11 @@ const getRevokedWithBotPresent = async (): Promise<Subscription[]> => {
       .select()
       .from(subscription)
       .innerJoin(
-        botPresence,
+        guild,
         and(
-          eq(subscription.guildId, botPresence.guildId),
+          eq(subscription.guildId, guild.guildId),
           // leftAt set = bot already gone, nothing to trim
-          isNull(botPresence.leftAt)
+          isNull(guild.leftAt)
         )
       )
       .where(notInArray(subscription.status, [...ENTITLED_STATUSES]));

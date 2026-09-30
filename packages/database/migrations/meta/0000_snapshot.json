@@ -1,50 +1,9 @@
 {
-  "id": "ab43941e-38c6-43c8-bf20-c61b48033651",
+  "id": "3c46f858-01ab-4435-b133-3dbe888404ea",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.bot_presence": {
-      "name": "bot_presence",
-      "schema": "",
-      "columns": {
-        "guild_id": {
-          "name": "guild_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "joined_at": {
-          "name": "joined_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "left_at": {
-          "name": "left_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "bot_presence_guild_id_guild_guild_id_fk": {
-          "name": "bot_presence_guild_id_guild_guild_id_fk",
-          "tableFrom": "bot_presence",
-          "tableTo": "guild",
-          "columnsFrom": ["guild_id"],
-          "columnsTo": ["guild_id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.channel": {
       "name": "channel",
       "schema": "",
@@ -142,6 +101,19 @@
         },
         "migrated_at": {
           "name": "migrated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "left_at": {
+          "name": "left_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false

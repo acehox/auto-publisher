@@ -16,6 +16,11 @@ export const guild = pgTable('guild', {
   // NULL = legacy guild (auto-publishes all announcement channels, pre-v7 model).
   // MIGRATION: dropped together with the `migrated:` Redis keys at sunset.
   migratedAt: timestamp('migrated_at', { withTimezone: true }),
+  // Bot membership, as Discord's GUILD_CREATE `joined_at` means it. leftAt is a soft
+  // delete so config survives a re-invite — reconciliation purges the guild 30 days
+  // after the bot left. joinedAt is re-stamped on re-invite, so it is not createdAt.
+  joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
+  leftAt: timestamp('left_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .defaultNow()
@@ -23,25 +28,8 @@ export const guild = pgTable('guild', {
     .$onUpdateFn(() => new Date()),
 });
 
-export const guildRelations = relations(guild, ({ many, one }) => ({
+export const guildRelations = relations(guild, ({ many }) => ({
   channels: many(channel),
-  botPresence: one(botPresence),
-}));
-
-// Bot membership; unrelated to Discord user presence. leftAt is a soft delete so
-// config survives a re-invite — reconciliation purges the guild 30 days after the
-// bot left. One row per guild: there is one bot, and Free/Premium are per-guild
-// subscription tiers rather than separate applications.
-export const botPresence = pgTable('bot_presence', {
-  guildId: text('guild_id')
-    .primaryKey()
-    .references(() => guild.guildId, { onDelete: 'cascade' }),
-  joinedAt: timestamp('joined_at', { withTimezone: true }).notNull(),
-  leftAt: timestamp('left_at', { withTimezone: true }),
-});
-
-export const botPresenceRelations = relations(botPresence, ({ one }) => ({
-  guild: one(guild, { fields: [botPresence.guildId], references: [guild.guildId] }),
 }));
 
 export const channel = pgTable(
@@ -173,8 +161,6 @@ export const withdrawal = pgTable(
 
 export type Guild = typeof guild.$inferSelect;
 export type Channel = typeof channel.$inferSelect;
-export type BotPresence = typeof botPresence.$inferSelect;
-export type NewBotPresence = typeof botPresence.$inferInsert;
 export type Subscription = typeof subscription.$inferSelect;
 export type NewSubscription = typeof subscription.$inferInsert;
 export type Withdrawal = typeof withdrawal.$inferSelect;

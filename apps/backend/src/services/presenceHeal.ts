@@ -1,4 +1,3 @@
-import { db, guild } from '@ap/database';
 import { createTtlCache } from '@ap/utils';
 import type { Snowflake } from 'discord-api-types/globals';
 import { logger } from 'utils/logger.js';
@@ -9,7 +8,7 @@ import { Plans } from './plans.js';
 const CONFIRMED_ABSENT_TTL_MS = 30_000;
 
 export interface HealResult {
-  /** Whether the presence row was restored. */
+  /** Whether the presence was restored. */
   healed: boolean;
   /** The membership check could not be resolved (Discord/proxy unreachable). */
   inconclusive: boolean;
@@ -21,7 +20,7 @@ export interface HealResult {
 const confirmedAbsent = createTtlCache<true>(CONFIRMED_ABSENT_TTL_MS);
 
 /**
- * Dashboard-read self-heal for presence rows the event path can never repair:
+ * Dashboard-read self-heal for presence the event path can never repair:
  * re-authorizing a bot that is already a member fires NO gateway event, and a
  * join missed while the stack was down (or a row lost to a DB reset) is never
  * re-emitted by Discord — without this, the dashboard shows "not present"
@@ -54,9 +53,7 @@ const healAbsentGuild = async (guildId: Snowflake): Promise<HealResult> => {
     }
 
     // Same shape as the reconcile sweep insert: a guild running without a row
-    // has been behaving legacy since the missed event.
-    // MIGRATION: no change at sunset (already a plain guild-exists insert).
-    await db.insert(guild).values({ guildId }).onConflictDoNothing();
+    // has been behaving legacy since the missed event, so no `migratedAt`.
     await Guilds.activatePresence(guildId);
     confirmedAbsent.delete(guildId);
     logger.info(`Presence heal: restored presence for guild ${guildId}`);

@@ -1,9 +1,3 @@
-CREATE TABLE "bot_presence" (
-	"guild_id" text PRIMARY KEY NOT NULL,
-	"joined_at" timestamp with time zone NOT NULL,
-	"left_at" timestamp with time zone
-);
---> statement-breakpoint
 CREATE TABLE "channel" (
 	"channel_id" text PRIMARY KEY NOT NULL,
 	"guild_id" text NOT NULL,
@@ -17,6 +11,8 @@ CREATE TABLE "channel" (
 CREATE TABLE "guild" (
 	"guild_id" text PRIMARY KEY NOT NULL,
 	"migrated_at" timestamp with time zone,
+	"joined_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"left_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -62,7 +58,6 @@ CREATE TABLE "withdrawal" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "bot_presence" ADD CONSTRAINT "bot_presence_guild_id_guild_guild_id_fk" FOREIGN KEY ("guild_id") REFERENCES "public"."guild"("guild_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "channel" ADD CONSTRAINT "channel_guild_id_guild_guild_id_fk" FOREIGN KEY ("guild_id") REFERENCES "public"."guild"("guild_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "channel_guild_id_idx" ON "channel" USING btree ("guild_id");--> statement-breakpoint
 CREATE INDEX "withdrawal_guild_id_idx" ON "withdrawal" USING btree ("guild_id");--> statement-breakpoint

@@ -1,7 +1,7 @@
-import { botPresence, db, guild, subscription } from '@ap/database';
+import { db, guild, subscription } from '@ap/database';
 import { type APIResponse, fetchUserGuilds, StatusCodes, sendErrorResponse } from '@ap/express';
 import { Data } from 'data/index.js';
-import { and, inArray, isNull } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import express, { type Request, type Response, type Router } from 'express';
 import { isEntitledStatus } from 'services/subscriptions.js';
 import { logger } from 'utils/logger.js';
@@ -73,14 +73,10 @@ export const User: Router = (() => {
 
       // Independent per-guild batches — all keyed only on guildIds, so fetch
       // them concurrently rather than in a waterfall.
-      // MIGRATION: the guild-migration query is removed after migration period.
-      const [presences, guildRows, subscriptions] = await Promise.all([
+      // MIGRATION: drop `migratedAt` from the guild query at sunset.
+      const [guildRows, subscriptions] = await Promise.all([
         db
-          .select({ guildId: botPresence.guildId })
-          .from(botPresence)
-          .where(and(inArray(botPresence.guildId, guildIds), isNull(botPresence.leftAt))),
-        db
-          .select({ guildId: guild.guildId, migratedAt: guild.migratedAt })
+          .select({ guildId: guild.guildId, migratedAt: guild.migratedAt, leftAt: guild.leftAt })
           .from(guild)
           .where(inArray(guild.guildId, guildIds)),
         db
@@ -89,7 +85,7 @@ export const User: Router = (() => {
           .where(inArray(subscription.guildId, guildIds)),
       ]);
 
-      const presentGuildIds = new Set(presences.map(p => p.guildId));
+      const presentGuildIds = new Set(guildRows.filter(g => g.leftAt === null).map(g => g.guildId));
       const migratedGuildIds = new Set(
         guildRows.filter(g => g.migratedAt !== null).map(g => g.guildId)
       );
