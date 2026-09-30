@@ -29,11 +29,11 @@ export const legalDocuments: readonly LegalDocument[] = [
  * `null` renders as an explicit draft marker rather than a plausible-looking date.
  */
 export const legalEffectiveDates: Record<string, string | null> = {
-  '/terms': null,
-  '/privacy': null,
-  '/refunds': null,
-  '/legal': null,
-  '/hr': null,
+  '/terms': '2026-09-28',
+  '/privacy': '2026-09-28',
+  '/refunds': '2026-09-28',
+  '/legal': '2026-09-28',
+  '/hr': '2026-09-28',
 };
 
 /**
@@ -42,7 +42,7 @@ export const legalEffectiveDates: Record<string, string | null> = {
  * with every purchase so we can show *which* wording a given buyer accepted.
  *
  * Deliberately a standalone constant rather than a read of `legalEffectiveDates`:
- * those are `null` until launch, and the acceptance gate has to produce a usable
+ * those can be `null` in draft, and the acceptance gate has to produce a usable
  * version string in draft too. Bump this whenever any of the three changes materially;
  * set it to the effective date when the documents go live.
  *
@@ -52,4 +52,4 @@ export const legalEffectiveDates: Record<string, string | null> = {
  * failure mode without adding any evidential weight. The gate that matters is the
  * server requiring acceptance at all.
  */
-export const LEGAL_DOCUMENTS_VERSION = '2026-09-25';
+export const LEGAL_DOCUMENTS_VERSION = '2026-09-28';
