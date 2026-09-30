@@ -2,7 +2,7 @@
 
 import {
   ArrowRight,
-  CircleCheck,
+  CalendarClock,
   CirclePause,
   Filter,
   type LucideIcon,
@@ -45,7 +45,7 @@ type Question = {
   choices: { value: string; label: string }[];
 };
 
-type Tone = 'danger' | 'warning' | 'success' | 'info';
+type Tone = 'danger' | 'warning' | 'info';
 
 type Outcome = {
   key: string;
@@ -58,14 +58,12 @@ type Outcome = {
 
 const linkActions = {
   migrate: { href: '/dashboard', label: 'Migrate now' },
-  dashboard: { href: '/dashboard', label: 'Open dashboard' },
   premium: { href: '/premium', label: 'See Premium' },
 };
 
 const toneStyles: Record<Tone, string> = {
   danger: 'bg-red-500/10 text-red-400',
   warning: 'bg-amber-500/10 text-amber-400',
-  success: 'bg-emerald-500/10 text-emerald-400',
   info: 'bg-blue-500/10 text-blue-400',
 };
 
@@ -81,17 +79,17 @@ function buildQuestions(limit: number): Question[] {
   return [
     {
       name: 'bot',
-      title: 'Is your server using Auto Publisher 2 or Auto Publisher 3?',
+      title: 'Does your server use Auto Publisher 2 or Auto Publisher 3?',
       choices: yesNo,
     },
     {
       name: 'channels',
-      title: `Does the bot publish in more than ${limit} channels?`,
+      title: `Does Auto Publisher publish in more than ${limit} channels on your server?`,
       choices: [...yesNo, { value: 'unsure', label: 'Not sure' }],
     },
     {
       name: 'premium',
-      title: 'Do you want priority publishing or message filters?',
+      title: 'Are you interested in priority publishing or message filters?',
       choices: yesNo,
     },
   ];
@@ -106,7 +104,7 @@ function buildOutcomes(answers: Answers, limit: number, sunset: string): Outcome
       tone: 'warning',
       icon: TriangleAlert,
       title: 'Switch to the main Auto Publisher bot',
-      body: `Auto Publisher 2 and 3 are retiring on ${sunset}. Add the main bot to your server and pick the channels you want it to publish.`,
+      body: `Auto Publisher 2 and 3 will be retired on ${sunset}. Please add the main Auto Publisher bot to your server and select the channels it should publish in.`,
       action: 'invite',
     });
   } else if (answers.channels === 'yes') {
@@ -114,26 +112,28 @@ function buildOutcomes(answers: Answers, limit: number, sunset: string): Outcome
       key: 'channels',
       tone: 'danger',
       icon: CirclePause,
-      title: `Pick your channels before ${sunset}`,
-      body: `On that date, servers publishing in more than ${limit} channels are paused until someone picks which ones to keep. Choose yours now and your announcements keep going without a break.`,
+      title: `Select your channels before ${sunset}`,
+      body: `On that date, publishing will be paused on servers with more than ${limit} channels until an administrator selects which ones to keep. We strongly recommend migrating now to keep publishing without any interruptions.`,
       action: 'migrate',
     });
   } else if (answers.channels === 'no') {
+    // Under the cap today is not safe: a channel added before the sunset can push the server over it.
     outcomes.push({
       key: 'channels',
-      tone: 'success',
-      icon: CircleCheck,
-      title: 'You’re all set',
-      body: `Your server switches over by itself on ${sunset} and keeps publishing as usual. You can also migrate sooner from the dashboard to pick your channels yourself.`,
+      tone: 'warning',
+      icon: CalendarClock,
+      title: `Migrate before ${sunset}`,
+      body: `Your server is currently within the ${limit}-channel limit, but any announcement channel added before that date counts toward it. We strongly recommend migrating now to keep publishing without any interruptions.`,
+      action: 'migrate',
     });
   } else {
     outcomes.push({
       key: 'channels',
-      tone: 'info',
+      tone: 'warning',
       icon: SearchCheck,
-      title: 'Check your channel count',
-      body: `Run /ap overview in your server or open the dashboard to see how many channels the bot publishes in. If it’s more than ${limit}, pick your channels before ${sunset}.`,
-      action: 'dashboard',
+      title: `Migrate before ${sunset}`,
+      body: `Migrating lists every channel Auto Publisher publishes in, so you can review and select them in one step. On ${sunset}, publishing will be paused on servers with more than ${limit} channels until an administrator selects which ones to keep.`,
+      action: 'migrate',
     });
   }
 
@@ -142,8 +142,8 @@ function buildOutcomes(answers: Answers, limit: number, sunset: string): Outcome
       key: 'premium',
       tone: 'info',
       icon: Filter,
-      title: 'Unlock Premium after migration',
-      body: 'Once your server is migrated, you can upgrade to get unlimited channels, message filters and priority publishing.',
+      title: 'Upgrade to Premium after migrating',
+      body: 'Once your server is migrated, you can upgrade to Premium for unlimited channels, message filters and priority publishing.',
       action: 'premium',
     });
   }
@@ -218,7 +218,7 @@ export function MigrationCheck() {
             tabIndex={-1}
             className="text-base font-medium text-white outline-none"
           >
-            Here is what to expect
+            Recommended next steps
           </h3>
           <ul className="flex flex-col gap-3">
             {buildOutcomes(answers, freeChannelLimit, sunset).map(outcome => (
@@ -284,7 +284,7 @@ export function MigrationCheck() {
           <QuestionnaireActions>
             <QuestionnairePrevious />
             <QuestionnaireNext />
-            <QuestionnaireSubmit>See what happens</QuestionnaireSubmit>
+            <QuestionnaireSubmit>See results</QuestionnaireSubmit>
           </QuestionnaireActions>
         </Questionnaire>
       )}

@@ -21,6 +21,7 @@ import { HowPublishingWorks } from '@/components/dashboard/how-publishing-works'
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { NoticeAction, NoticeStrip } from '@/components/dashboard/notice-strip';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { useLegacySunsetLabel } from '@/components/site-config-context';
 import { Switch } from '@/components/ui/switch';
 import { disableChannel, enableChannel } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
@@ -72,6 +73,7 @@ export function ChannelConfig({
   );
   // MIGRATION: removed at sunset with the legacy strip.
   const [migrateOpen, setMigrateOpen] = useState(false);
+  const sunsetLabel = useLegacySunsetLabel();
 
   const handleToggleChannel = (
     channelId: string,
@@ -216,7 +218,7 @@ export function ChannelConfig({
           tone="amber"
           actions={<NoticeAction onClick={() => setMigrateOpen(true)}>Migrate now</NoticeAction>}
         >
-          Legacy mode publishes every announcement channel. Migrate to control channels one by one.
+          {Copy.legacy.body(sunsetLabel)}
         </NoticeStrip>
       )}
 

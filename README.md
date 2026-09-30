@@ -32,7 +32,7 @@ Need help? Join the [support server](https://discord.gg/xcEeJkdQX8).
 
 - Discord allows 10 published messages per hour per channel, for bots and people alike.
 - A channel with heavy traffic (chat, moderation logs) should not be an announcement channel.
-- Servers set up before v7 keep publishing every announcement channel until they pick channels. The [migration guide](https://auto-publisher.gg/migration) explains what changes.
+- Servers set up before v7 run in legacy mode, which ends on December 31, 2027. They must migrate before then; the [migration guide](https://auto-publisher.gg/migration) explains how.
 
 ## Self-hosting
 

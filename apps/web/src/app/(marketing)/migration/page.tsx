@@ -207,8 +207,8 @@ export default function MigrationPage() {
               {sections.yourServer.title}
             </h2>
             <p className="text-slate-400 max-w-2xl mx-auto">
-              Answer a few quick questions to see what changes on {sunsetLabel}, and whether you
-              need to do anything.
+              Answer a few questions to find out how the changes on {sunsetLabel} affect your
+              server.
             </p>
           </div>
           <MigrationCheck />
