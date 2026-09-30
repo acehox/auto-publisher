@@ -9,7 +9,11 @@ import express, { type Router } from 'express';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
-import { GuildReqSchema, PublishStatePushReqSchema } from 'utils/validations.js';
+import {
+  GuildReqSchema,
+  JoinDatesPushReqSchema,
+  PublishStatePushReqSchema,
+} from 'utils/validations.js';
 
 export const Internal: Router = (() => {
   const router = express.Router();
@@ -37,6 +41,27 @@ export const Internal: Router = (() => {
       } as APIResponse);
     }
   );
+
+  /**
+   * POST /internal/guilds/joined-at
+   * Join dates from the bot's gateway cache, pushed at startup — Discord's REST
+   * guild list carries no `joined_at`. Statistics only.
+   */
+  router.post('/guilds/joined-at', validateRequest(JoinDatesPushReqSchema), (req, res) => {
+    const entries = req.body.guilds.map(g => ({
+      guildId: g.guildId,
+      joinedAt: new Date(g.joinedAt),
+    }));
+
+    void Services.Guilds.recordJoinDates(entries).catch(error =>
+      logger.error(error, `Join-date write failed for ${entries.length} guilds`)
+    );
+
+    res.status(StatusCodes.ACCEPTED).json({
+      status: StatusCodes.ACCEPTED,
+      message: 'Join dates accepted',
+    } as APIResponse);
+  });
 
   /**
    * POST /internal/guild/:guildId/channels/invalidate

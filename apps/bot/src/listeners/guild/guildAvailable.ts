@@ -4,10 +4,10 @@ import { Events, type Guild } from 'discord.js';
 import { Services } from 'services/index.js';
 
 @ApplyOptions<Listener.Options>({
-  event: Events.GuildCreate,
+  event: Events.GuildAvailable,
 })
-export class GuildCreateListener extends Listener {
+export class GuildAvailableListener extends Listener {
   public async run(guild: Guild) {
-    await Services.Guild.register(guild);
+    await Services.Guild.registerIfPendingJoin(guild);
   }
 }

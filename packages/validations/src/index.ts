@@ -95,3 +95,6 @@ export const SetChannelFiltersSchema = z.object({
 export type Filter = z.infer<typeof FilterSchema>;
 export type CreateFilter = z.infer<typeof CreateFilterSchema>;
 export type SetChannelFilters = z.infer<typeof SetChannelFiltersSchema>;
+
+/** Guilds per bot join-date push; sized to stay well under express.json()'s 100kb default. */
+export const MAX_JOIN_DATES_PER_PUSH = 500;

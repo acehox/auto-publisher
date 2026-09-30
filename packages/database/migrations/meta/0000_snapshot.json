@@ -1,5 +1,5 @@
 {
-  "id": "3c46f858-01ab-4435-b133-3dbe888404ea",
+  "id": "73d8d6c4-ca6e-4e93-b6b9-85bb4e26206b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -107,6 +107,13 @@
         },
         "joined_at": {
           "name": "joined_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "first_joined_at": {
+          "name": "first_joined_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,

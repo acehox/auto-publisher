@@ -1,6 +1,7 @@
 import {
   CreateFilterSchema,
   FilterMatchModeSchema,
+  MAX_JOIN_DATES_PER_PUSH,
   SetChannelFiltersSchema,
   Validations,
 } from '@ap/validations';
@@ -44,6 +45,16 @@ export const GuildRegisterReqSchema = z.object({
     // Live announcement channels from the GUILD_CREATE payload; absent = no prune.
     // 500 = Discord's per-guild channel cap
     announcementChannelIds: z.array(Validations.snowflakeId).max(500).optional(),
+    // Discord's `joined_at`; optional so a bot deployed out of step still registers
+    joinedAt: z.iso.datetime().optional(),
+  }),
+});
+
+export const JoinDatesPushReqSchema = z.object({
+  body: z.object({
+    guilds: z
+      .array(z.object({ guildId: Validations.snowflakeId, joinedAt: z.iso.datetime() }))
+      .max(MAX_JOIN_DATES_PER_PUSH),
   }),
 });
 

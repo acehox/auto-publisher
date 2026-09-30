@@ -1,13 +1,29 @@
+import { MAX_JOIN_DATES_PER_PUSH } from '@ap/validations';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
-import { ChannelType, type Client, Events, type NewsChannel } from 'discord.js';
+import { Data } from 'data/index.js';
+import { type Client, Events } from 'discord.js';
 import { setBotInvite } from 'lib/constants/index.js';
 import { hydrateEmojis } from 'lib/emojis.js';
 import { Services } from 'services/index.js';
+import { getAnnouncementChannels } from 'utils/channels.js';
 import { logger } from 'utils/logger.js';
 
 // Cap concurrent per-guild pushes so a large shard doesn't burst the backend.
 const SWEEP_CONCURRENCY = 10;
+
+// `joined_at` comes from GUILD_CREATE because Discord's REST guild list has none.
+const pushJoinDates = async (client: Client): Promise<void> => {
+  // An unavailable (outage) guild is unpatched: `joinedAt` is an Invalid Date.
+  const guilds = [...client.guilds.cache.values()]
+    .filter(g => g.available)
+    .map(g => ({ guildId: g.id, joinedAt: g.joinedAt.toISOString() }));
+  for (let i = 0; i < guilds.length; i += MAX_JOIN_DATES_PER_PUSH) {
+    await Data.API.Backend.pushJoinDates(guilds.slice(i, i + MAX_JOIN_DATES_PER_PUSH)).catch(err =>
+      logger.warn({ event: 'guilds.join_dates_batch_failed', err }, 'Join-date batch push failed')
+    );
+  }
+};
 
 /**
  * Seed the publish-state cache (ADR 0008) for every guild this shard owns.
@@ -16,20 +32,17 @@ const SWEEP_CONCURRENCY = 10;
  * backend's write-back REST path.
  */
 const sweepPublishState = async (client: Client): Promise<void> => {
-  const guilds = [...client.guilds.cache.values()];
+  // An unavailable guild's channel cache is empty, and a `full` push of nothing
+  // would wipe its stored publish state.
+  const guilds = [...client.guilds.cache.values()].filter(g => g.available);
   for (let i = 0; i < guilds.length; i += SWEEP_CONCURRENCY) {
     await Promise.all(
-      guilds.slice(i, i + SWEEP_CONCURRENCY).map(guild => {
-        const announcementChannels = [
-          ...guild.channels.cache
-            .filter((c): c is NewsChannel => c.type === ChannelType.GuildAnnouncement)
-            .values(),
-        ];
-        return Services.Permissions.syncChannels(guild, announcementChannels, {
+      guilds.slice(i, i + SWEEP_CONCURRENCY).map(guild =>
+        Services.Permissions.syncChannels(guild, getAnnouncementChannels(guild), {
           full: true,
           clearBlocked: false,
-        });
-      })
+        })
+      )
     );
   }
 };
@@ -52,6 +65,10 @@ export class ReadyListener extends Listener {
     );
 
     this.container.client.cluster.triggerReady();
+
+    void pushJoinDates(this.container.client).catch(err =>
+      logger.warn({ event: 'guilds.join_dates_failed', err }, 'Join-date startup push failed')
+    );
 
     void sweepPublishState(this.container.client).catch(err =>
       logger.warn({ event: 'permissions.sweep_failed', err }, 'Publish-state startup sweep failed')

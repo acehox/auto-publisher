@@ -4,7 +4,7 @@ import { RedisKeys } from '@ap/redis';
 import { FilterMatchMode } from '@ap/validations';
 import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
-import { and, count, eq, inArray, isNotNull, isNull, lt, notInArray, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, isNull, lt, notInArray, or, sql } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
 import { Discord } from './discord.js';
 import { Plans } from './plans.js';
@@ -227,31 +227,64 @@ const seedOnboardingBoost = async (guildId: Snowflake): Promise<void> => {
   }
 };
 
+const earliestJoin = sql`LEAST(${guild.firstJoinedAt}, excluded.first_joined_at)`;
+
 /**
- * Upsert the guild with the bot present. A re-invite gets a fresh joinedAt; a
- * duplicate registration while already active keeps the original one (the
- * reconciliation join-race guard keys off joinedAt).
- * @param migratedAt applies to a new row only — an existing guild keeps its own
+ * Without Discord's `joinedAt`, a re-invite gets now and a duplicate
+ * registration keeps the stored value — the reconcile join-race guard keys off it.
+ * @param options.migratedAt applies to a new row only — an existing guild keeps its own
  * @returns the guild's resulting `migratedAt`
  */
-// MIGRATION: at sunset drop the `migratedAt` param and the returned value.
+// MIGRATION: at sunset drop `migratedAt` from the options and the returned value.
 const activatePresence = async (
   guildId: Snowflake,
-  migratedAt: Date | null = null
+  { migratedAt = null, joinedAt }: { migratedAt?: Date | null; joinedAt?: Date } = {}
 ): Promise<Date | null> => {
+  const joined = joinedAt ?? new Date();
   const [row] = await db
     .insert(guild)
-    .values({ guildId, migratedAt, joinedAt: new Date() })
+    .values({ guildId, migratedAt, joinedAt: joined, firstJoinedAt: joined })
     .onConflictDoUpdate({
       target: guild.guildId,
       set: {
-        joinedAt: sql`CASE WHEN ${guild.leftAt} IS NULL THEN ${guild.joinedAt} ELSE now() END`,
+        joinedAt: joinedAt
+          ? joinedAt
+          : sql`CASE WHEN ${guild.leftAt} IS NULL THEN ${guild.joinedAt} ELSE now() END`,
+        firstJoinedAt: earliestJoin,
         leftAt: null,
         updatedAt: new Date(),
       },
     })
     .returning({ migratedAt: guild.migratedAt });
   return row?.migratedAt ?? null;
+};
+
+/**
+ * Update-only: inserting from a startup snapshot would revive a guild kicked
+ * after it (ADR 0005). An unknown guild gets its date on the next push after
+ * the reconcile inserts it. Unchanged rows are skipped, so a restart writes nothing.
+ */
+const recordJoinDates = async (
+  entries: { guildId: Snowflake; joinedAt: Date }[]
+): Promise<void> => {
+  if (entries.length === 0) return;
+  const rows = entries.map(e => sql`(${e.guildId}, ${e.joinedAt.toISOString()}::timestamptz)`);
+  await db
+    .update(guild)
+    .set({
+      joinedAt: sql`pushed.joined_at`,
+      firstJoinedAt: sql`LEAST(${guild.firstJoinedAt}, pushed.joined_at)`,
+    })
+    .from(sql`(VALUES ${sql.join(rows, sql`, `)}) AS pushed(guild_id, joined_at)`)
+    .where(
+      and(
+        eq(guild.guildId, sql`pushed.guild_id`),
+        or(
+          sql`${guild.joinedAt} <> pushed.joined_at`,
+          sql`${guild.firstJoinedAt} > pushed.joined_at`
+        )
+      )
+    );
 };
 
 /**
@@ -266,16 +299,18 @@ const activatePresence = async (
  * publishes, not whether it is there.
  * @param guildId ID of the guild
  * @param announcementChannelIds live announcement channels from the GUILD_CREATE payload
+ * @param joinedAt Discord's `joined_at` from the same payload
  */
 // MIGRATION: at sunset every guild is allowlist-model — drop the `migratedAt`
 // argument below and make the two `migratedAt` guards unconditional (a
 // re-invited guild always rebuilds its channel cache + serving).
 const registerNewGuild = async (
   guildId: Snowflake,
-  announcementChannelIds?: Snowflake[]
+  announcementChannelIds?: Snowflake[],
+  joinedAt?: Date
 ): Promise<void> => {
   try {
-    const migratedAt = await activatePresence(guildId, new Date());
+    const migratedAt = await activatePresence(guildId, { migratedAt: new Date(), joinedAt });
 
     // The bot receives no gateway events while kicked, so a channel created or
     // deleted during the absent window never fired the observe-based eviction.
@@ -479,6 +514,7 @@ export const Guilds = {
   filterPresent,
   purge,
   activatePresence,
+  recordJoinDates,
   registerNewGuild,
   migrate,
   syncMigratedGuildCache,

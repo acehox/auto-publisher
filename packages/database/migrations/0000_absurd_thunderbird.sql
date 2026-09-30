@@ -12,6 +12,7 @@ CREATE TABLE "guild" (
 	"guild_id" text PRIMARY KEY NOT NULL,
 	"migrated_at" timestamp with time zone,
 	"joined_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"first_joined_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"left_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL

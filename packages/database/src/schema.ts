@@ -16,10 +16,12 @@ export const guild = pgTable('guild', {
   // NULL = legacy guild (auto-publishes all announcement channels, pre-v7 model).
   // MIGRATION: dropped together with the `migrated:` Redis keys at sunset.
   migratedAt: timestamp('migrated_at', { withTimezone: true }),
-  // Bot membership, as Discord's GUILD_CREATE `joined_at` means it. leftAt is a soft
-  // delete so config survives a re-invite — reconciliation purges the guild 30 days
-  // after the bot left. joinedAt is re-stamped on re-invite, so it is not createdAt.
+  // joinedAt: Discord's `joined_at`, so it resets on re-invite; a reconcile/heal insert
+  // holds the sweep time until the bot reports it. firstJoinedAt only moves back — for
+  // pre-v7 guilds it is the join Discord reported at deploy. leftAt: soft delete so
+  // config survives a re-invite; the reconcile purges 30 days after it.
   joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
+  firstJoinedAt: timestamp('first_joined_at', { withTimezone: true }).defaultNow().notNull(),
   leftAt: timestamp('left_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true })

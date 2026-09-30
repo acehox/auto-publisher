@@ -17,20 +17,19 @@ const request = async (path: string, init?: RequestInit): Promise<Response> => {
   return response;
 };
 
-const LIFECYCLE_RETRY_ATTEMPTS = 3;
+const RETRY_ATTEMPTS = 3;
 
-// Guild lifecycle events are one-shot — Discord never re-emits a missed join
-// or leave, and a lost call means wrong presence until the next reconcile
-// sweep — so transient failures (network, 5xx) are retried before giving up
-const lifecycleRequest = async (path: string, init: RequestInit): Promise<Response> => {
+// One-shot calls: Discord never re-emits a missed join or leave, and join dates
+// are pushed once per startup, so transient failures (network, 5xx) are retried
+const requestWithRetry = async (path: string, init: RequestInit): Promise<Response> => {
   for (let attempt = 1; ; attempt++) {
     try {
       const response = await request(path, init);
-      if (response.ok || response.status < 500 || attempt >= LIFECYCLE_RETRY_ATTEMPTS) {
+      if (response.ok || response.status < 500 || attempt >= RETRY_ATTEMPTS) {
         return response;
       }
     } catch (error) {
-      if (attempt >= LIFECYCLE_RETRY_ATTEMPTS) throw error;
+      if (attempt >= RETRY_ATTEMPTS) throw error;
       logger.warn(error, `Backend request errored: ${init.method} ${path} (attempt ${attempt})`);
     }
     await sleep(secToMs(2 * attempt));
@@ -72,7 +71,7 @@ const getGuildChannels = async (guildId: Snowflake) => {
 };
 
 const deleteGuild = async (guildId: Snowflake) => {
-  return lifecycleRequest(`/guild/${guildId}`, {
+  return requestWithRetry(`/guild/${guildId}`, {
     method: RequestMethod.Delete,
   });
 };
@@ -80,13 +79,27 @@ const deleteGuild = async (guildId: Snowflake) => {
 // Register guild on join/re-invite: upsert guild row, activate presence, prune
 // config for channels deleted while the bot was away, rebuild derived cache,
 // and apply the guild's plan to its channels
-const registerNewGuild = async (guildId: Snowflake, announcementChannelIds: Snowflake[]) => {
-  return lifecycleRequest(`/guild/${guildId}/new`, {
+const registerNewGuild = async (
+  guildId: Snowflake,
+  announcementChannelIds: Snowflake[],
+  joinedAt: Date
+) => {
+  return requestWithRetry(`/guild/${guildId}/new`, {
     method: RequestMethod.Post,
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ announcementChannelIds }),
+    body: JSON.stringify({ announcementChannelIds, joinedAt: joinedAt.toISOString() }),
+  });
+};
+
+const pushJoinDates = async (guilds: { guildId: Snowflake; joinedAt: string }[]) => {
+  return requestWithRetry('/internal/guilds/joined-at', {
+    method: RequestMethod.Post,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ guilds }),
   });
 };
 
@@ -181,6 +194,7 @@ export const Backend = {
   getGuildChannels,
   deleteGuild,
   registerNewGuild,
+  pushJoinDates,
   pushChannelPermissions,
   invalidateGuildChannels,
   invalidateGuildRoles,
