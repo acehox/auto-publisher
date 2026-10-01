@@ -3,8 +3,10 @@ import {
   Filter,
   Hash,
   LayoutDashboard,
+  type LucideIcon,
   MessageCircle,
   ShieldCheck,
+  SquareSlash,
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -13,6 +15,7 @@ import { MigrationCheck } from '@/components/marketing/migration-check';
 import { Button } from '@/components/ui/button';
 import { legacySunsetLabel, links } from '@/lib/constants';
 import { getSiteConfig } from '@/lib/site-config';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Migration Guide | Auto Publisher',
@@ -27,29 +30,42 @@ const sections = {
   howToMigrate: { id: 'how-to-migrate', title: 'How to migrate' },
 };
 
-const whatsNew = [
+const whatsNew: { icon: LucideIcon; title: string; description: ReactNode; wide?: boolean }[] = [
   {
-    icon: Hash,
-    title: 'Choose which channels publish',
-    description:
-      'You now pick exactly which announcement channels auto-publish, instead of every one of them at once.',
+    icon: SquareSlash,
+    title: 'Slash commands',
+    description: (
+      <>
+        Control everything from Discord. Use{' '}
+        <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-200">/help</code> to get
+        started.
+      </>
+    ),
   },
   {
     icon: LayoutDashboard,
     title: 'A new web dashboard',
     description:
-      'Manage every server from the website. Just sign in with Discord and configure things in a few clicks.',
-  },
-  {
-    icon: Filter,
-    title: 'Premium, if you want more',
-    description: 'Premium adds unlimited channels, message filters, and priority publishing.',
+      'Prefer a visual interface? Manage every server from the website. Just sign in with Discord and configure things in a few clicks.',
   },
   {
     icon: ShieldCheck,
     title: 'More reliable publishing',
     description:
       "Messages no longer go missing when Discord is busy, instead they wait their turn and then publish. The only limit left is Discord's own cap on how often a channel can publish.",
+  },
+  {
+    icon: Hash,
+    title: 'Choose which channels publish',
+    description:
+      'Pick exactly which announcement channels auto-publish and monitor them from one place, instead of publishing every one of them at once.',
+  },
+  {
+    icon: Filter,
+    title: 'Premium, if you want more',
+    description:
+      'Message filters and priority publishing, two of the most requested features, plus unlimited channels. More are on the way.',
+    wide: true,
   },
 ];
 
@@ -85,7 +101,7 @@ const steps: { title: string; description: ReactNode }[] = [
 ];
 
 export default function MigrationPage() {
-  const { isPublicInstance, legacySunsetDate } = getSiteConfig();
+  const { isPublicInstance, legacySunsetDate, freeChannelLimit } = getSiteConfig();
   const sunsetLabel = legacySunsetLabel(legacySunsetDate);
   // The server check is about the free cap, the retiring bots and Premium, none of which a self-host has.
   const contents = [
@@ -111,7 +127,8 @@ export default function MigrationPage() {
             </span>
           </h1>
           <p className="text-lg sm:text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
-            What is changing and how to keep your announcements flowing?
+            We rebuilt Auto Publisher from the ground up. Here is what is changing, why, and what
+            you need to do.
           </p>
           <div className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-5 py-3">
             <span className="text-base sm:text-lg text-amber-200">
@@ -152,10 +169,11 @@ export default function MigrationPage() {
         </div>
         <div className="space-y-4 text-slate-300 leading-relaxed">
           <p>
-            For years, Auto Publisher simply published every announcement channel automatically.
-            That worked when we were small, but as the bot grew to thousands of servers, Discord
-            {'’'}s rate limits made that all-or-nothing approach fragile. Busy servers could hit
-            those limits and see messages delayed or missed entirely.
+            For years, Auto Publisher simply published every announcement channel automatically,
+            based on permissions alone. That worked when we were small, but as the bot grew to
+            thousands of servers, many admins found that approach confusing, and Discord{'’'}s rate
+            limits made it fragile. Busy servers could hit those limits and see messages delayed or
+            missed entirely.
           </p>
           <p>
             We have rebuilt how publishing works from the ground up. It is faster, handles Discord
@@ -183,7 +201,10 @@ export default function MigrationPage() {
           {whatsNew.map(feature => (
             <div
               key={feature.title}
-              className="flex items-start gap-4 rounded-xl border border-slate-800 bg-slate-900/50 px-5 py-5 backdrop-blur-sm"
+              className={cn(
+                'flex items-start gap-4 rounded-xl border border-slate-800 bg-slate-900/50 px-5 py-5 backdrop-blur-sm',
+                feature.wide && 'sm:col-span-2'
+              )}
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
                 <feature.icon className="h-5 w-5 text-blue-400" />
@@ -207,8 +228,7 @@ export default function MigrationPage() {
               {sections.yourServer.title}
             </h2>
             <p className="text-slate-400 max-w-2xl mx-auto">
-              Answer a few questions to find out how the changes on {sunsetLabel} affect your
-              server.
+              Answer a few questions to find out what this means for your server.
             </p>
           </div>
           <MigrationCheck />
@@ -254,7 +274,7 @@ export default function MigrationPage() {
           You can run{' '}
           <code className="rounded bg-slate-800 px-1.5 py-0.5 text-slate-200">/ap enable</code> in a
           channel to migrate that channel without leaving your server. Your server is automatically
-          migrated as soon as you enable at first channel.
+          migrated as soon as you enable its first channel.
         </p>
       </section>
 
