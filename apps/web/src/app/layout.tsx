@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   keywords: ['Discord', 'bot', 'announcements', 'auto publish', 'Discord bot'],
   authors: [{ name: 'acehox' }],
   openGraph: { siteName: 'Auto Publisher' },
+  // X falls back to `og:image` (from `opengraph-image.png`) but shows it as a small thumbnail
+  // unless told to use the large card.
+  twitter: { card: 'summary_large_image' },
 };
 
 // Colours the edge of Discord's link preview and the mobile browser bar; Tailwind blue-500, the
