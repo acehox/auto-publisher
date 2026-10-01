@@ -1,4 +1,5 @@
 import { isPublicInstance } from '@ap/config';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { SiteShell } from '@/components/layout/site-shell';
@@ -16,6 +17,11 @@ import { SiteShell } from '@/components/layout/site-shell';
  * so a public image built in CI without it would 404 checkout in production.
  */
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Checkout',
+  robots: { index: false, follow: false },
+};
 
 export default function CheckoutLayout({
   children,

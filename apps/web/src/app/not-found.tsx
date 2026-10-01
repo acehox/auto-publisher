@@ -7,7 +7,7 @@ import { SiteShell } from '@/components/layout/site-shell';
 import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
-  title: 'Page not found | Auto Publisher',
+  title: { absolute: 'Page not found | Auto Publisher' },
   robots: { index: false, follow: false },
 };
 

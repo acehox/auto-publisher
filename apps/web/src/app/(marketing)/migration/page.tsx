@@ -18,7 +18,8 @@ import { getSiteConfig } from '@/lib/site-config';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'Migration Guide | Auto Publisher',
+  title: 'Migration Guide',
+  alternates: { canonical: '/migration' },
   description:
     'Auto Publisher is entering a New Era. See what is changing and follow a few quick steps to keep your announcements publishing without interruption.',
 };
@@ -101,7 +102,7 @@ const steps: { title: string; description: ReactNode }[] = [
 ];
 
 export default function MigrationPage() {
-  const { isPublicInstance, legacySunsetDate, freeChannelLimit } = getSiteConfig();
+  const { isPublicInstance, legacySunsetDate } = getSiteConfig();
   const sunsetLabel = legacySunsetLabel(legacySunsetDate);
   // The server check is about the free cap, the retiring bots and Premium, none of which a self-host has.
   const contents = [

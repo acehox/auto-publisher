@@ -12,8 +12,9 @@ import type { DiscordGuild } from '@/lib/api/types';
 import { auth } from '@/lib/auth';
 
 export const metadata: Metadata = {
-  title: 'Dashboard | Auto Publisher',
+  title: 'Dashboard',
   description: 'Manage your Discord servers, channels, and subscriptions.',
+  robots: { index: false, follow: false },
 };
 
 /**

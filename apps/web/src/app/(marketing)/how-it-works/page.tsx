@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { links } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  title: 'How It Works | Auto Publisher',
+  title: 'How It Works',
+  alternates: { canonical: '/how-it-works' },
   description:
     'Everything you need to set up Auto Publisher and keep your Discord announcements flowing — from your first invite to commands, permissions, and advanced filters.',
 };

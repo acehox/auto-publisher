@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'Status | Auto Publisher',
+  title: 'Status',
   description: 'Real-time monitoring of Auto Publisher bot performance and service health.',
 };
 

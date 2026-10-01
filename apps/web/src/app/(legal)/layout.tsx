@@ -9,7 +9,12 @@ import { legalDocuments } from '@/lib/legal/documents';
  * the documents cross-reference instead of duplicating clauses. The imprint block, for
  * instance, is stated once at /legal — ZEIT cl. 6 requires it be permanently accessible,
  * which a referenced ungated page satisfies.
+ *
+ * Rendered per request: each document's canonical URL resolves against
+ * `WEB_APP_ORIGIN`, which a build-time prerender would freeze at `localhost`.
  */
+export const dynamic = 'force-dynamic';
+
 export default function LegalLayout({
   children,
 }: Readonly<{

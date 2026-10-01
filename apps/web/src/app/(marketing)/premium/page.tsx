@@ -6,8 +6,10 @@ import { values } from '@/lib/constants';
 import { formatNumberFull } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'Premium | Auto Publisher',
-  description: 'Unlock unlimited channels and advanced controls for your server.',
+  title: 'Premium',
+  description:
+    'Auto Publisher Premium gives your Discord server unlimited announcement channels, message filters for each channel, and priority publishing.',
+  alternates: { canonical: '/premium' },
 };
 
 export default function PremiumPage() {
