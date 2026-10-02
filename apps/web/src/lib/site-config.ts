@@ -36,6 +36,11 @@ export type SiteConfig = {
   paddleEnvironment: 'sandbox' | 'production';
 };
 
+/** Public origin of this deployment, the base for every absolute URL in page metadata. */
+export function getSiteUrl(): URL {
+  return new URL(env.WEB_APP_ORIGIN);
+}
+
 /**
  * Resolve deployment config on the server, once per render.
  *

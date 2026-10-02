@@ -1,8 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { SiteConfigProvider } from '@/components/site-config-context';
 import { ToastProvider } from '@/components/ui/toast';
-import { getSiteConfig } from '@/lib/site-config';
+import { getSiteConfig, getSiteUrl } from '@/lib/site-config';
 import './globals.css';
 
 const geistSans = Geist({
@@ -16,12 +16,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Auto Publisher | Automate Your Discord Announcements Easily',
+  metadataBase: getSiteUrl(),
+  title: {
+    default: 'Auto Publisher | Automate Your Discord Announcements Easily',
+    template: '%s | Auto Publisher',
+  },
   applicationName: 'Auto Publisher',
   description:
     'Auto Publisher automatically publishes messages in your announcement channels, ensuring they reach your followers automatically. Trusted by 17,000+ Discord servers.',
   keywords: ['Discord', 'bot', 'announcements', 'auto publish', 'Discord bot'],
   authors: [{ name: 'acehox' }],
+  openGraph: { siteName: 'Auto Publisher' },
+  // X falls back to `og:image` (from `opengraph-image.png`) but shows it as a small thumbnail
+  // unless told to use the large card.
+  twitter: { card: 'summary_large_image' },
+};
+
+// Colours the edge of Discord's link preview and the mobile browser bar; Tailwind blue-500, the
+// site's `--primary`.
+export const viewport: Viewport = {
+  themeColor: '#3b82f6',
 };
 
 export default function RootLayout({

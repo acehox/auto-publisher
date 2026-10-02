@@ -10,8 +10,8 @@ import { SiteShell } from '@/components/layout/site-shell';
  * page would bake in an empty client id and render no invite button, for good —
  * defeating the point of keeping the dashboard free of build-time config.
  *
- * Scoped to this route group deliberately: the legal pages carry no runtime
- * config and stay static, and the dashboard is already dynamic.
+ * The legal pages are dynamic for the same reason: their canonical URL is built
+ * from `WEB_APP_ORIGIN`, so prerendered they would point at `localhost`.
  */
 export const dynamic = 'force-dynamic';
 

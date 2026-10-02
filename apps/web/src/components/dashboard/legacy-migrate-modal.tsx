@@ -14,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { migrateGuild } from '@/lib/api/actions';
 import { signInOnAuthExpired } from '@/lib/api/client-auth';
 import type { GuildChannel } from '@/lib/api/types';
@@ -89,7 +90,10 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
         </DialogHeader>
 
         {channels.length > 0 ? (
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-slate-800">
+          <ScrollArea
+            className="flex min-h-0 flex-1 flex-col rounded-lg border border-slate-800"
+            viewportClassName="min-h-0 flex-1"
+          >
             {channels.map(channel => {
               const checked = selected.has(channel.channelId);
               return (
@@ -120,7 +124,7 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
                 </button>
               );
             })}
-          </div>
+          </ScrollArea>
         ) : (
           <p className="py-4 text-center text-xs text-slate-500">
             No announcement channels found. You can still migrate now and enable channels later.

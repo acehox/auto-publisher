@@ -17,7 +17,6 @@ const quickLinks = [
 
 const supportLinks = [
   { href: links.discordSupportServer, label: 'Support Server' },
-  { href: '/legal#contact', label: 'Contact' },
 ];
 
 export function Footer() {

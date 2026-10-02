@@ -34,7 +34,7 @@ export const retention = {
 
   /**
    * Ceiling for every short-lived server-side cache of Discord data: the profile and
-   * guild-list caches and their last-known-good fallbacks (Redis DB 4,
+   * guild-list caches and their last-known-good fallbacks (Redis `DashboardAuth`,
    * packages/express/src/discordUserApi.ts), the rate-limit counters
    * (apps/backend/src/index.ts) and the in-process username cache
    * (apps/backend/src/services/discord.ts). The longest is currently 1 hour. Raising
@@ -42,10 +42,10 @@ export const retention = {
    */
   shortLivedCache: 'no longer than 1 hour',
 
-  /** Redis DB 13 `publish_state:{guildId}`. apps/backend/src/services/publishState.ts. */
+  /** Redis `Guilds` `channel_permissions:{guildId}`. apps/backend/src/services/publishState.ts. */
   publishState: '14 days',
 
-  /** Redis DB 6 `paddle_event:{eventId}`. apps/backend/src/app/routes/api/webhooks.ts. */
+  /** Redis `PaddleWebhookDedupe` `paddle_event:{eventId}`. apps/backend/src/app/routes/api/webhooks.ts. */
   webhookDedupe: '24 hours',
 
   /**
