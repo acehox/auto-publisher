@@ -9,7 +9,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@discordjs/rest": "^2.4.0",
+    "@discordjs/rest": "^2.6.3",
     "bullmq": "^5.13.0",
     "discord-api-types": "^0.37.110",
     "dotenv": "^16.4.5",
