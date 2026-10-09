@@ -95,16 +95,15 @@ web (Paddle.js overlay)                    premium backend
 
 ### Local tunnel for webhooks
 
-Paddle sandbox needs a public HTTPS URL to deliver webhooks. The dev compose exposes the backend on `localhost:3101`:
+Paddle sandbox needs a public HTTPS URL to deliver webhooks. The dev compose runs a `cloudflared` container on its own locally-managed tunnel; `dev:start` brings it up with everything else. Its routes are in `scripts/bot/dev/cloudflared.yml` — `^/webhooks/paddle$` → `backend:8081`, everything else 404 — so it never reaches the unauthenticated internal API on `8080`.
 
-```bash
-# either
-ngrok http 3101
-# or
-cloudflared tunnel --url http://localhost:3101
-```
+One-time setup:
 
-Point the notification destination at `https://<tunnel-host>/webhooks/paddle`. Re-update it whenever the tunnel URL changes (or use a named/reserved tunnel).
+1. `cloudflared tunnel login`, then `cloudflared tunnel create <name>` and `cloudflared tunnel route dns <name> <dev-hostname>`.
+2. Add the token to `.env.local`: `TUNNEL_TOKEN = "<output of cloudflared tunnel token <name>>"`.
+3. Point the sandbox notification destination at `https://<dev-hostname>/webhooks/paddle`.
+
+Use a different tunnel from prod: one token on two connectors splits traffic between them.
 
 ### Environment
 
@@ -157,7 +156,7 @@ PADDLE_CLIENT_TOKEN = "test_..."              # client-side token; runtime, not 
 3. Create a live API key and a live client-side token (`live_...`). Same permissions as the sandbox key
    in §1 step 3 — **adjustments included**, or withdrawal refunds fail in production.
 4. **Checkout settings**: set default payment link to `https://auto-publisher.gg/checkout`.
-5. Notification destination: `https://<api-host>/webhooks/paddle` with the same event list; copy the live secret.
+5. Notification destination: `https://auto-publisher.gg/webhooks/paddle` with the same event list; copy the live secret. Keep **one** active live destination: the SDK verifies against a single secret.
    **Re-check that `adjustment.created` and `adjustment.updated` are ticked** — event selections are
    per destination and do not carry over from sandbox, and the omission is invisible in production
    exactly as it is in sandbox (§1 step 5).
@@ -165,7 +164,27 @@ PADDLE_CLIENT_TOKEN = "test_..."              # client-side token; runtime, not 
 
 ### Webhook ingress
 
-Paddle must reach the backend over public HTTPS. The prod compose publishes nothing off-box — only loopback mappings for Redis and the dashboard — so put a TLS-terminating reverse proxy (Caddy/nginx/Cloudflare Tunnel) in front that forwards **only** `POST /webhooks/paddle` to `backend:8080` (e.g. `https://api.auto-publisher.gg/webhooks/paddle`). Signature verification rejects anything unsigned, but there is no reason to expose the rest of the internal API.
+The `cloudflared` service in the prod compose is the only public ingress, on the approved domain — no subdomain, so no extra DNS, certificate or Paddle domain review (review covers domains that launch a checkout, not webhook URLs). Paddle sends no custom headers, so the edge can check only method, path and source IP; each layer below blocks the internal API on its own:
+
+1. **WAF custom rule (Block)** — Security → WAF → Custom rules. Paddle live IPs from `GET https://api.paddle.com/ips`; re-check them if deliveries start failing with 403:
+   ```
+   (http.host eq "auto-publisher.gg" and starts_with(http.request.uri.path, "/webhooks") and not (http.request.method eq "POST" and http.request.uri.path eq "/webhooks/paddle" and ip.src in {34.232.58.13 34.195.105.136 34.237.3.244 35.155.119.135 52.11.166.252 34.212.5.7}))
+   ```
+2. **Tunnel routes** (Zero Trust → Networks → Tunnels → the tunnel → Published application routes), in this order — first match wins, and the path is an unanchored regex, so keep `^…$`:
+   1. `auto-publisher.gg`, path `^/webhooks/paddle$` → `http://backend:8081`
+   2. `auto-publisher.gg` → `http://web:3100`
+   3. catch-all → `http_status:404`
+
+   Never route to `backend:8080`: it serves `/internal`, `/guild` and `/channel` with no auth.
+3. **Backend `:8081`** mounts only the webhook router, so even a mis-scoped route reaches nothing else.
+4. **`ap-edge` network**: `cloudflared` shares it with `web` and `backend` only — no route to Redis (no password), the proxy or the bot.
+5. **Signature** (`Paddle-Signature`, SDK `unmarshal`): rejects timestamps older than **5 s**, so the host clock must be NTP-synced (`timedatectl` → `System clock synchronized: yes`).
+
+Paddle does not follow redirects, so the URL must be exactly the one above. The token goes in the root `.env` as `TUNNEL_TOKEN`; the prod scripts pass `--env-file .env` so Compose interpolates it into `cloudflared`, which therefore holds no other secret. Every other prod service blanks it with `TUNNEL_TOKEN=` in `environment` (it loads the same `.env` via `env_file`); a new prod service must too. `prod:start` refuses to run without the token.
+
+**Cutover from the web-only stack**: one token on two connectors splits traffic randomly between them, so stop the old one first — build the prod images, `docker compose -f scripts/web-only/docker-compose.yml down` in the web-only checkout, then `bun run prod:start`. Rollback is the reverse.
+
+**Verify**: from outside Paddle's IPs, `curl -i -X POST https://auto-publisher.gg/webhooks/paddle` → 403 from Cloudflare; `curl -i https://auto-publisher.gg/internal/info` → the website's 404. Then send a simulator event whose type the handler ignores and confirm a 200 in the destination's logs.
 
 ### Environment
 

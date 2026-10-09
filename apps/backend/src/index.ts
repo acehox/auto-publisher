@@ -1,3 +1,4 @@
+import type { Server } from 'node:http';
 import { assertRequiredEnv, env, isPublicInstance } from '@ap/config';
 import { runMigrations } from '@ap/database';
 import {
@@ -17,7 +18,7 @@ import {
 } from 'cron/subscriptionReconcile.js';
 import { startWithdrawalAcknowledgeRetry } from 'cron/withdrawalAcknowledge.js';
 import { Data } from 'data/index.js';
-import express from 'express';
+import express, { type Express } from 'express';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 
@@ -30,12 +31,6 @@ const app = express();
 
 // Request logger (applies to all routes)
 app.use(...createRequestLogger(env.isDevelopment));
-
-// Paddle webhook route (needs raw body BEFORE express.json()).
-// Public instance only — a self-hosted copy has no billing to receive.
-if (isPublicInstance) {
-  app.use('/webhooks/paddle', express.raw({ type: 'application/json' }), App.Routes.Api.Webhooks);
-}
 
 // JSON parser for all remaining routes
 app.use(express.json());
@@ -74,11 +69,34 @@ await runMigrations();
 // Sync cache on startup to ensure consistency between DB and cache
 await Services.Channels.initialize();
 
-// Start the server
-const server = app.listen('8080', async () => {
-  const { NODE_ENV } = env;
-  logger.info(`Server (${NODE_ENV}) running on port http://localhost:8080`);
-});
+// Express 5 passes bind errors to this callback. Exit on one: the healthcheck
+// only probes 8080, so a dead 8081 would look healthy.
+const listen = (target: Express, port: number, label: string): Server =>
+  target.listen(port, error => {
+    if (error) {
+      logger.fatal(error, `${label} failed to bind port ${port}`);
+      process.exit(1);
+    }
+    logger.info(`${label} (${env.NODE_ENV}) running on port http://localhost:${port}`);
+  });
+
+// Own port, the only one the tunnel reaches, so a mis-scoped route cannot
+// expose 8080's unauthenticated internal routes.
+const startWebhookListener = (): Server => {
+  const webhookApp = express();
+  webhookApp.use(...createRequestLogger(env.isDevelopment));
+  // Raw body: the signature is computed over the exact bytes Paddle sent.
+  webhookApp.use(
+    '/webhooks/paddle',
+    express.raw({ type: 'application/json' }),
+    App.Routes.Api.Webhooks
+  );
+  webhookApp.use(...createErrorHandler());
+  return listen(webhookApp, 8081, 'Paddle webhook listener');
+};
+
+const servers = [listen(app, 8080, 'Server')];
+if (isPublicInstance) servers.push(startWebhookListener());
 
 // Start guild presence reconcile cron (03:30 — before subscription reconcile
 // so its bot-present backstop reads fresh presence)
@@ -101,13 +119,15 @@ if (isPublicInstance) {
 // backstop reads fresh presence (same ordering as the 03:30/04:00 crons)
 void (isPublicInstance ? runGuildReconcile().then(runSubscriptionReconcile) : runGuildReconcile());
 
-// Gracefully handle server shutdown
+// Drain before exiting: a webhook cut off between `applyPaddleSubscription` and
+// `enforceTransition` is lost, as Paddle's retry finds the row already updated.
+const closeServer = (target: Server) => new Promise<void>(resolve => target.close(() => resolve()));
+
 const onCloseSignal = async () => {
-  server.close(() => {
-    logger.info('Server closed');
-    process.exit();
-  });
   setTimeout(() => process.exit(1), 10000).unref(); // Force shutdown after 10s
+  await Promise.all(servers.map(closeServer));
+  logger.info('Server closed');
+  process.exit();
 };
 
 // Handle close signals

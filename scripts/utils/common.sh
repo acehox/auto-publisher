@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Common variables
-BOT_COMPOSE_FILES_DEV="-f scripts/bot/docker-compose.base.yml -f scripts/bot/dev/docker-compose.yml"
-BOT_COMPOSE_FILES_PROD="-f scripts/bot/docker-compose.base.yml -f scripts/bot/prod/docker-compose.yml"
+BOT_COMPOSE_FILES_DEV="--env-file .env.local -f scripts/bot/docker-compose.base.yml -f scripts/bot/dev/docker-compose.yml"
+BOT_COMPOSE_FILES_PROD="--env-file .env -f scripts/bot/docker-compose.base.yml -f scripts/bot/prod/docker-compose.yml"
 
 # Check that an env file exists. Takes the filename: dev overrides live in
 # `.env.local`, every deployment reads `.env`.
@@ -11,6 +11,16 @@ check_env_exists() {
 
     if [ ! -f "$ENV_FILE" ]; then
         echo "⚠️  $ENV_FILE file not found. See docs/public-instance/.env.example"
+        exit 1
+    fi
+}
+
+check_env_var_set() {
+    local ENV_FILE="$1"
+    local VAR_NAME="$2"
+
+    if ! grep -Eq "^[[:space:]]*${VAR_NAME}[[:space:]]*=[[:space:]]*[\"']?[^\"'[:space:]]" "$ENV_FILE"; then
+        echo "⚠️  $VAR_NAME is not set in $ENV_FILE. See docs/public-instance/.env.example"
         exit 1
     fi
 }

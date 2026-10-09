@@ -1,0 +1,6 @@
+# Routes for the locally-managed dev tunnel (TUNNEL_TOKEN in .env.local only
+# identifies it). No hostname: DNS decides which hosts reach this tunnel.
+ingress:
+  - path: ^/webhooks/paddle$
+    service: http://backend:8081
+  - service: http_status:404

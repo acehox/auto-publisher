@@ -10,6 +10,7 @@ echo "🚀 Starting production environment..."
 
 is_docker_running
 check_env_exists ".env"
+check_env_var_set ".env" "TUNNEL_TOKEN"
 
 echo "📦 Building and starting production services..."
 

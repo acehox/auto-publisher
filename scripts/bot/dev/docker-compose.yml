@@ -63,7 +63,8 @@ services:
       redis:
         condition: service_started
     ports:
-      - 8081:8080 # Expose proxy for local debugging
+      # Loopback-bound: an open Discord REST proxy carrying the bot token
+      - 127.0.0.1:8081:8080
     healthcheck:
       disable: true # Remove healthcheck for faster development startup
     command: ["bun", "run", "start"]
@@ -115,7 +116,10 @@ services:
       mailpit:
         condition: service_started
     ports:
-      - 3101:8080 # Expose API for local development
+      # Loopback-bound: /internal, /guild and /channel have no auth
+      - 127.0.0.1:3101:8080
+      # Paddle webhook listener alone, so a dev tunnel exposes nothing else
+      - 127.0.0.1:3102:8081
     healthcheck:
       disable: true # Remove healthcheck for faster development startup
     command: ["bun", "run", "start"]
@@ -161,6 +165,22 @@ services:
       - 127.0.0.1:8025:8025 # Web UI + REST API
     healthcheck:
       disable: true # Remove healthcheck for faster development startup
+
+  # Public HTTPS for Paddle sandbox webhooks; reaches only the 8081 listener.
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    command: tunnel --no-autoupdate --metrics 127.0.0.1:20241 --config /etc/cloudflared/config.yml run
+    restart: unless-stopped
+    # Interpolated (`--env-file` in BOT_COMPOSE_FILES_DEV), not env_file.
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    volumes:
+      - ./dev/cloudflared.yml:/etc/cloudflared/config.yml:ro
+    networks:
+      - ap-network
+    depends_on:
+      backend:
+        condition: service_started
 
   redis:
     extends:

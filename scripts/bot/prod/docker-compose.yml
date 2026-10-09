@@ -1,5 +1,8 @@
 name: auto-publisher-prod
 
+# Services loading ../../.env blank `TUNNEL_TOKEN` (`environment` beats
+# `env_file`): whoever reads the token can run a connector and take live traffic.
+
 x-prod-logging: &prod-logging
   driver: "json-file"
   options:
@@ -41,6 +44,7 @@ services:
     env_file:
       - ../../.env
     environment:
+      - TUNNEL_TOKEN=
       - NODE_ENV=production
       - LOGGER_LEVEL=info
     logging: *prod-logging
@@ -50,8 +54,12 @@ services:
     env_file:
       - ../../.env
     environment:
+      - TUNNEL_TOKEN=
       - NODE_ENV=production
       - LOGGER_LEVEL=info
+    networks:
+      - ap-network
+      - ap-edge
     logging: *prod-logging
     deploy:
       resources:
@@ -66,6 +74,7 @@ services:
     env_file:
       - ../../.env
     environment:
+      - TUNNEL_TOKEN=
       - NODE_ENV=production
       - LOGGER_LEVEL=info
     logging: *prod-logging
@@ -81,11 +90,13 @@ services:
     environment:
       # Server-side only; the browser never calls the backend directly.
       - BACKEND_URL=http://backend:8080
+      - TUNNEL_TOKEN=
       - NODE_ENV=production
     ports:
       - 127.0.0.1:3100:3100
     networks:
       - ap-network
+      - ap-edge
     depends_on:
       backend:
         condition: service_healthy
@@ -98,3 +109,47 @@ services:
         reservations:
           memory: 256M
           cpus: '0.25'
+
+  # Sole public ingress; routes live in the Cloudflare dashboard.
+  # See docs/public-instance/billing-paddle-setup.md "Webhook ingress".
+  cloudflared:
+    image: cloudflare/cloudflared:2026.9.3
+    # The default metrics bind is 0.0.0.0, serving /config and pprof to the network.
+    command: tunnel --metrics 127.0.0.1:20241 --management-diagnostics=false run
+    restart: unless-stopped
+    # Interpolated (`--env-file`), not env_file, so no other secret lands here.
+    # Presence is checked in prod/start.sh: `:?` would also block prod:stop.
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # ap-edge only: no route to redis, proxy or bot.
+    networks:
+      - ap-edge
+    depends_on:
+      web:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:20241", "ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging: *prod-logging
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+
+networks:
+  ap-edge:
+    driver: bridge
