@@ -34,7 +34,7 @@ export class BackendError extends Error {
  * A 401 from any backend call behind `createDiscordAuth` — the Discord OAuth
  * token embedded in the session has expired (or the session/token is missing),
  * even though the NextAuth session is still "valid". Reactive re-login handles
- * it (ADR 0010). Extends BackendError so existing `instanceof BackendError`
+ * it. Extends BackendError so existing `instanceof BackendError`
  * checks still see it (status 401); `requireGuildPermission` uses 403, so a 401
  * here is unambiguously dead auth, never insufficient-permission.
  */

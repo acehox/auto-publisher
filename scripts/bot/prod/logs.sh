@@ -9,5 +9,5 @@ source "$SCRIPT_DIR/../../utils/common.sh"
 is_docker_running
 is_docker_services_running "prod" "$BOT_COMPOSE_FILES_PROD"
 
-# Show continuous logs for bot services
-docker compose $BOT_COMPOSE_FILES_PROD logs -f
+# Production logs plain JSON (packages/logger); prettify here.
+docker compose $BOT_COMPOSE_FILES_PROD logs -f --no-log-prefix | bunx pino-pretty

@@ -46,7 +46,7 @@ export const channel = pgTable(
     filterMode: text('filter_mode').default('all').notNull(),
     // Set by the system trim when a guild drops to free-managed over its channel
     // limit: config is retained but the channel leaves the allowlist and the limit
-    // count. Only ever written by the trim, never by a user toggle (ADR 0009).
+    // count. Only ever written by the trim, never by a user toggle.
     pausedAt: timestamp('paused_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true })

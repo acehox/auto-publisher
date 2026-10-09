@@ -10,10 +10,7 @@ export type ProxyInfo = {
     invalidRequests: { count: number; expiresInMs: number };
   };
   queue: {
-    /** BullMQ's wait+paused. Must be 0 — see the render in handlers/admin/info.ts */
     waiting: number;
-    /** Where all depth lives: every enqueue carries an explicit priority (ADR 0011) */
-    prioritized: number;
     active: number;
   };
   /** `null` when the proxy's count failed */

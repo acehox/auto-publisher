@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
     // no server hop, per-browser so there is no cross-user exposure. Mutations
     // call router.refresh() which busts this cache, so edits still reflect
     // immediately; the invite-return refresh (useRefreshOnReturn) keeps the
-    // guild list fresh. See ADR 0007.
+    // guild list fresh.
     staleTimes: {
       dynamic: 60,
     },

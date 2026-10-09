@@ -66,7 +66,7 @@ export async function disableChannel(guildId: string, channelId: string): Promis
     return { ok: true };
   } catch (error) {
     // Surface the status (esp. 401 = dead token) so the client can re-login
-    // rather than silently swallowing a sanitized thrown error (ADR 0010).
+    // rather than silently swallowing a sanitized thrown error.
     if (error instanceof BackendError) {
       return { ok: false, status: error.status, code: error.code as ChannelLimitReason };
     }

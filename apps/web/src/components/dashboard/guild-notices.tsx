@@ -275,7 +275,10 @@ function LegacyCard({
   );
 }
 
-/** The only dismissible strip, remembered per browser (ADR 0009). */
+/**
+ * The only dismissible strip, remembered per browser: free with paused channels
+ * is a stable end state, not a problem to nag about.
+ */
 function PausedStrip({
   guildId,
   pausedCount,

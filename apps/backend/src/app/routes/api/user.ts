@@ -33,7 +33,7 @@ export const User: Router = (() => {
       // that check and vice versa. A dead token surfaces HERE (not in
       // createDiscordAuth) when the 5 min auth cache is still warm but this
       // guild-list cache has expired: a genuine 401 stays a 401 so reactive
-      // re-login fires (ADR 0010) rather than ejecting the user to the server
+      // re-login fires rather than ejecting the user to the server
       // list; a transient 429/5xx with no stale fallback is a 502 the web
       // retries in place. Presence/subscription below are composed live from
       // Postgres, so only the raw Discord list is cached — derived flags never
@@ -98,7 +98,7 @@ export const User: Router = (() => {
       // one gap the event path cannot repair — re-authorizing a bot already a
       // member fires no gateway event — is healed on the guild-detail read
       // (GET /api/guild/:guildId), scoped to the one guild being opened rather
-      // than a fan-out over every managed guild here (ADR 0007, 2026-07-15).
+      // than a fan-out over every managed guild here.
 
       const result = managedGuilds.map(g => ({
         id: g.id,

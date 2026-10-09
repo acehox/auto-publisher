@@ -10,14 +10,17 @@ export const createLogger = (name: string, pid?: string): PinoLogger => {
   const options: LoggerOptions = {
     name,
     level: process.env.LOGGER_LEVEL ?? 'info',
-    transport: {
+  };
+
+  if (process.env.NODE_ENV !== 'production') {
+    options.transport = {
       target: 'pino-pretty',
       options: {
         colorize: true,
         translateTime: 'UTC:yyyy-mm-dd HH:MM:ss.l o',
       },
-    },
-  };
+    };
+  }
 
   if (pid) {
     options.base = { pid };

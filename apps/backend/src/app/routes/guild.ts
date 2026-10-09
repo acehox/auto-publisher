@@ -19,7 +19,7 @@ export const Guild: Router = (() => {
     const { guildId } = req.params;
 
     try {
-      // channelIds = serving; pausedChannels = retained-but-paused (ADR 0009),
+      // channelIds = serving; pausedChannels = retained-but-paused,
       // surfaced separately by /ap overview. Each paused entry carries its filter
       // count, which is what lets the bot state WHY a channel is paused.
       const [channelIds, pausedChannels, guildRow, premium] = await Promise.all([

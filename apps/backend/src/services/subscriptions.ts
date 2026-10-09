@@ -1,6 +1,6 @@
 import { env, premiumTrialEnabled } from '@ap/config';
 import { db, guild, type Subscription, subscription } from '@ap/database';
-import { and, eq, inArray, isNull, lt, notInArray, or } from 'drizzle-orm';
+import { and, eq, isNull, lt, notInArray, or } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 
@@ -315,19 +315,6 @@ const getRevokedWithBotPresent = async (): Promise<Subscription[]> => {
 };
 
 /**
- * Guilds holding an entitled subscription. Joined to `guild` because a
- * subscription outlives its guild row, and a purged guild needs no marker.
- */
-const getEntitledGuildIds = async (): Promise<string[]> => {
-  const rows = await db
-    .select({ guildId: subscription.guildId })
-    .from(subscription)
-    .innerJoin(guild, eq(subscription.guildId, guild.guildId))
-    .where(inArray(subscription.status, [...ENTITLED_STATUSES]));
-  return rows.map(row => row.guildId);
-};
-
-/**
  * Structural shape shared by the Paddle API Adjustment entity and the webhook
  * AdjustmentNotification — the two carry identical fields.
  */
@@ -430,7 +417,6 @@ export const Subscriptions = {
   applyPaddleSubscription,
   isEntitled,
   getRevokedWithBotPresent,
-  getEntitledGuildIds,
   isRecordableRefund,
   recordRefund,
   isTrialAvailable,

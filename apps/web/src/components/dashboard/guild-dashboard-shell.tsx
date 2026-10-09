@@ -48,7 +48,7 @@ interface GuildDashboardShellProps {
  *     above the content costs one row instead of two.
  *
  * The chrome renders instantly from the guild list + route param; only the
- * content and the badge suspend on the streamed detail promise (ADR 0007), so
+ * content and the badge suspend on the streamed detail promise, so
  * switching guilds never blanks the switcher or tabs.
  */
 export function GuildDashboardShell({ guildId, dataPromise, children }: GuildDashboardShellProps) {
@@ -59,7 +59,7 @@ export function GuildDashboardShell({ guildId, dataPromise, children }: GuildDas
   // A guild missing from a CLEANLY-loaded list = lost access, bot removed, or a
   // bad deep link — eject to the server list. Missing because the list FETCH
   // failed is transient: stay put and retry in place rather than bouncing to a
-  // server list that failed the same way (ADR 0010).
+  // server list that failed the same way.
   useEffect(() => {
     if (!guild && !error) {
       router.replace('/dashboard');

@@ -26,7 +26,7 @@ const pushJoinDates = async (client: Client): Promise<void> => {
 };
 
 /**
- * Seed the publish-state cache (ADR 0008) for every guild this shard owns.
+ * Seed the publish-state cache for every guild this shard owns.
  * `full` replaces stale fields (self-heals channels deleted
  * while the bot was offline). Fire-and-forget; failures fall back to the
  * backend's write-back REST path.

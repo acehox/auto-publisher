@@ -22,10 +22,11 @@ export interface PlanComparisonRow {
 
 /**
  * čl. 60 st. 2 makes the publishing row a contract term, so it has to describe what
- * actually runs. There is ONE publishing queue; Premium is a higher tier within it
- * (ADR 0011), which is why the row says "priority in the queue" and NOT "dedicated
- * queue" or "dedicated capacity" — those described a second bot that no longer
- * exists, and were never true of a shared Discord rate limit anyway.
+ * actually runs. There is ONE plain FIFO publishing queue (ADR 0001), so "priority in the
+ * queue" no longer runs and is replaced by the rollover pitch before develop
+ * ships (release gate). Never "dedicated queue" or "dedicated capacity" —
+ * those described a second bot that no longer exists, and were never true of a
+ * shared Discord rate limit anyway.
  */
 export const planComparison = (freeChannelLimit: number): readonly PlanComparisonRow[] => [
   {

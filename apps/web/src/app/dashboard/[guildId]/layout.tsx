@@ -27,8 +27,8 @@ export default async function GuildLayout({
 
   // Stream the guild-detail payload as a promise — do NOT await it here. The
   // shell chrome (switcher/sidebar) renders instantly from the persisted guild
-  // list; only the content + attention badge suspend on this (ADR 0007,
-  // 2026-07-15). Authorization + presence are enforced by the detail read
+  // list; only the content + attention badge suspend on this.
+  // Authorization + presence are enforced by the detail read
   // itself (requireGuildPermission + a botless-guild throw): a rejection surfaces
   // at the content's `use()` and the shell's error boundary redirects to the
   // server list, so no separate presence gate is needed here.
@@ -39,7 +39,7 @@ export default async function GuildLayout({
   // useGuild() turns each sentinel back into a typed client-side throw the
   // boundary routes to the matching recovery — re-login (401), offer the bot
   // invite in place (409 BOT_NOT_PRESENT), redirect to the server list
-  // (403/404), or stay + retry (5xx / network). See ADR 0010.
+  // (403/404), or stay + retry (5xx / network).
   const dataPromise: Promise<GuildDashboardData | GuildLoadFailure> = getGuildDashboard(guildId)
     .then(raw => ({
       ...raw,

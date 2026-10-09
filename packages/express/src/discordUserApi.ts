@@ -27,7 +27,7 @@ export const DISCORD_AUTH_TTL_SECONDS = 300;
  * because this data drives authorization (`requireGuildPermission` MANAGE_GUILD,
  * `discordAuth` identity): a stale-serve is a deliberate fail-open, so its window
  * is capped at the same ~5-10 min permission-staleness the dashboard already
- * tolerates (ADR 0007), not the 1h a purely-cosmetic cache could afford.
+ * tolerates, not the 1h a purely-cosmetic cache could afford.
  */
 const LKG_TTL_SECONDS = 10 * 60;
 
@@ -62,7 +62,7 @@ export type DiscordUser = {
 /**
  * Result of a resilient user-token read.
  * - `ok`: fresh, cached, or (on a transient failure) last-known-good data.
- * - `kind: 'auth'`: a genuine Discord 401 — the token is dead, re-login (ADR 0010).
+ * - `kind: 'auth'`: a genuine Discord 401 — the token is dead, re-login.
  * - `kind: 'transient'`: 429/5xx/network AND no last-known-good to fall back on.
  */
 export type UserFetchResult<T> =

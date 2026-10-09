@@ -26,7 +26,7 @@ const DISCORD_READ_CACHE_TTL_MS = 5 * 60 * 1000;
 const LKG_TTL_MS = 60 * 60 * 1000;
 
 /**
- * In-memory cache for the guild-dashboard read paths (ADR 0007), keyed by
+ * In-memory cache for the guild-dashboard read paths, keyed by
  * route. Only 200 responses are cached, so a stray error never poisons a key.
  *
  * Explicit opt-in — deliberately NOT wired into `isBotInGuild`, whose
@@ -36,7 +36,7 @@ const LKG_TTL_MS = 60 * 60 * 1000;
 const discordReadCache = createTtlCache<unknown>(DISCORD_READ_CACHE_TTL_MS);
 
 /**
- * Last-known-good store for stale-while-error (ADR 0007 amendment). Holds the
+ * Last-known-good store for stale-while-error. Holds the
  * most recent 200 per route for 1h (longer than the 5-min fresh TTL). When a
  * live fetch on a fresh-cache miss FAILS, `cachedGet` serves this stale value
  * as a 200 instead of throwing, so a momentary Discord/proxy blip can never turn
@@ -95,7 +95,7 @@ const getAnnouncementChannels = async (guildId: Snowflake): Promise<APIChannel[]
 };
 
 /**
- * Evict a guild's cached channel list (ADR 0007 amendments). Two callers:
+ * Evict a guild's cached channel list. Two callers:
  * `POST /internal/guild/:guildId/channels/invalidate` when a bot observes an
  * announcement-channel MEMBERSHIP change (created / deleted / type-cross), and
  * `Guilds.registerNewGuild` on re-invite to flush changes the bot could not

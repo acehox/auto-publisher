@@ -37,7 +37,7 @@ const find = async (guildId: Snowflake) => {
  */
 const getChannels = async (guildId: Snowflake): Promise<string[]> => {
   try {
-    // Serving channels only — paused rows are retained but not published (ADR 0009)
+    // Serving channels only — paused rows are retained but not published
     const rows = await db
       .select({ channelId: channel.channelId })
       .from(channel)
@@ -55,7 +55,7 @@ const getChannels = async (guildId: Snowflake): Promise<string[]> => {
 };
 
 /**
- * Paused (retained-but-not-serving) channels for a guild (ADR 0009), each with
+ * Paused (retained-but-not-serving) channels for a guild, each with
  * its filter count.
  *
  * The count is what lets `/ap overview` state the *cause* the way the dashboard
@@ -151,12 +151,8 @@ const purge = async (guildId: Snowflake, cutoff: Date): Promise<boolean> => {
     if (channelIds.length > 0) {
       await Data.Channels.Cache.removeMany(channelIds);
     }
-    // MIGRATION: drop `RedisKeys.migrated` from this list at sunset
-    await Data.Drivers.Redis.Guilds.del(
-      RedisKeys.migrated(guildId),
-      RedisKeys.boosted(guildId),
-      RedisKeys.premium(guildId)
-    );
+    // MIGRATION: drop this delete at sunset
+    await Data.Drivers.Redis.Guilds.del(RedisKeys.migrated(guildId));
 
     logger.debug(`Purged guild ${guildId} and ${channelIds.length} associated channels`);
     return true;
@@ -194,39 +190,6 @@ const pruneStaleChannels = async (
   }
 };
 
-/** Priority publishes granted to a newly-joined guild */
-const BOOST_PUBLISHES = 10;
-/** Safety TTL (90 days): the budget expires even if the guild never publishes */
-const BOOST_TTL_SEC = 90 * 24 * 60 * 60;
-
-/**
- * Grant a newly-joined guild a bounded run of priority crossposts, so its first
- * messages are not stuck behind the peak backlog while the admin is still
- * deciding whether the bot works. Read by the proxy at enqueue.
- *
- * Deliberately seeded from `registerNewGuild` and nowhere else: the reconcile
- * sweep and the dashboard presence self-heal both touch guilds that never left,
- * so seeding there would re-arm a large slice of the base and flatten the tier
- * back into FIFO.
- *
- * Plain SET, so a re-invite re-arms the budget. That is intended — a re-invite
- * is a real join event, bounded at 10 publishes — and it keeps key presence the
- * whole of the boost state.
- */
-const seedOnboardingBoost = async (guildId: Snowflake): Promise<void> => {
-  try {
-    await Data.Drivers.Redis.Guilds.set(
-      RedisKeys.boosted(guildId),
-      String(BOOST_PUBLISHES),
-      'EX',
-      BOOST_TTL_SEC
-    );
-  } catch (error) {
-    // Never fail a registration over this — losing a boost is cosmetic
-    logger.warn(error, `Failed to seed onboarding boost for guild ${guildId}`);
-  }
-};
-
 const earliestJoin = sql`LEAST(${guild.firstJoinedAt}, excluded.first_joined_at)`;
 
 /**
@@ -261,7 +224,7 @@ const activatePresence = async (
 
 /**
  * Update-only: inserting from a startup snapshot would revive a guild kicked
- * after it (ADR 0005). An unknown guild gets its date on the next push after
+ * after it. An unknown guild gets its date on the next push after
  * the reconcile inserts it. Unchanged rows are skipped, so a restart writes nothing.
  */
 const recordJoinDates = async (
@@ -315,7 +278,7 @@ const registerNewGuild = async (
     // The bot receives no gateway events while kicked, so a channel created or
     // deleted during the absent window never fired the observe-based eviction.
     // Re-invite closes that window with the bot confirmed present; later
-    // dashboard reads re-fetch live (ADR 0007 amendment).
+    // dashboard reads re-fetch live.
     Discord.evictGuildChannels(guildId);
 
     if (announcementChannelIds) {
@@ -334,9 +297,7 @@ const registerNewGuild = async (
       await syncMigratedGuildCache(guildId);
     }
 
-    await seedOnboardingBoost(guildId);
-
-    // Bring serving in line with the guild's plan (ADR 0009): a free guild
+    // Bring serving in line with the guild's plan: a free guild
     // re-invited over the cap gets its excess and its filtered channels paused;
     // a Premium guild gets everything back.
     // MIGRATION: at sunset drop the `migratedAt` guard — every guild is
@@ -361,7 +322,7 @@ const registerNewGuild = async (
  */
 const syncMigratedGuildCache = async (guildId: Snowflake): Promise<void> => {
   // Serving channels only — a paused channel must never be written to the
-  // allowlist (ADR 0009); reconcileChannelServing repauses excess right after.
+  // allowlist; reconcileChannelServing repauses excess right after.
   const records = await getServingChannelRecords(guildId);
 
   if (records.length > 0) {

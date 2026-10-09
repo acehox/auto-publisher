@@ -5,8 +5,8 @@ import { logger } from 'utils/logger.js';
 import { Permissions } from './permissions.js';
 
 // Joins that arrived during an outage. discord.js emits guildAvailable, not
-// guildCreate, once they recover — and so does a guild that merely recovered,
-// which must not be re-registered (that would re-arm its onboarding boost).
+// guildCreate, once they recover — and so does every guild that merely
+// recovered, which never left and so needs no registration.
 const pendingJoins = new Set<Snowflake>();
 
 /**
@@ -31,7 +31,7 @@ const register = async (guild: DiscordGuild) => {
     guild.joinedAt
   );
 
-  // `full` drops publish-state fields stale from a prior stint (ADR 0008).
+  // `full` drops publish-state fields stale from a prior stint.
   await Permissions.syncChannels(guild, announcementChannels, {
     full: true,
     clearBlocked: false,

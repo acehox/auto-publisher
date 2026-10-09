@@ -20,7 +20,7 @@ import { TabContentSkeleton } from './skeletons';
 // 5xx / connection blip) before surfacing the manual retry card. Most blips
 // outlast the backend's built-in @discordjs/rest retries by only a beat, so a
 // couple of paced client retries recover them invisibly — the user never sees
-// the error card for a momentary hiccup (ADR 0010). Bounded + manual-after: a
+// the error card for a momentary hiccup. Bounded + manual-after: a
 // persistent outage can't spin an unbounded refresh loop.
 const MAX_AUTO_RETRIES = 3;
 const BACKOFF_MS = [500, 1500, 3000, 5000];

@@ -28,7 +28,7 @@ export const createInvalidRequestsTracker = (
       count = 0;
     }
     count++;
-    logger.info({ event: 'invalid_requests.update', count, remainingMs: expiresAt - Date.now() });
+    logger.debug({ event: 'invalid_requests.update', count, remainingMs: expiresAt - Date.now() });
   };
 
   rest.on(RESTEvents.Response, (_req, res) => {

@@ -69,7 +69,7 @@ const disable = async (channelId: Snowflake) => {
       return false;
     }
 
-    logger.info(`Disabled channel ${channelId}`);
+    logger.debug(`Disabled channel ${channelId}`);
     return true;
   } catch (error) {
     logger.error(error, `Error disabling channel ${channelId}`);
@@ -110,7 +110,7 @@ const getStatus = async (channelId: Snowflake) => {
   }
 };
 
-/** A paused channel and the size of the rule it kept (ADR 0009). */
+/** A paused channel and the size of the rule it kept. */
 export interface PausedChannel {
   channelId: Snowflake;
   filterCount: number;
@@ -130,7 +130,7 @@ const normalizePausedChannels = (
 
 /**
  * Get a guild's auto-publishing state: serving channel IDs, paused ones
- * (retained but over the free limit, ADR 0009), whether the guild is migrated,
+ * (retained but over the free limit), whether the guild is migrated,
  * and whether it is on Premium.
  *
  * `premium` is the bot's ONLY source for a guild's plan — one bot serves both,
@@ -205,8 +205,8 @@ const getRule = async (channelId: Snowflake): Promise<ChannelRule | null> => {
 };
 
 /**
- * Bust the backend's cached candidate-channel list for a guild (ADR 0007
- * amendment) after an announcement-channel membership change. Fire-and-forget:
+ * Bust the backend's cached candidate-channel list for a guild
+ * after an announcement-channel membership change. Fire-and-forget:
  * a failure just means the dashboard waits out the 5-min TTL.
  */
 const invalidateGuildCache = async (guildId: Snowflake) => {

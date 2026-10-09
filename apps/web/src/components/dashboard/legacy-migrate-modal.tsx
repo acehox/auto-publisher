@@ -63,7 +63,7 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
         router.refresh();
         return;
       }
-      // Dead Discord token: re-login instead of a generic failure (ADR 0010).
+      // Dead Discord token: re-login instead of a generic failure.
       if (signInOnAuthExpired(result.status)) return;
       setError(true);
     });

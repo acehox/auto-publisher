@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
  * Skeletons mirror the real row rhythm so the first paint does not move: a
  * header line, one surface, then rows at the height the tab actually renders.
  * The shell is interactive while these show — only the content region suspends
- * on guild detail (ADR 0007).
+ * on guild detail.
  */
 
 const bar = 'bg-slate-800';

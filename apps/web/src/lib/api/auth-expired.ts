@@ -7,7 +7,7 @@
  * Errors thrown across the RSC boundary are sanitized (identity + status lost,
  * only a digest survives), so the streamed promise resolves to one of these
  * sentinels instead of rejecting; the client branches on the sentinel to pick a
- * recovery. See ADR 0010.
+ * recovery.
  *
  * Four failure kinds, four recoveries:
  * - `AUTH_EXPIRED` (backend 401): the embedded Discord OAuth token is dead while

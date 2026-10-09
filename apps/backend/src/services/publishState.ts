@@ -6,7 +6,7 @@ import { logger } from 'utils/logger.js';
 import { BotPermissions, type PublishEntry } from './botPermissions.js';
 
 /**
- * Publish-state cache (ADR 0008): per-guild Redis hash of the bot's crosspost
+ * Publish-state cache: per-guild Redis hash of the bot's crosspost
  * capability per channel, PUSHED by the bot off its gateway cache (zero Discord
  * REST). The dashboard reads it instead of computing permissions via REST;
  * `BotPermissions.getPublishMap` is the write-back fallback for fields the bot

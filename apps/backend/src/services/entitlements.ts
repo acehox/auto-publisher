@@ -9,8 +9,8 @@ import { isEntitledStatus } from './subscriptions.js';
  * entitlement change is a change of what that bot publishes, not of where it is.
  * `reconcileChannelServing` resolves the plan and moves the channels to match:
  * a downgrade pauses the guild to the free shape (filtered channels, then the
- * excess beyond the cap), an upgrade restores every paused row untouched
- * (ADR 0009). Idempotent, which is what lets the webhook path and the reconcile
+ * excess beyond the cap), an upgrade restores every paused row untouched.
+ * Idempotent, which is what lets the webhook path and the reconcile
  * backstop both call it without tracking whether the other already did.
  */
 const apply = async (guildId: string): Promise<void> => {

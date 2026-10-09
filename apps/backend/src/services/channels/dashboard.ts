@@ -30,7 +30,7 @@ export const getChannelsForDashboard = async (guildId: Snowflake) => {
 
   const recordMap = new Map(records.map(ch => [ch.channelId, ch]));
 
-  // Serving = a row exists AND is not paused (ADR 0009). A paused row is a
+  // Serving = a row exists AND is not paused. A paused row is a
   // disabled channel with retained config → surfaced via hasSavedSetup.
   const listed = announcementChannels.map(c => {
     const record = recordMap.get(c.id);

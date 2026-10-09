@@ -70,7 +70,7 @@ const computeChannelPermissions = (
 /**
  * `{channelId → {canPublish, missing}}` for the given channels, evaluated via
  * the proxy (two REST calls: guild roles + bot member). This is the REST
- * fallback for the bot-pushed publish-state cache (ADR 0008) — the bot normally
+ * fallback for the bot-pushed publish-state cache — the bot normally
  * supplies this data for free off its gateway cache.
  */
 const getPublishMap = async (

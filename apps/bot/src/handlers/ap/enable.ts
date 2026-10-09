@@ -152,8 +152,8 @@ export async function chatInputEnable(
   }
 
   const successReply = async () => {
-    // Seed publish-state for this channel so the dashboard reflects it at once
-    // (ADR 0008) — perms were just verified above, so this is a free push.
+    // Seed publish-state for this channel so the dashboard reflects it at once —
+    // perms were just verified above, so this is a free push.
     void Services.Permissions.syncChannels(botMember.guild, [channel], {
       full: false,
       clearBlocked: false,

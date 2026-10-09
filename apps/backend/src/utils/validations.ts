@@ -58,7 +58,7 @@ export const JoinDatesPushReqSchema = z.object({
   }),
 });
 
-/** Bot-pushed publish-state batch (ADR 0008): per-channel capability */
+/** Bot-pushed publish-state batch: per-channel capability */
 export const PublishStatePushReqSchema = z.object({
   params: z.object({
     guildId: Validations.snowflakeId,

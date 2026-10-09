@@ -6,7 +6,7 @@ import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { logger } from 'utils/logger.js';
 
 /**
- * Channel soft-pause primitives (ADR 0009). Pure DB + cache operations with no
+ * Channel soft-pause primitives. Pure DB + cache operations with no
  * plan awareness — the CALLER decides when to pause or reactivate (that
  * decision lives in `Plans.reconcileChannelServing`, which this module
  * deliberately does not import).

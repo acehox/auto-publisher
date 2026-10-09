@@ -22,7 +22,7 @@ export const metadata: Metadata = {
  * client GuildListProvider. This shared layout isn't re-run on guild-to-guild
  * navigation (Next caches it), so the switcher/sidebar stay populated without
  * re-fetching. Both the server-list page and the switcher read the same list
- * from context (ADR 0007, 2026-07-15). The fetch is wrapped in a Suspense so a
+ * from context. The fetch is wrapped in a Suspense so a
  * cold load shows a route-appropriate skeleton instead of a blank.
  */
 export default async function DashboardLayout({
@@ -90,7 +90,7 @@ async function GuildListLoader({
     guilds = await getUserGuilds();
   } catch (e) {
     // A dead Discord token (session valid, token expired) is not a generic
-    // failure — re-login instead of the "Something went wrong" card (ADR 0010).
+    // failure — re-login instead of the "Something went wrong" card.
     if (e instanceof AuthExpiredError) {
       return (
         <DashboardChrome user={user}>

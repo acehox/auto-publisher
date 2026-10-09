@@ -35,7 +35,7 @@ export function createRequireGuildPermission(redisClient: RedisLike, logger: Log
     }
 
     // Shared resilient read (fresh cache → retry → last-known-good). A real
-    // Discord 401 maps to 401 so reactive re-login fires (ADR 0010); a transient
+    // Discord 401 maps to 401 so reactive re-login fires; a transient
     // 429/5xx with no stale fallback maps to 502 the web retries in place — a
     // blip must NOT masquerade as auth-expiry.
     const result = await fetchUserGuilds(redisClient, token, logger);

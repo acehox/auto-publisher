@@ -2,8 +2,9 @@ import process from 'node:process';
 import { createAlerter } from '@ap/alerts';
 import { assertRequiredEnv, config, env } from '@ap/config';
 import { createRedisClient, DatabaseIDs, disconnectAllRedis } from '@ap/redis';
-import { createGatedChannels, createQueuePriorityState } from './crosspost/caches.js';
+import { createGatedChannels } from './crosspost/caches.js';
 import { createGate } from './crosspost/gate.js';
+import { createCrosspostMetrics } from './crosspost/metrics.js';
 import { createCrosspostQueue } from './crosspost/queue.js';
 import { buildGateway } from './gateway/index.js';
 import { createApp } from './http/app.js';
@@ -16,14 +17,12 @@ const PROXY_PORT = 8080;
 const main = async () => {
   assertRequiredEnv();
 
-  const [gatedRedis, alertsRedis, guildsRedis] = await Promise.all([
+  const [gatedRedis, alertsRedis] = await Promise.all([
     createRedisClient(DatabaseIDs.GatedChannels, logger),
     createRedisClient(DatabaseIDs.Alerts, logger),
-    createRedisClient(DatabaseIDs.Guilds, logger),
   ]);
 
   const gatedChannels = createGatedChannels(gatedRedis);
-  const queuePriority = createQueuePriorityState(guildsRedis);
   const alerter = createAlerter({ redis: alertsRedis, service: 'proxy', logger });
 
   const gateway = buildGateway({
@@ -31,15 +30,20 @@ const main = async () => {
     invalidRequestsThreshold: INVALID_REQUESTS_THRESHOLD,
   });
   const gate = createGate({ invalidRequests: gateway.invalidRequests, gatedChannels, alerter });
+  const metrics = createCrosspostMetrics({
+    rest: gateway.rest,
+    invalidRequests: gateway.invalidRequests,
+  });
   const crosspost = createCrosspostQueue({
     rest: gateway.rest,
     gate,
     gatedChannels,
-    queuePriority,
+    metrics,
     redisUri: env.REDIS_URI,
     queueDatabaseId: DatabaseIDs.CrosspostQueue,
     concurrency: WORKER_CONCURRENCY,
   });
+  metrics.start(crosspost.stats);
 
   const app = createApp({ gateway, crosspost, gatedChannels });
   const server = app.listen(PROXY_PORT, () => {
@@ -52,6 +56,7 @@ const main = async () => {
   const shutdown = async () => {
     logger.info({ event: 'proxy.shutdown' });
     server.close();
+    metrics.stop();
     await crosspost.shutdown();
     await disconnectAllRedis();
     process.exit(0);

@@ -9,14 +9,14 @@ interface ErrorBoundaryProps {
   /**
    * Rendered instead of `fallback` when the caught error is an AuthExpiredSignal
    * (dead Discord token), so the boundary can route to re-login rather than the
-   * generic server-list redirect (ADR 0010). Omit to treat auth-expiry like any
+   * generic server-list redirect. Omit to treat auth-expiry like any
    * other error (used by the badge boundary, which just renders null).
    */
   authFallback?: ReactNode;
   /**
    * Rendered instead of `fallback` when the caught error is a TransientErrorSignal
    * (upstream 5xx / network blip), so the boundary can offer an in-place retry
-   * rather than ejecting to the server list (ADR 0010). Omit to treat a transient
+   * rather than ejecting to the server list. Omit to treat a transient
    * failure like any other error (redirect via `fallback`).
    */
   transientFallback?: ReactNode;
@@ -30,8 +30,8 @@ interface ErrorBoundaryProps {
    * compare), re-mounting `children` so a streamed promise is re-consumed. A
    * class error boundary never self-resets; `router.refresh()` alone gets a
    * fresh server promise but the latched boundary keeps rendering the fallback
-   * and never reads it. Retry orchestration bumps a value here to recover
-   * (ADR 0010). Omit to keep the old behaviour (reset only via React `key`).
+   * and never reads it. Retry orchestration bumps a value here to recover.
+   * Omit to keep the old behaviour (reset only via React `key`).
    */
   resetKeys?: readonly unknown[];
   children: ReactNode;

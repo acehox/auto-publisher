@@ -20,7 +20,7 @@ export const Internal: Router = (() => {
 
   /**
    * POST /internal/channel-permissions/:guildId
-   * Publish-state push from the bot (ADR 0008): per-channel crosspost
+   * Publish-state push from the bot: per-channel crosspost
    * capability, computed off the bot's gateway cache. Stored for the dashboard
    * to read. Fire-and-forget — 202 immediately.
    */
@@ -65,7 +65,7 @@ export const Internal: Router = (() => {
 
   /**
    * POST /internal/guild/:guildId/channels/invalidate
-   * Channel-list membership-change ping from a bot (ADR 0007 amendment): an
+   * Channel-list membership-change ping from a bot: an
    * announcement channel was created/deleted or crossed the type boundary, so
    * the cached candidate list is stale. Evicts only this guild's `/channels`
    * cache entry (permission entries stay on TTL). Fire-and-forget — 202.

@@ -50,25 +50,53 @@ const handle = async (message: Message, channel: NewsChannel) => {
   return push(message, channel.guildId);
 };
 
+const MAX_PUSH_ATTEMPTS = 3;
+const PUSH_BACKOFF_MS = [2_000, 4_000];
+
 /**
- * @param guildId taken from the channel, not `message.guildId` — the latter is
- *   nullable, and the proxy needs the guild to resolve the onboarding boost tier.
+ * Retries are safe: the proxy's job id dedupes a double landing. They live in
+ * memory, so a restart drops the ones in flight.
+ * @param guildId taken from the channel, not `message.guildId`, which is nullable
  */
-const push = async (message: Message, guildId: Snowflake): Promise<Response | undefined> => {
-  try {
-    return await Data.API.Proxy.enqueueCrosspost(guildId, message.channel.id, message.id);
-  } catch (error) {
-    logger.warn(
-      {
-        event: 'crosspost.push_failed',
+const push = async (message: Message, guildId: Snowflake): Promise<void> => {
+  const context = { guildId, channelId: message.channel.id, messageId: message.id };
+
+  for (let attempt = 1; ; attempt++) {
+    const backoffMs = PUSH_BACKOFF_MS[attempt - 1] ?? 0;
+    let delayMs: number;
+    let failure: Record<string, unknown>;
+
+    try {
+      const response = await Data.API.Proxy.enqueueCrosspost(
         guildId,
-        channelId: message.channel.id,
-        messageId: message.id,
-        err: error,
-      },
-      'Failed to enqueue crosspost'
-    );
-    return undefined;
+        context.channelId,
+        context.messageId
+      );
+      // 204 = locked or blocked channel, dropped on purpose.
+      if (response.ok) return;
+      if (response.status !== 503) {
+        logger.warn(
+          { event: 'crosspost.push_rejected', ...context, status: response.status },
+          'Proxy rejected crosspost enqueue'
+        );
+        return;
+      }
+      const retryAfterSec = Number(response.headers.get('retry-after'));
+      delayMs = retryAfterSec > 0 ? secToMs(retryAfterSec) : backoffMs;
+      failure = { status: response.status };
+    } catch (error) {
+      delayMs = backoffMs;
+      failure = { err: error };
+    }
+
+    if (attempt >= MAX_PUSH_ATTEMPTS) {
+      logger.warn(
+        { event: 'crosspost.push_failed', ...context, attempts: attempt, ...failure },
+        'Failed to enqueue crosspost'
+      );
+      return;
+    }
+    await sleep(delayMs);
   }
 };
 

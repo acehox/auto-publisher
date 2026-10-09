@@ -21,8 +21,9 @@ const countOf = (count: number, noun: string): string =>
 /**
  * ZZP čl. 60 st. 2 makes these contract terms, so they must describe what runs.
  * Nothing here promises delivery — the proxy gate drops on Discord's
- * 10/hour/channel sublimit. `delay` says "priority", not "dedicated capacity":
- * one queue, Premium is a tier within it (ADR 0011).
+ * 10/hour/channel sublimit. `delay` still says "priority", which no longer runs
+ * (one FIFO queue, ADR 0001): replaced by the rollover pitch before develop
+ * ships (release gate).
  */
 const publishing = {
   rateLimit: 'Discord allows up to 10 published messages per hour, per channel.',
@@ -243,7 +244,7 @@ const channels = {
       `${subject} stays off until you turn another channel off, or upgrade. Premium publishes every channel, adds filters, and moves you up the publish queue.`,
   },
 
-  /** Retained but not serving (ADR 0009). */
+  /** Retained but not serving. */
   paused: {
     count: (count: number): string =>
       `${countOf(count, 'channel')} ${plural(count, 'is', 'are')} set up but paused.`,

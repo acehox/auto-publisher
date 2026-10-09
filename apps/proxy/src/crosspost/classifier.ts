@@ -13,9 +13,9 @@ export type CrosspostOutcome =
   | { kind: 'retryable_5xx'; status: number };
 
 const classifyRateLimit = (error: RateLimitError): CrosspostOutcome => {
-  if (error.scope === 'shared' && !error.global) {
-    return { kind: 'sublimit', retryAfterMs: error.retryAfter };
-  }
+  // Scope first: `global` is discord.js's own 50 req/s counter, not Discord's
+  // verdict, and is often true at full speed.
+  if (error.scope === 'shared') return { kind: 'sublimit', retryAfterMs: error.retryAfter };
   if (!error.global && error.retryAfter > SUBLIMIT_TIME_THRESHOLD_MS) {
     return { kind: 'sublimit', retryAfterMs: error.retryAfter };
   }

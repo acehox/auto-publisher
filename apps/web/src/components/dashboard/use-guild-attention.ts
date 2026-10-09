@@ -84,7 +84,7 @@ export function useGuildAttention(): GuildAttention {
   const showMigration = !data.migrated;
 
   // Paused-channels state: the guild is on the free plan (channelLimit !== 0)
-  // and has retained channels it is no longer serving. ADR 0009.
+  // and has retained channels it is no longer serving.
   const pausedChannels = data.channels.filter(c => c.hasSavedSetup);
   const pausedCount = pausedChannels.length;
   const overLimitPaused = data.channelLimit !== 0 && pausedCount > 0 && !guild.hasSubscription;

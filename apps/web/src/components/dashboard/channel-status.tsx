@@ -24,8 +24,8 @@ import type { GuildChannel } from '@/lib/api/types';
  *
  * The card is the alert, so a broken channel needs no banner above it: severity
  * is on the card's top edge, icon and headline, and the Fix control sits on the
- * row that names the problem. Permission-derived from the publish-state cache
- * (ADR 0008) — no activity feed or rate-limit counter is plumbed to the web.
+ * row that names the problem. Permission-derived from the publish-state cache —
+ * no activity feed or rate-limit counter is plumbed to the web.
  */
 export function ChannelStatus() {
   const { guild, data } = useGuild();

@@ -13,10 +13,8 @@ export enum DatabaseIDs {
 
 export enum Keys {
   Enabled = 'enabled',
-  Sublimited = 'sublimited',
+  SublimitLock = 'sublimit_lock',
   Blocked = 'blocked',
-  Premium = 'premium',
-  Boosted = 'boosted',
   Migrated = 'migrated', // MIGRATION: removed at sunset, with a one-off SCAN + DEL of `migrated:*`
   ChannelPermissions = 'channel_permissions',
   Alert = 'alert',
@@ -28,10 +26,8 @@ const keyFor = (prefix: Keys) => (id: string) => `${prefix}:${id}`;
 
 export const RedisKeys = {
   enabled: keyFor(Keys.Enabled),
-  sublimited: keyFor(Keys.Sublimited),
+  sublimitLock: keyFor(Keys.SublimitLock),
   blocked: keyFor(Keys.Blocked),
-  premium: keyFor(Keys.Premium),
-  boosted: keyFor(Keys.Boosted),
   migrated: keyFor(Keys.Migrated),
   channelPermissions: keyFor(Keys.ChannelPermissions),
   alert: keyFor(Keys.Alert),

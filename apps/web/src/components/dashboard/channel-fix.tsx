@@ -37,7 +37,7 @@ export function channelIsHidden(channel: GuildChannel): boolean {
 
 /**
  * Instructional only, and freely dismissible — the publish-state cache is
- * bot-pushed and self-heals once permissions change (ADR 0008), so a recheck
+ * bot-pushed and self-heals once permissions change, so a recheck
  * button would either lie or burn Discord REST.
  */
 export function ChannelFixButton({

@@ -13,7 +13,7 @@ import type { ChannelRule } from './channel.js';
  * An empty list publishes everything.
  *
  * No plan check: filters are Premium-only, and a free guild's filtered channels
- * are PAUSED rather than served unfiltered (ADR 0009), so they never reach the
+ * are PAUSED rather than served unfiltered, so they never reach the
  * allowlist this reads. A serving channel with conditions is, by construction,
  * a Premium guild's channel.
  * @param message Discord message

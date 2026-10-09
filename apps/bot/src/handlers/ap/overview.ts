@@ -49,7 +49,7 @@ interface OverviewState {
   premium: boolean;
   /** Registered + serving channels, broken-first. Empty for a legacy guild. */
   channels: OverviewChannel[];
-  /** Retained but not serving (ADR 0009), in sidebar order, with filter counts. */
+  /** Retained but not serving, in sidebar order, with filter counts. */
   pausedChannels: PausedChannel[];
   /**
    * Announcement channels that exist in the guild at all, from the bot's cache.
@@ -269,7 +269,7 @@ const renderFixBlock = (state: OverviewState): string[] | null => {
 };
 
 /**
- * Paused channels are retained but not serving (ADR 0009) — surfaced so the user
+ * Paused channels are retained but not serving — surfaced so the user
  * understands why they went quiet, with the path back. Trails the serving
  * channels, matching the Overview's paused rows.
  *

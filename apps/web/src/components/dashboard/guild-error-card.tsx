@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 
 /**
  * In-place manual retry for a transient load failure, instead of ejecting to the
- * server list (ADR 0010). Two words and a button — the cause is never the user's
+ * server list. Two words and a button — the cause is never the user's
  * business, and there is no auto-retry loop once this is showing: the user
  * decides when to re-hit the backend while Discord is down.
  *

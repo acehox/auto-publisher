@@ -18,7 +18,7 @@ import type { DiscordGuild, GuildDashboardData } from '@/lib/api/types';
 interface GuildContextValue {
   guildId: string;
   // May resolve to a failure sentinel; useGuild() turns that into a typed
-  // client-side throw the shell's error boundary routes per kind (ADR 0010).
+  // client-side throw the shell's error boundary routes per kind.
   dataPromise: Promise<GuildDashboardData | GuildLoadFailure>;
 }
 
@@ -29,7 +29,7 @@ const GuildContext = createContext<GuildContextValue | null>(null);
  * list) plus its detail payload as a PROMISE. `useGuild()` unwraps the promise
  * with `use()`, so only components that read guild detail suspend — the shell
  * chrome (switcher/tabs), which needs only the list + route param, renders
- * immediately (ADR 0007, 2026-07-15). The identity comes from the list because
+ * immediately. The identity comes from the list because
  * the detail payload carries no name/icon (fetching them would cost a Discord
  * call).
  */
@@ -56,7 +56,7 @@ export function useGuild(): { guild: DiscordGuild; data: GuildDashboardData } {
   const data = use(context.dataPromise);
   // A failure sentinel: re-throw as a typed signal so the shell's error boundary
   // routes each kind to its recovery — re-login, server-list redirect, or an
-  // in-place retry card (ADR 0010).
+  // in-place retry card.
   if (isAuthExpired(data)) {
     throw new AuthExpiredSignal();
   }

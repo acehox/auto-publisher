@@ -103,7 +103,7 @@ const pushJoinDates = async (guilds: { guildId: Snowflake; joinedAt: string }[])
   });
 };
 
-// Publish-state push (ADR 0008): per-channel crosspost capability computed off
+// Publish-state push: per-channel crosspost capability computed off
 // the gateway cache. `full` (a reconnect/join sweep) lets the backend drop stale
 // fields; incremental pushes only upsert.
 const pushChannelPermissions = async (
@@ -120,7 +120,7 @@ const pushChannelPermissions = async (
   });
 };
 
-// Channel-list cache invalidation (ADR 0007 amendment): an announcement channel
+// Channel-list cache invalidation: an announcement channel
 // was created/deleted or crossed the type boundary — bust the backend's cached
 // candidate list so the dashboard reflects it without the 5-min TTL wait.
 const invalidateGuildChannels = async (guildId: Snowflake) => {

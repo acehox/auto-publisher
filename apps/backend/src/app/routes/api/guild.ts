@@ -29,8 +29,8 @@ import {
 
 /**
  * Guard shared by every filter-write route. Filters are a Premium feature, and
- * a free guild's filtered channels are paused rather than published unfiltered
- * (ADR 0009) — so editing them there is a no-op the dashboard already locks.
+ * a free guild's filtered channels are paused rather than published unfiltered —
+ * so editing them there is a no-op the dashboard already locks.
  * Enforced here too: the UI lock is not a real gate. The `PREMIUM_INACTIVE`
  * code lets the client distinguish this from a generic 403.
  */
@@ -48,7 +48,7 @@ const assertPremiumActive = async (guildId: string): Promise<void> => {
  * Resolve a serving channel that belongs to this guild, or throw. Filters live
  * on the channel row and are mutated by channelId (its PK), so without the
  * guild-ownership check a guild admin could edit filters on a channel
- * registered under a different guild. A paused row (ADR 0009) is a disabled
+ * registered under a different guild. A paused row is a disabled
  * channel with retained config — not a valid filter-edit target.
  */
 const requireOwnedServingChannel = async (guildId: string, channelId: string): Promise<void> => {
@@ -149,7 +149,7 @@ export const GuildApi: Router = (() => {
       // Self-heal before reading presence-derived state — the invite-return
       // lands here, and re-authorizing an already-present bot fires no gateway
       // event, so a missing row would otherwise stick until the nightly
-      // reconcile (ADR 0007).
+      // reconcile.
       const [present, sub] = await Promise.all([
         Services.Guilds.isBotPresent(guildId),
         Services.Subscriptions.getByGuildId(guildId),
@@ -166,7 +166,7 @@ export const GuildApi: Router = (() => {
         // ...but only when Discord actually SAID the bot is absent. An
         // unresolved check (outage, proxy failure) must not render as the
         // permanent "bot isn't in your server" redirect — 503 lands in the
-        // web's transient bucket and retries in place (ADR 0010).
+        // web's transient bucket and retries in place.
         if (inconclusive) {
           throw createHttpError(
             'Could not confirm bot presence',
@@ -178,7 +178,7 @@ export const GuildApi: Router = (() => {
       }
 
       // Publish capability per channel rides along, served from the bot-pushed
-      // publish-state cache (ADR 0008) with a REST write-back fallback. Drives
+      // publish-state cache with a REST write-back fallback. Drives
       // the "Publishing / Not publishing" indicator + migrate-modal preselection.
       const [channels, guildRow, channelLimit] = await Promise.all([
         Services.Channels.getChannelsForDashboard(guildId),
@@ -216,7 +216,7 @@ export const GuildApi: Router = (() => {
         message: 'Guild data retrieved successfully',
       } as APIResponse);
     } catch (error) {
-      // Diagnostic (Phase 1, ADR 0010): the web maps any non-401/403/404/409
+      // Diagnostic: the web maps any non-401/403/404/409
       // here to a transient retry card. Log the actual upstream trigger — proxy
       // 504 / Discord 5xx / connection blip — so we can confirm the real cause
       // before hardening this read path. Intentional control-flow throws (the

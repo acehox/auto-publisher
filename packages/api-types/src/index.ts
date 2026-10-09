@@ -56,14 +56,14 @@ export interface GuildChannel {
   filters: ChannelFilterRule[];
   filterMode: FilterMatchMode;
   /**
-   * Whether the bot can currently crosspost here (from the publish-state cache,
-   * ADR 0008). Present on every channel of the dashboard aggregate; also drives
+   * Whether the bot can currently crosspost here (from the publish-state
+   * cache). Present on every channel of the dashboard aggregate; also drives
    * legacy migrate-modal preselection.
    */
   canPublish?: boolean;
   /**
    * True for a disabled channel whose config is retained because a plan change
-   * paused it (ADR 0009) — either for carrying filters or for the over-limit
+   * paused it — either for carrying filters or for the over-limit
    * trim. Only ever true when `enabled` is false. It does NOT say which cause,
    * so copy about filters must read `filters.length`, never this flag.
    */

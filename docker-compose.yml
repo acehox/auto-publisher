@@ -9,6 +9,8 @@ services:
       dockerfile: apps/bot/Dockerfile
     restart: unless-stopped
     env_file: [.env]
+    environment:
+      - NODE_ENV=production
     networks: [ap-network]
     depends_on:
       proxy:
@@ -23,6 +25,8 @@ services:
       dockerfile: apps/proxy/Dockerfile
     restart: unless-stopped
     env_file: [.env]
+    environment:
+      - NODE_ENV=production
     networks: [ap-network]
     depends_on:
       redis:
@@ -41,6 +45,7 @@ services:
     restart: unless-stopped
     env_file: [.env]
     environment:
+      - NODE_ENV=production
       # Service names on the compose network; override in .env only for an
       # external database.
       - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/postgres}
@@ -66,6 +71,7 @@ services:
     restart: unless-stopped
     env_file: [.env]
     environment:
+      - NODE_ENV=production
       # Reached over the compose network, never from the browser: every
       # dashboard call to the backend is server-side.
       - BACKEND_URL=http://backend:8080

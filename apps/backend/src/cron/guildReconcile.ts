@@ -126,7 +126,7 @@ const sweepPresence = async (): Promise<Snowflake[]> => {
 };
 
 /**
- * State-based backstop for the free plan's channel cap (ADR 0009). The live
+ * State-based backstop for the free plan's channel cap. The live
  * paths only fire on a subscription change, a join or a dashboard load, so they
  * miss guilds already over-limit at deploy time and any live trim that threw.
  * This finds every guild serving more channels than the free cap, then trims the
@@ -222,13 +222,6 @@ const reconcileGuilds = async () => {
   }
 
   await purgeAbandonedGuilds();
-
-  // Reads subscriptions, not presence, so it runs whether or not the sweep completed.
-  try {
-    await Services.Plans.syncPriorityMarkers();
-  } catch (error) {
-    logger.warn(error, 'Guild reconcile: priority marker sync failed');
-  }
 };
 
 export const runGuildReconcile = async (): Promise<void> => {

@@ -1,16 +1,18 @@
 import { config } from '@ap/config';
-import { type RateLimitData, REST, RESTEvents } from '@discordjs/rest';
+import { type RateLimitData, REST } from '@discordjs/rest';
 import { Agent, type buildConnector } from 'undici';
 import { logger } from '../logger.js';
 
 const SUBLIMIT_TIME_THRESHOLD_MS = 60_000;
 
 /**
- * Reject sublimits so our error handlers see them. Route-level 429s (timeToReset < ~10s) are still
- * waited out by discord.js. Pre-flight passes sublimitTimeout=0, so we use timeToReset as a proxy.
+ * Reject sublimits so the classifier sees them; short route 429s are still waited out by
+ * discord.js. Not `sublimitTimeout`: discord.js zeroes it when the bucket is locally exhausted
+ * or X-RateLimit-Global is set, then retries the shared 429 itself. Pre-flight hardcodes scope
+ * 'user', so timeToReset stands in there.
  */
 const rejectOnCrosspostRateLimit = (data: RateLimitData): boolean => {
-  const isPostSublimit = data.scope === 'shared' && data.sublimitTimeout > 0;
+  const isPostSublimit = data.scope === 'shared';
   const isPreflightSublimit = data.timeToReset > SUBLIMIT_TIME_THRESHOLD_MS;
   return isPostSublimit || isPreflightSublimit;
 };
@@ -33,10 +35,6 @@ export const createRest = (token: string): REST => {
       'Discord egress pinned to local address'
     );
   }
-
-  rest.on(RESTEvents.RateLimited, data => {
-    logger.warn({ event: 'rest.rate_limited', ...data }, 'Rate limit hit');
-  });
 
   return rest;
 };

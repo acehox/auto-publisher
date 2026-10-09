@@ -4,7 +4,7 @@ import { Events, type Role } from 'discord.js';
 import { Services } from 'services/index.js';
 
 // Keeps the backend's cached role list fresh for the dashboard's
-// mention-filter picker (ADR 0007 amendment).
+// mention-filter picker.
 @ApplyOptions<Listener.Options>({
   event: Events.GuildRoleCreate,
 })

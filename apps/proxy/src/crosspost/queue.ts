@@ -1,41 +1,24 @@
 import type { REST } from '@discordjs/rest';
 import { DelayedError, type Job, Queue, Worker } from 'bullmq';
-import { Routes, type Snowflake } from 'discord-api-types/v10';
+import { RESTJSONErrorCodes, Routes, type Snowflake } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import { Redis } from 'ioredis';
 import { logger } from '../logger.js';
-import type { GatedChannels, QueuePriorityState } from './caches.js';
+import type { GatedChannels } from './caches.js';
 import { type CrosspostOutcome, classify } from './classifier.js';
 import type { Gate } from './gate.js';
+import type { CrosspostMetrics } from './metrics.js';
 
 const QUEUE_NAME = 'crosspost';
 const QUEUE_HIGH_WATER = 10_000;
 const RATE_LIMIT_RETRY_CAP_MS = 5 * 60 * 1_000;
 const INVALID_REQUESTS_DELAY_MS = 60_000;
 const SNOWFLAKE_PATTERN = /^\d{17,19}$/;
-
-/**
- * Queue tiers. Lower is higher priority; BullMQ's valid range is 1..2_097_152.
- *
- * One queue, one token, one REST client — the tiers are the whole of "priority
- * publishing". Two queues on one token would be actively harmful: discord.js
- * tracks the 50 req/s global limit client-side PER REST instance, so two
- * instances each think they have a full 50 and manufacture the 429s the split
- * was meant to avoid.
- *
- * `BOOSTED` deliberately outranks paying guilds. The budget is 10 publishes per
- * newly-joined guild, so it costs Premium nothing measurable, and it is the one
- * lever on the first-impression window that decides whether a server keeps the
- * bot at all.
- *
- * INVARIANT: every `queue.add` MUST pass an explicit priority. BullMQ serves
- * un-prioritized jobs BEFORE prioritized ones — `fetchNextJob.lua` RPOPLPUSHes
- * from the `wait` list and only falls back to the prioritized sorted set when
- * `wait` is empty. So leaving any job untagged (priority 0 = "no priority")
- * would starve the boosted tier behind a backlog that at peak never drains,
- * making the boost strictly worse than plain FIFO. See ADR 0011.
- */
-const PRIORITY = { BOOSTED: 1, PREMIUM: 5, NORMAL: 10 } as const;
+const EXPECTED_DISCORD_ERRORS = new Set<number | string>([
+  RESTJSONErrorCodes.UnknownChannel,
+  RESTJSONErrorCodes.UnknownMessage,
+  RESTJSONErrorCodes.InvalidMessageType,
+]);
 
 export type CrosspostJobData = {
   guildId: Snowflake;
@@ -44,14 +27,10 @@ export type CrosspostJobData = {
 };
 
 export type CrosspostQueueStats = {
-  /**
-   * Untagged depth. MUST stay 0 — a non-zero value means some `queue.add` lost
-   * its explicit priority and is starving the boosted tier (see PRIORITY).
-   */
   waiting: number;
-  /** Where all depth lives now that every job carries a priority */
-  prioritized: number;
   active: number;
+  delayed: number;
+  failed: number;
 };
 
 export type CrosspostQueueModule = {
@@ -65,7 +44,7 @@ export const createCrosspostQueue = (deps: {
   rest: REST;
   gate: Gate;
   gatedChannels: GatedChannels;
-  queuePriority: QueuePriorityState;
+  metrics: CrosspostMetrics;
   redisUri: string;
   queueDatabaseId: number;
   concurrency: number;
@@ -92,16 +71,18 @@ export const createCrosspostQueue = (deps: {
     const { channelId, messageId } = job.data;
     switch (outcome.kind) {
       case 'already_done':
-        await deps.gatedChannels.increment(channelId);
+        deps.metrics.outcome('already_done');
         logger.debug({ event: 'crosspost.already', channelId, messageId });
         return;
       case 'blocked':
         await deps.gatedChannels.block(channelId);
+        deps.metrics.outcome('blocked');
         logger.info({ event: 'crosspost.blocked', channelId, messageId, status: outcome.status });
         return;
       case 'sublimit':
         await deps.gatedChannels.lock(channelId, outcome.retryAfterMs / 1_000);
-        logger.info({
+        deps.metrics.outcome('sublimit');
+        logger.debug({
           event: 'crosspost.sublimit',
           channelId,
           messageId,
@@ -111,6 +92,7 @@ export const createCrosspostQueue = (deps: {
       case 'global_ratelimit':
       case 'transient_429': {
         const delayMs = Math.min(outcome.retryAfterMs, RATE_LIMIT_RETRY_CAP_MS);
+        deps.metrics.outcome('rate_limited');
         logger.warn({
           event: 'crosspost.rate_limited',
           channelId,
@@ -121,8 +103,10 @@ export const createCrosspostQueue = (deps: {
         await job.moveToDelayed(Date.now() + delayMs, job.token);
         throw new DelayedError();
       }
-      case 'fatal_4xx':
-        logger.warn({
+      case 'fatal_4xx': {
+        deps.metrics.discordError(outcome.code);
+        const level = EXPECTED_DISCORD_ERRORS.has(outcome.code) ? 'debug' : 'warn';
+        logger[level]({
           event: 'crosspost.discord_error',
           channelId,
           messageId,
@@ -130,8 +114,10 @@ export const createCrosspostQueue = (deps: {
           code: outcome.code,
         });
         return;
+      }
       case 'retryable_5xx':
-        logger.warn({
+        deps.metrics.outcome('retryable');
+        logger.debug({
           event: 'crosspost.retryable',
           channelId,
           messageId,
@@ -145,8 +131,9 @@ export const createCrosspostQueue = (deps: {
     const { channelId, messageId } = job.data;
     const verdict = await deps.gate.evaluate(channelId);
     if (verdict.kind === 'reject') {
+      deps.metrics.workerSkipped(verdict.reason);
       if (verdict.reason === 'invalid_requests') {
-        logger.warn({ event: 'crosspost.shed.invalid_requests', channelId, messageId });
+        logger.debug({ event: 'crosspost.shed.invalid_requests', channelId, messageId });
         await job.moveToDelayed(Date.now() + INVALID_REQUESTS_DELAY_MS, job.token);
         throw new DelayedError();
       }
@@ -161,14 +148,7 @@ export const createCrosspostQueue = (deps: {
 
     try {
       await deps.rest.post(Routes.channelMessageCrosspost(channelId, messageId));
-      await deps.gatedChannels.increment(channelId);
-      // Gated on the job's OWN priority, not on a fresh budget read: an
-      // unconditional DECR would mint a negative key for every guild in the
-      // system, which is real memory under the `noeviction` cap, where a full
-      // Redis rejects every write, the queue's included.
-      if (job.opts.priority === PRIORITY.BOOSTED) {
-        await deps.queuePriority.consume(job.data.guildId);
-      }
+      deps.metrics.latency(Date.now() - job.timestamp);
       logger.debug({ event: 'crosspost.success', channelId, messageId });
     } catch (error) {
       const outcome = classify(error);
@@ -183,7 +163,9 @@ export const createCrosspostQueue = (deps: {
 
   worker.on('failed', (job, err) => {
     if (err instanceof DelayedError) return;
-    logger.warn({
+    // BullMQ emits 'failed' on every attempt; only the last one is a lost message
+    const isFinal = !job || job.attemptsMade >= (job.opts.attempts ?? 1);
+    logger[isFinal ? 'warn' : 'debug']({
       event: 'crosspost.job_failed',
       jobId: job?.id,
       attemptsMade: job?.attemptsMade,
@@ -191,6 +173,24 @@ export const createCrosspostQueue = (deps: {
     });
   });
   worker.on('error', err => logger.error({ event: 'worker.error', err }));
+
+  // `prioritized` counts jobs left by the tiered build; BullMQ's 'waiting'
+  // excludes them. Drop next release.
+  const counts = async (): Promise<CrosspostQueueStats> => {
+    const jobCounts = await queue.getJobCounts(
+      'waiting',
+      'prioritized',
+      'active',
+      'delayed',
+      'failed'
+    );
+    return {
+      waiting: (jobCounts.waiting ?? 0) + (jobCounts.prioritized ?? 0),
+      active: jobCounts.active ?? 0,
+      delayed: jobCounts.delayed ?? 0,
+      failed: jobCounts.failed ?? 0,
+    };
+  };
 
   const router = express.Router();
   router.post('/crosspost/:guildId/:channelId/:messageId', async (req, res) => {
@@ -206,8 +206,9 @@ export const createCrosspostQueue = (deps: {
 
     const verdict = await deps.gate.evaluate(channelId);
     if (verdict.kind === 'reject') {
+      deps.metrics.enqueueRejected(verdict.reason);
       if (verdict.reason === 'invalid_requests') {
-        logger.warn({ event: 'crosspost.rejected.invalid_requests', channelId, messageId });
+        logger.debug({ event: 'crosspost.rejected.invalid_requests', channelId, messageId });
         res.setHeader('Retry-After', '60').status(503).end();
         return;
       }
@@ -216,48 +217,21 @@ export const createCrosspostQueue = (deps: {
       return;
     }
 
-    // Both states, never `getWaitingCount()`: BullMQ's 'waiting' expands to
-    // `wait` + `paused` (`sanitizeJobTypes`) and never covers `prioritized`, so
-    // once every job carries a priority a waiting-only read is permanently 0 and
-    // this shed can never fire. One round trip either way.
-    const counts = await queue.getJobCounts('waiting', 'prioritized');
-    const waiting = counts.waiting ?? 0;
-    const prioritized = counts.prioritized ?? 0;
-    const depth = waiting + prioritized;
-    if (depth >= QUEUE_HIGH_WATER) {
-      logger.warn({
-        event: 'crosspost.rejected.queue_overloaded',
-        channelId,
-        messageId,
-        waiting,
-        prioritized,
-      });
+    const { waiting } = await counts();
+    if (waiting >= QUEUE_HIGH_WATER) {
+      deps.metrics.enqueueRejected('queue_overloaded');
+      logger.debug({ event: 'crosspost.rejected.queue_overloaded', channelId, messageId, waiting });
       res.setHeader('Retry-After', '30').status(503).end();
       return;
     }
 
-    // Boost first: it outranks Premium by design, and a boosted guild that is
-    // also Premium must consume its budget rather than silently keep it.
-    const [boosted, premium] = await Promise.all([
-      deps.queuePriority.isBoosted(guildId),
-      deps.queuePriority.isPremium(guildId),
-    ]);
-    const priority = boosted ? PRIORITY.BOOSTED : premium ? PRIORITY.PREMIUM : PRIORITY.NORMAL;
-
     await queue.add(
       'crosspost',
       { guildId, channelId, messageId },
-      { jobId: `${channelId}-${messageId}`, priority }
+      { jobId: `${channelId}-${messageId}` }
     );
-
-    // Boosted enqueues log at `info` so the feature is measurable in prod
-    // (bounded: 10 per new guild). Premium and normal stay at `debug` — an info
-    // line per message would be thousands an hour at peak.
-    if (priority === PRIORITY.BOOSTED) {
-      logger.info({ event: 'crosspost.enqueued.boosted', guildId, channelId, messageId, priority });
-    } else {
-      logger.debug({ event: 'crosspost.enqueued', guildId, channelId, messageId, priority });
-    }
+    deps.metrics.enqueueAccepted();
+    logger.debug({ event: 'crosspost.enqueued', guildId, channelId, messageId });
 
     res.status(202).end();
   });
@@ -281,13 +255,6 @@ export const createCrosspostQueue = (deps: {
       await queue.close();
       await connection.quit();
     },
-    stats: async () => {
-      const counts = await queue.getJobCounts('waiting', 'prioritized', 'active');
-      return {
-        waiting: counts.waiting ?? 0,
-        prioritized: counts.prioritized ?? 0,
-        active: counts.active ?? 0,
-      };
-    },
+    stats: counts,
   };
 };

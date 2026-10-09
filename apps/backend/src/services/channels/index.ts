@@ -245,7 +245,7 @@ const add = async (
   await assertAnnouncementChannelOfGuild(guildId, channelId);
 
   // The limit counts SERVING channels only (paused rows are retained but not
-  // served, ADR 0009), so both "register new" and "unpause existing" go through
+  // served), so both "register new" and "unpause existing" go through
   // the same cap gate.
   const limit = await Plans.channelLimit(guildId);
   const [servingCount] = await db
@@ -270,7 +270,7 @@ const add = async (
     }
 
     // The bot's hot path has no plan check — a serving channel's conditions are
-    // a Premium guild's by construction (ADR 0009) — so unpausing with filters
+    // a Premium guild's by construction — so unpausing with filters
     // intact hands a free guild Premium filtering, and only a guild ALSO over
     // the count cap would ever be corrected by the nightly backstop. In the
     // service, not the routes, so the dashboard and `/ap enable` can't diverge.

@@ -108,7 +108,7 @@ export function ChannelConfig({
           router.refresh();
           return;
         }
-        // Dead Discord token: re-login instead of a generic failure (ADR 0010).
+        // Dead Discord token: re-login instead of a generic failure.
         if (signInOnAuthExpired(result.status)) return;
         // Disable never hits the channel cap, so a non-auth failure there is
         // transient — a refresh re-syncs the toggle to server truth.

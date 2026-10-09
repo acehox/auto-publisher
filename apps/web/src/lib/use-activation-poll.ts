@@ -15,7 +15,7 @@ export type ActivationPhase = 'activating' | 'gaveUp';
  * row, so `hasSubscription` (the signal the invite/pending banners key off) can
  * still be false on arrival. While `active` is false this calls
  * `router.refresh()` every 3s — a soft RSC re-fetch that re-seeds the guild
- * list so `hasSubscription` observes the webhook write (ADR 0007 model: reads
+ * list so `hasSubscription` observes the webhook write (reads
  * stay in Server Components, no client fetch) — until it flips true or a 60s
  * ceiling is hit.
  *

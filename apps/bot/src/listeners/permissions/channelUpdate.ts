@@ -13,7 +13,7 @@ export class ChannelUpdateListener extends Listener {
   ) {
     // A type-cross INTO or OUT OF announcement changes the candidate list →
     // bust the backend's cached list so the dashboard reflects it without the
-    // 5-min TTL wait (ADR 0007 amendment). Membership only: a rename/reposition
+    // 5-min TTL wait. Membership only: a rename/reposition
     // (no type change) is left to expire on TTL. Relies on the cached
     // oldChannel type (ChannelManager is not zeroed).
     const wasAnnouncement = oldChannel.type === ChannelType.GuildAnnouncement;

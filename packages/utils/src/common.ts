@@ -27,7 +27,7 @@ export interface TtlCache<T> {
  * Minimal in-memory TTL cache: `Map` + per-entry `expiresAt`, lazy expiry on
  * read, and a size-gated full sweep on write so expired entries never
  * accumulate unbounded. No LRU cap — callers use it for small, self-evicting
- * key spaces. Safe because every consumer is single-instance (ADR 0006).
+ * key spaces. Safe because every consumer is single-instance.
  * @param ttlMs entry lifetime in milliseconds
  * @param pruneThreshold sweep expired entries once the map reaches this size
  */

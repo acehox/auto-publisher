@@ -13,13 +13,13 @@ export class ChannelDeleteListener extends Listener {
     const channel = await Services.Channel.fetchNewsChannel(receivedChannel);
     if (!channel) return;
 
-    logger.info(`Channel deleted: ${channel.id} in guild ${channel.guildId}`);
+    logger.debug(`Channel deleted: ${channel.id} in guild ${channel.guildId}`);
 
     // Disable channel in DB & cache
     await Services.Channel.disable(channel.id);
 
-    // Membership change → bust the backend's cached candidate list (ADR 0007
-    // amendment) so the deleted channel stops appearing without the 5-min wait.
+    // Membership change → bust the backend's cached candidate list
+    // so the deleted channel stops appearing without the 5-min wait.
     await Services.Channel.invalidateGuildCache(channel.guildId);
   }
 }
