@@ -1,6 +1,14 @@
 'use client';
 
-import { Check, Filter, Hash, Headphones, History, type LucideIcon, Zap } from 'lucide-react';
+import {
+  Check,
+  Filter,
+  Hash,
+  Headphones,
+  type LucideIcon,
+  RotateCwFadingClock,
+  Zap,
+} from 'lucide-react';
 import { easeOut, motion, useReducedMotion, useTime, useTransform } from 'motion/react';
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -35,7 +43,7 @@ const RING_CLASS =
 const FEATURE_ICONS: Record<PremiumFeatureId, LucideIcon> = {
   channels: Hash,
   filters: Filter,
-  rollover: History,
+  rollover: RotateCwFadingClock,
   support: Headphones,
 };
 

@@ -50,13 +50,13 @@ export function PlanComparisonTable({
           </th>
           <th
             scope="col"
-            className={`text-xs font-normal text-slate-400 ${compact ? 'px-3 py-2 text-left uppercase tracking-wide' : 'w-18 pb-2 text-center'}`}
+            className={`text-xs font-normal text-slate-400 ${compact ? 'px-3 py-2 text-left uppercase tracking-wide' : 'w-18 pb-2 text-center sm:w-32'}`}
           >
             Free
           </th>
           <th
             scope="col"
-            className={`text-xs font-normal text-blue-300 ${compact ? 'px-3 py-2 text-left uppercase tracking-wide' : 'w-24 pb-2 text-center'}`}
+            className={`text-xs font-normal text-blue-300 ${compact ? 'px-3 py-2 text-left uppercase tracking-wide' : 'w-24 pb-2 text-center sm:w-52'}`}
           >
             <span className="inline-flex items-center gap-1">
               <Zap className="h-3 w-3" aria-hidden="true" />
