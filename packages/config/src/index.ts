@@ -243,7 +243,7 @@ export const assertRequiredEnv = (scope: EnvScope = {}): void => {
 };
 
 /** The free plan's channel cap. Every other app reads it from here. */
-const FREE_CHANNELS_PER_GUILD = 3;
+const FREE_CHANNELS_PER_GUILD = 5;
 
 /**
  * Application configuration.
