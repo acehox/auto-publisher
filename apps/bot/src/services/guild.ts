@@ -63,12 +63,11 @@ const remove = async (guildId: Snowflake) => {
   }
 };
 
-// MIGRATION: removed at sunset (every guild is allowlist-model; no isMigrated check).
-const isMigrated = (guildId: Snowflake) => Data.Cache.MigratedGuilds.isMigrated(guildId);
+const getFlags = (guildId: Snowflake) => Data.Cache.GuildFlags.get(guildId);
 
 export const Guild = {
   register,
   registerIfPendingJoin,
   remove,
-  isMigrated,
+  getFlags,
 };

@@ -51,23 +51,13 @@ const faqs: { question: string; answer: ReactNode }[] = [
     ),
   },
   {
-    question: 'Why are my messages being delayed from publishing?',
-    answer: (
-      <>
-        During busy periods Auto Publisher paces out publishing to stay within Discord&apos;s rate
-        limits. This is normal — even instant publishes take a moment to reach every following
-        server, depending on how many follow your channel.
-      </>
-    ),
-  },
-  {
     question: 'Why can only 10 messages per channel per hour be published?',
     answer: (
       <>
-        That is a hard limit set by Discord, not by us — even a person cannot publish more than 10
-        messages per channel per hour. There is no way around it. Anything posted past that limit in
-        the same hour is not published, so a channel carrying a busy feed will not have all of it
-        crossposted.
+        That is a limit set by Discord, not by us — even a person cannot publish more than 10
+        messages per channel per hour. On the Free plan, messages beyond that limit can&apos;t be
+        published. Premium publishes them automatically once the limit resets, oldest first, for up
+        to 24 hours after they were posted.
       </>
     ),
   },

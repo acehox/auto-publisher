@@ -4,7 +4,10 @@ import type { GatedChannels } from './caches.js';
 
 export type GateRejectReason = 'invalid_requests' | 'blocked' | 'sublimit';
 
-export type GateVerdict = { kind: 'allow' } | { kind: 'reject'; reason: GateRejectReason };
+export type GateVerdict =
+  | { kind: 'allow' }
+  | { kind: 'reject'; reason: 'invalid_requests' | 'blocked' }
+  | { kind: 'reject'; reason: 'sublimit'; retryAfterMs: number };
 
 export type Gate = {
   evaluate(channelId: string): Promise<GateVerdict>;
@@ -25,9 +28,11 @@ export const createGate = (deps: {
       });
       return { kind: 'reject', reason: 'invalid_requests' };
     }
-    const { blocked, sublimited } = await deps.gatedChannels.check(channelId);
+    const { blocked, lockRemainingMs } = await deps.gatedChannels.check(channelId);
     if (blocked) return { kind: 'reject', reason: 'blocked' };
-    if (sublimited) return { kind: 'reject', reason: 'sublimit' };
+    if (lockRemainingMs !== null) {
+      return { kind: 'reject', reason: 'sublimit', retryAfterMs: lockRemainingMs };
+    }
     return { kind: 'allow' };
   },
 });

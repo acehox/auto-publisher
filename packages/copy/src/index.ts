@@ -20,23 +20,21 @@ const countOf = (count: number, noun: string): string =>
 
 /**
  * ZZP čl. 60 st. 2 makes these contract terms, so they must describe what runs.
- * Nothing here promises delivery — the proxy gate drops on Discord's
- * 10/hour/channel sublimit. `delay` still says "priority", which no longer runs
- * (one FIFO queue, ADR 0001): replaced by the rollover pitch before develop
- * ships (release gate).
+ * The limit is Discord's 10/hour/channel sublimit; only Premium publishes the
+ * excess after it resets. `entitled` is true on a self-host, which has no Free Plan.
  */
 const publishing = {
-  rateLimit: 'Discord allows up to 10 published messages per hour, per channel.',
+  overLimit: {
+    body: (entitled: boolean): string =>
+      entitled
+        ? 'Discord limits each channel to 10 published messages per hour. Messages beyond that limit are published automatically once it resets, in the order they were posted, for up to 24 hours.'
+        : "Discord limits each channel to 10 published messages per hour. Messages beyond that limit can't be published. Premium publishes them automatically once the limit resets, in the order they were posted, for up to 24 hours.",
 
-  delay: (entitled: boolean): string =>
-    entitled
-      ? 'Your messages are published at Premium priority. They go ahead of the free queue during busy periods.'
-      : "Messages may be delayed during busy periods to respect Discord's rate limits. Upgrade to Premium to prioritize your messages.",
-
-  delayShort: (entitled: boolean): string =>
-    entitled
-      ? 'Messages are published at priority.'
-      : 'Messages may be delayed. Upgrade to prioritize your messages.',
+    short: (entitled: boolean): string =>
+      entitled
+        ? "Messages beyond Discord's hourly limit are published once it resets, for up to 24 hours."
+        : "Messages beyond Discord's hourly limit aren't published.",
+  },
 } as const;
 
 /* Channel permissions ------------------------------------------------------ */
@@ -241,7 +239,7 @@ const channels = {
   limit: {
     title: (limit: number): string => `The Free plan publishes ${limit} channels`,
     body: (subject: string): string =>
-      `${subject} stays off until you turn another channel off, or upgrade. Premium publishes every channel, adds filters, and moves you up the publish queue.`,
+      `${subject} stays off until you turn another channel off, or upgrade. Premium publishes every channel and adds filters. It also publishes messages beyond Discord's hourly limit once the limit resets, for up to 24 hours.`,
   },
 
   /** Retained but not serving. */

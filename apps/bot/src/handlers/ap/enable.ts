@@ -159,9 +159,10 @@ export async function chatInputEnable(
       clearBlocked: false,
     });
 
-    // The guild's plan decides which delay note to show. One bot serves both,
-    // so this is a backend read, not a process constant. A failed read falls
-    // back to the free note — over-promising speed is the worse error.
+    // The guild's plan decides which hourly-limit note to show. One bot serves
+    // both, so this is a backend read, not a process constant. A failed read
+    // falls back to the free note — promising a rollover that won't run is the
+    // worse error.
     const premium =
       (await Services.Channel.getGuildChannels(interaction.guildId))?.premium ?? false;
 
@@ -169,10 +170,7 @@ export async function chatInputEnable(
       title: `${emojis.checkmark} ${Copy.channels.outcome.enabled}`,
       body:
         Copy.channels.outcome.enabledDetail(`<#${channel.id}>`) +
-        formatNotes([
-          notes.rateLimit,
-          premium ? notes.publishDelayPremium : notes.publishDelayFree,
-        ]),
+        formatNotes([premium ? notes.overLimitPremium : notes.overLimitFree]),
     });
   };
 

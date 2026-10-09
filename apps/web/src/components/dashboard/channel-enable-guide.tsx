@@ -2,7 +2,7 @@
 
 import { Copy } from '@ap/copy';
 import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
-import { usePublishDelayEntitled } from '@/components/dashboard/publish-delay-note';
+import { useRolloverEntitled } from '@/components/dashboard/over-limit-note';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -31,12 +31,11 @@ export function ChannelEnableGuideModal({
   onCancel,
 }: {
   channelName: string;
-  /** Entitled guild → the priority copy; else the delay note. */
   hasSubscription: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const entitled = usePublishDelayEntitled(hasSubscription);
+  const entitled = useRolloverEntitled(hasSubscription);
 
   return (
     <AlertDialog
@@ -54,10 +53,9 @@ export function ChannelEnableGuideModal({
 
         <PermissionSteps />
 
-        <div className="space-y-1.5 border-slate-800 border-t pt-3 text-xs leading-relaxed text-slate-400">
-          <p>{Copy.publishing.rateLimit}</p>
-          <p>{Copy.publishing.delay(entitled)}</p>
-        </div>
+        <p className="border-slate-800 border-t pt-3 text-xs leading-relaxed text-slate-400">
+          {Copy.publishing.overLimit.body(entitled)}
+        </p>
 
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>

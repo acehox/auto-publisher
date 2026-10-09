@@ -1,4 +1,6 @@
 import { config, isPublicInstance } from '@ap/config';
+import { db, guild } from '@ap/database';
+import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { logger } from 'utils/logger.js';
 import { ChannelPausing } from './channels/pausing.js';
@@ -22,6 +24,13 @@ const isPremium = async (guildId: Snowflake): Promise<boolean> => {
   return !!sub && isEntitledStatus(sub.status);
 };
 
+/** Every guild that resolves to Premium, in one query: the startup rebuild of the `premium:` flags. */
+const getPremiumGuildIds = async (): Promise<Snowflake[]> => {
+  if (isPublicInstance) return Subscriptions.getEntitledGuildIds();
+  const rows = await db.select({ guildId: guild.guildId }).from(guild);
+  return rows.map(row => row.guildId);
+};
+
 /** Max serving channels for a guild; 0 = unlimited (Premium). */
 const channelLimit = async (guildId: Snowflake): Promise<number> =>
   (await isPremium(guildId)) ? 0 : config.limits.freeChannelsPerGuild;
@@ -34,15 +43,22 @@ const channelLimit = async (guildId: Snowflake): Promise<number> =>
  * a no-op when already consistent, which is what lets the webhook path, the
  * reconcile backstop and the dashboard self-heal all call it unconditionally.
  *
+ * Also the runtime writer of the `premium:` flag (the startup rebuild is the
+ * other), which the bot forwards to the proxy as rollover: every entitlement
+ * change already passes through here.
+ *
  * Filtered channels are PAUSED rather than published unfiltered. With one bot
  * there is no longer a premium instance whose absence stops filters running, so
  * a downgrade would otherwise start publishing exactly what an admin
  * deliberately filtered out — unrecoverable, where not publishing is not.
  */
 const reconcileChannelServing = async (guildId: Snowflake): Promise<void> => {
-  if (await isPremium(guildId)) {
+  const premium = await isPremium(guildId);
+  await Data.Guilds.Premium.set(guildId, premium);
+  if (premium) {
     await ChannelPausing.reactivateGuild(guildId);
   } else {
+    await ChannelPausing.clearRollover(guildId);
     await ChannelPausing.pauseFiltered(guildId);
     await ChannelPausing.pauseExcess(guildId, config.limits.freeChannelsPerGuild);
   }
@@ -61,6 +77,7 @@ const reconcileChannelServingMany = async (guildIds: Iterable<Snowflake>): Promi
 
 export const Plans = {
   isPremium,
+  getPremiumGuildIds,
   channelLimit,
   reconcileChannelServing,
   reconcileChannelServingMany,

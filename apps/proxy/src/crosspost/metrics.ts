@@ -15,12 +15,14 @@ export type CrosspostOutcomeMetric =
   | 'sublimit'
   | 'blocked'
   | 'rate_limited'
-  | 'retryable';
+  | 'retryable'
+  | 'released'
+  | 'expired';
 
 export type EnqueueRejectReason = GateRejectReason | 'queue_overloaded';
 
 export type CrosspostMetrics = {
-  outcome(kind: CrosspostOutcomeMetric): void;
+  outcome(kind: CrosspostOutcomeMetric, count?: number): void;
   discordError(code: number | string): void;
   enqueueAccepted(): void;
   enqueueRejected(reason: EnqueueRejectReason): void;
@@ -46,8 +48,8 @@ const createCounters = () => ({
   latencySamples: [] as number[],
 });
 
-const bump = (counts: Counts, key: string) => {
-  counts[key] = (counts[key] ?? 0) + 1;
+const bump = (counts: Counts, key: string, by = 1) => {
+  counts[key] = (counts[key] ?? 0) + by;
 };
 
 const percentile = (sorted: number[], p: number): number =>
@@ -128,7 +130,9 @@ export const createCrosspostMetrics = (deps: {
   };
 
   return {
-    outcome: kind => bump(counters.outcomes, kind),
+    outcome: (kind, count = 1) => {
+      if (count > 0) bump(counters.outcomes, kind, count);
+    },
     discordError: code => bump(counters.discordErrorsByCode, String(code)),
     enqueueAccepted: () => {
       counters.enqueue.accepted++;

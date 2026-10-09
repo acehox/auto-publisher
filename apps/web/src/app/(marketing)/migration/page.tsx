@@ -65,7 +65,7 @@ const whatsNew: { icon: LucideIcon; title: string; description: ReactNode; wide?
     icon: Filter,
     title: 'Premium, if you want more',
     description:
-      'Message filters and priority publishing, two of the most requested features, plus unlimited channels. More are on the way.',
+      "Message filters and unlimited channels, plus messages beyond Discord's hourly limit published once it resets, for up to 24 hours. More are on the way.",
     wide: true,
   },
 ];

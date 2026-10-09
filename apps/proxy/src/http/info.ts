@@ -22,6 +22,7 @@ export const createInfoHandler =
           queue: queueStats,
           sublimitCount: gated.sublimited,
           blockedCount: gated.blocked,
+          backloggedCount: gated.backlogged,
         },
       });
     } catch (error) {

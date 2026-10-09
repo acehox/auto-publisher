@@ -29,11 +29,11 @@ export const legalDocuments: readonly LegalDocument[] = [
  * `null` renders as an explicit draft marker rather than a plausible-looking date.
  */
 export const legalEffectiveDates: Record<string, string | null> = {
-  '/terms': '2026-09-28',
+  '/terms': '2026-10-09',
   '/privacy': '2026-09-28',
   '/refunds': '2026-09-28',
   '/legal': '2026-09-28',
-  '/hr': '2026-09-28',
+  '/hr': '2026-10-09',
 };
 
 /**
@@ -52,4 +52,4 @@ export const legalEffectiveDates: Record<string, string | null> = {
  * failure mode without adding any evidential weight. The gate that matters is the
  * server requiring acceptance at all.
  */
-export const LEGAL_DOCUMENTS_VERSION = '2026-09-28';
+export const LEGAL_DOCUMENTS_VERSION = '2026-10-09';

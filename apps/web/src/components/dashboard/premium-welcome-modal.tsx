@@ -1,20 +1,11 @@
 'use client';
 
-import {
-  ArrowRight,
-  Check,
-  Filter,
-  Hash,
-  Headphones,
-  type LucideIcon,
-  Sparkles,
-  Zap,
-} from 'lucide-react';
+import { Check, Filter, Hash, Headphones, History, type LucideIcon, Zap } from 'lucide-react';
 import { easeOut, motion, useReducedMotion, useTime, useTransform } from 'motion/react';
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { PREMIUM_PLAN_FEATURES } from '@/lib/plans';
+import { PREMIUM_PLAN_FEATURES, type PremiumFeatureId } from '@/lib/plans';
 import { PREMIUM_TRIAL_DAYS } from '@/lib/pricing';
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
@@ -37,17 +28,15 @@ const RING_CLASS =
   'pointer-events-none absolute size-48 rounded-full border border-violet-400/70 will-change-[transform,opacity]';
 
 /**
- * Keyed on the copy rather than the array index so a reordered or reworded
- * feature degrades to the neutral mark instead of silently taking the icon of
- * the line above it. `Hash` rather than `Zap` for channels: Zap is Premium's one
- * mark and already sits in the header — spending it twice on one screen costs it
- * its meaning, and `#` is how a channel is written everywhere else in the app.
+ * `Hash` rather than `Zap` for channels: Zap is Premium's one mark and already
+ * sits in the header — spending it twice on one screen costs it its meaning, and
+ * `#` is how a channel is written everywhere else in the app.
  */
-const FEATURE_ICONS: Record<string, LucideIcon> = {
-  'Unlimited channels': Hash,
-  'Priority publishing': ArrowRight,
-  'Advanced message filters': Filter,
-  'Priority support': Headphones,
+const FEATURE_ICONS: Record<PremiumFeatureId, LucideIcon> = {
+  channels: Hash,
+  filters: Filter,
+  rollover: History,
+  support: Headphones,
 };
 
 /**
@@ -220,10 +209,10 @@ export function PremiumWelcomeModal({ guildName, trialing, onClose }: PremiumWel
         <ul className="mt-7 space-y-3 text-left">
           {PREMIUM_PLAN_FEATURES.map((feature, index) => {
             const delay = 0.56 + index * 0.08;
-            const FeatureIcon = FEATURE_ICONS[feature] ?? Sparkles;
+            const FeatureIcon = FEATURE_ICONS[feature.id];
             return (
               <motion.li
-                key={feature}
+                key={feature.id}
                 initial={{ opacity: 0, x: reduce ? 0 : -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{
@@ -245,7 +234,7 @@ export function PremiumWelcomeModal({ guildName, trialing, onClose }: PremiumWel
                 >
                   <Check className="size-3.5 text-green-400" aria-hidden="true" />
                 </motion.span>
-                {feature}
+                {feature.label}
                 <FeatureIcon
                   className="ml-auto size-4 shrink-0 text-slate-600"
                   aria-hidden="true"

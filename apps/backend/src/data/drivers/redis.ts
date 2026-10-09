@@ -3,6 +3,7 @@ import { logger } from 'utils/logger.js';
 
 const enabledChannelsClient = await createRedisClient(DatabaseIDs.EnabledChannels, logger);
 const guildsClient = await createRedisClient(DatabaseIDs.Guilds, logger);
+const gatedChannelsClient = await createRedisClient(DatabaseIDs.GatedChannels, logger);
 const alertsClient = await createRedisClient(DatabaseIDs.Alerts, logger);
 const dashboardAuthClient = await createRedisClient(DatabaseIDs.DashboardAuth, logger);
 const paddleWebhookDedupeClient = await createRedisClient(DatabaseIDs.PaddleWebhookDedupe, logger);
@@ -10,12 +11,14 @@ const paddleWebhookDedupeClient = await createRedisClient(DatabaseIDs.PaddleWebh
 export const Redis: {
   EnabledChannels: RedisClient;
   Guilds: RedisClient;
+  GatedChannels: RedisClient;
   Alerts: RedisClient;
   DashboardAuth: RedisClient;
   PaddleWebhookDedupe: RedisClient;
 } = {
   EnabledChannels: enabledChannelsClient,
   Guilds: guildsClient,
+  GatedChannels: gatedChannelsClient,
   Alerts: alertsClient,
   DashboardAuth: dashboardAuthClient,
   PaddleWebhookDedupe: paddleWebhookDedupeClient,

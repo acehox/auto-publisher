@@ -20,7 +20,7 @@ import { useGuildAttention } from './use-guild-attention';
 /**
  * Four destinations, and no persistent plan chrome on any of them: the
  * free/Premium distinction surfaces where it bites — the channel cap, the locked
- * Filters tab, the queue note — not as a badge riding the nav.
+ * Filters tab, the hourly-limit note — not as a badge riding the nav.
  */
 const TABS: { id: string; label: string; icon: LucideIcon }[] = [
   { id: 'overview', label: 'Overview', icon: Home },

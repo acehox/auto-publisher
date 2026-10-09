@@ -1,8 +1,7 @@
 import { EnabledChannels } from './enabledChannels.js';
-// MIGRATION: MigratedGuilds cache removed at sunset (`migrated:` keys dropped).
-import { MigratedGuilds } from './migratedGuilds.js';
+import { GuildFlagsCache } from './guildFlags.js';
 
 export const Cache = {
   EnabledChannels,
-  MigratedGuilds,
+  GuildFlags: GuildFlagsCache,
 };

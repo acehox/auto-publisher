@@ -123,7 +123,6 @@ export const emojiNames: Record<keyof typeof emojis, string> = {
  * the permissions and publishing resumes on its own".
  */
 export const notes = {
-  rateLimit: Copy.publishing.rateLimit,
-  publishDelayFree: Copy.publishing.delay(false),
-  publishDelayPremium: Copy.publishing.delay(true),
+  overLimitFree: Copy.publishing.overLimit.body(false),
+  overLimitPremium: Copy.publishing.overLimit.body(true),
 } as const;

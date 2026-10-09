@@ -8,7 +8,7 @@ import { ChannelFixButton } from '@/components/dashboard/channel-fix';
 import { ChannelRow, ChannelStatusLabel } from '@/components/dashboard/channel-row';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { useGuild } from '@/components/dashboard/guild-context';
-import { PublishDelayFooter } from '@/components/dashboard/publish-delay-note';
+import { OverLimitFooter } from '@/components/dashboard/over-limit-note';
 import { StatusCard, StatusCardAction } from '@/components/dashboard/status-card';
 import { useGuildAttention } from '@/components/dashboard/use-guild-attention';
 import { Button } from '@/components/ui/button';
@@ -18,9 +18,9 @@ import type { GuildChannel } from '@/lib/api/types';
  * The Overview's answer to "is it working". Read-only by contract: Overview
  * never carries a control that changes state — the header's Manage link and the
  * Fix dialog navigate, they don't write — and Channels never carries a summary.
- * The card's footer states the queue-delay fact in its short form, because it is
- * what "publishing" on this card actually promises; the long form and the
- * 10/hour limit sit below in `HowPublishingWorks`, shared with Channels.
+ * The card's footer states the hourly-limit fact in its short form, because it
+ * bounds what "publishing" on this card promises; the long form sits below in
+ * `HowPublishingWorks`, shared with Channels.
  *
  * The card is the alert, so a broken channel needs no banner above it: severity
  * is on the card's top edge, icon and headline, and the Fix control sits on the
@@ -29,7 +29,7 @@ import type { GuildChannel } from '@/lib/api/types';
  */
 export function ChannelStatus() {
   const { guild, data } = useGuild();
-  const footer = <PublishDelayFooter hasSubscription={guild.hasSubscription} />;
+  const footer = <OverLimitFooter hasSubscription={guild.hasSubscription} />;
   return data.migrated ? (
     <MigratedStatus guildId={guild.id} channels={data.channels} footer={footer} />
   ) : (

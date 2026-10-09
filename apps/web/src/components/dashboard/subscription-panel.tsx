@@ -156,9 +156,9 @@ function BillingCard({
 
       <ul className="space-y-2">
         {PREMIUM_PLAN_FEATURES.map(feature => (
-          <li key={feature} className="flex items-center gap-2.5 text-sm text-slate-200">
+          <li key={feature.id} className="flex items-center gap-2.5 text-sm text-slate-200">
             <Check className="size-4 shrink-0 text-green-400" aria-hidden="true" />
-            {feature}
+            {feature.label}
           </li>
         ))}
       </ul>

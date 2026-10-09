@@ -1,6 +1,6 @@
 import { env, premiumTrialEnabled } from '@ap/config';
 import { db, guild, type Subscription, subscription } from '@ap/database';
-import { and, eq, isNull, lt, notInArray, or } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lt, notInArray, or } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 
@@ -288,6 +288,21 @@ const isEntitled = async (guildId: string): Promise<boolean> => {
   }
 };
 
+/** Guilds holding an entitled subscription, limited to those with a guild row. */
+const getEntitledGuildIds = async (): Promise<string[]> => {
+  try {
+    const rows = await db
+      .select({ guildId: subscription.guildId })
+      .from(subscription)
+      .innerJoin(guild, eq(subscription.guildId, guild.guildId))
+      .where(inArray(subscription.status, [...ENTITLED_STATUSES]));
+    return rows.map(row => row.guildId);
+  } catch (error) {
+    logger.error(error);
+    throw new Error('Failed to retrieve entitled guild ids');
+  }
+};
+
 /**
  * Not-entitled subscriptions whose guild still has the bot present — the
  * reconcile cron re-applies the downgrade for these. A guild the bot has left
@@ -416,6 +431,7 @@ export const Subscriptions = {
   getByPaddleSubscriptionId,
   applyPaddleSubscription,
   isEntitled,
+  getEntitledGuildIds,
   getRevokedWithBotPresent,
   isRecordableRefund,
   recordRefund,

@@ -89,7 +89,8 @@ ispunjavaju uvjete Filtra.
   ograničen. Na Serveru na koji je Bot dodan prije uvođenja Uključenih kanala Bot objavljuje poruke iz
   svih Kanala za najave dok Administrator ne odabere Uključene kanale ([pojedinosti](/migration)).
 - Premium dodatno uključuje: Filtre, čiji se uvjeti mogu odnositi na tekst, autora, spominjanja ili
-  webhook kojim je poruka poslana; prednost u redu za objavu te prioritetnu korisničku podršku.
+  webhook kojim je poruka poslana; objavu poruka iznad Discordova ograničenja po satu nakon što se to
+  ograničenje obnovi te prioritetnu korisničku podršku.
 
 ### Tehnički zahtjevi
 
@@ -99,11 +100,11 @@ Uslugu je Administrator, a Bot u svakom Uključenom kanalu ima dopuštenja **Vie
 odgođena, otežana ili nedostupna ako Discord nije dostupan, ograniči broj zahtjeva ili promijeni svoju
 platformu.
 
-- **Discord dopušta objavu najviše 10 poruka po kanalu unutar jednog sata.** Ostale poruke iz tog
-  sata ne objavljuju se.
-- Jedan Bot poslužuje sve Servere putem jednog reda za objavu. Poruke sa Servera s Premiumom imaju
-  prednost pred porukama sa Servera na Besplatnom paketu, a ograničen broj prvih poruka objavljenih
-  nakon dodavanja Bota na Server, na bilo kojem paketu, ima prednost pred objema skupinama.
+- **Discord dopušta objavu najviše 10 poruka po kanalu unutar jednog sata.** To ograničenje određuje
+  Discord, a ne mi. Na Besplatnom paketu poruke iznad tog ograničenja ne objavljuju se.
+- Uz Pretplatu Bot pokušava objaviti poruke iznad tog ograničenja nakon što se ono obnovi, redoslijedom
+  kojim su poslane, najdulje 24 sata od slanja pojedine poruke. Poruka koja u tom roku nije objavljena
+  ne objavljuje se. Ne jamčimo da će takva poruka biti objavljena.
 - Ako poruka sadrži poveznicu za koju Discord još nije izradio pregled, Bot odgađa njezinu objavu za
   pet sekundi kako bi se pregled mogao izraditi.
 

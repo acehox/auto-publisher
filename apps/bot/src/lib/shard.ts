@@ -44,7 +44,8 @@ export const client = new BotClient({
     VoiceStateManager: 0,
   }),
   intents: [IntentBits.Guilds, IntentBits.GuildMessages, IntentBits.MessageContent],
-  partials: [Partials.Channel, Partials.GuildMember],
+  // Message: MessageManager caches nothing, so without it a delete would never fire `messageDelete`
+  partials: [Partials.Channel, Partials.GuildMember, Partials.Message],
   shards: getInfo().SHARD_LIST,
   shardCount: getInfo().TOTAL_SHARDS,
   rest: {

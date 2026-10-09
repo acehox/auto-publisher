@@ -28,15 +28,25 @@ export const withTimeout = async <T>(
   }
 };
 
-export type GateState = { blocked: boolean; sublimited: boolean };
+/** `lockRemainingMs` null = no sublimit lock */
+export type GateState = { blocked: boolean; lockRemainingMs: number | null };
+
+/** The lock's lifetime for a shared 429, rounded up to the whole seconds `EX` takes */
+export const lockTtlMs = (retryAfterMs: number): number =>
+  Math.max(1, Math.ceil(retryAfterMs / 1_000)) * 1_000;
 
 export type GatedChannels = {
   check(channelId: string): Promise<GateState>;
-  lock(channelId: string, retryAfterSec: number): Promise<void>;
+  /** Returns the lock's lifetime, which is when the channel's held messages may go */
+  lock(channelId: string, retryAfterMs: number): Promise<number>;
   block(channelId: string): Promise<void>;
   unblock(channelId: string): Promise<void>;
   /** `null` = the count failed, so a Redis error never reads as "none" */
-  counts(): Promise<{ sublimited: number | null; blocked: number | null }>;
+  counts(): Promise<{
+    sublimited: number | null;
+    blocked: number | null;
+    backlogged: number | null;
+  }>;
 };
 
 export const createGatedChannels = (redis: RedisClient): GatedChannels => {
@@ -50,22 +60,28 @@ export const createGatedChannels = (redis: RedisClient): GatedChannels => {
   };
 
   return {
-    // A timeout fails open on both.
+    // A timeout fails open on both. Both commands are in flight together: one round trip.
     check: async channelId => {
-      const [blocked, locked] = await withTimeout(
-        redis.mget(RedisKeys.blocked(channelId), RedisKeys.sublimitLock(channelId)),
-        [null, null],
+      const [blocked, lockTtl] = await withTimeout(
+        Promise.all([
+          redis.get(RedisKeys.blocked(channelId)),
+          redis.pttl(RedisKeys.sublimitLock(channelId)),
+        ]),
+        [null, -2],
         { op: 'gate.check', channelId }
       );
-      return { blocked: blocked === '1', sublimited: locked !== null };
+      // PTTL -2 = no lock. -1 (no expiry) cannot come from `lock`; failing open
+      // lets the next shared 429 rewrite it with a TTL.
+      return { blocked: blocked === '1', lockRemainingMs: lockTtl > 0 ? lockTtl : null };
     },
-    lock: async (channelId, retryAfterSec) => {
-      const ttl = Math.max(1, Math.ceil(retryAfterSec));
+    lock: async (channelId, retryAfterMs) => {
+      const ttlMs = lockTtlMs(retryAfterMs);
       try {
-        await redis.set(RedisKeys.sublimitLock(channelId), '1', 'EX', ttl);
+        await redis.set(RedisKeys.sublimitLock(channelId), '1', 'EX', ttlMs / 1_000);
       } catch (error) {
         logger.warn({ event: 'redis.write_failed', op: 'sublimit.lock', channelId, err: error });
       }
+      return ttlMs;
     },
     block: async channelId => {
       try {
@@ -82,11 +98,12 @@ export const createGatedChannels = (redis: RedisClient): GatedChannels => {
       }
     },
     counts: async () => {
-      const [sublimited, blocked] = await Promise.all([
+      const [sublimited, blocked, backlogged] = await Promise.all([
         countKeys(Keys.SublimitLock),
         countKeys(Keys.Blocked),
+        countKeys(Keys.Rollover),
       ]);
-      return { sublimited, blocked };
+      return { sublimited, blocked, backlogged };
     },
   };
 };

@@ -6,6 +6,7 @@ import { createGatedChannels } from './crosspost/caches.js';
 import { createGate } from './crosspost/gate.js';
 import { createCrosspostMetrics } from './crosspost/metrics.js';
 import { createCrosspostQueue } from './crosspost/queue.js';
+import { createRolloverBacklog } from './crosspost/rollover.js';
 import { buildGateway } from './gateway/index.js';
 import { createApp } from './http/app.js';
 import { logger } from './logger.js';
@@ -38,6 +39,7 @@ const main = async () => {
     rest: gateway.rest,
     gate,
     gatedChannels,
+    backlog: createRolloverBacklog(gatedRedis),
     metrics,
     redisUri: env.REDIS_URI,
     queueDatabaseId: DatabaseIDs.CrosspostQueue,

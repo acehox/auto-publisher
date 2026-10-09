@@ -70,11 +70,11 @@ export function PricingPlans({ trialOffered }: { trialOffered: boolean }) {
 
             <ul className="space-y-3 mb-8 flex-1">
               {PREMIUM_PLAN_FEATURES.map(feature => (
-                <li key={feature} className="flex items-start gap-3 text-slate-300">
+                <li key={feature.id} className="flex items-start gap-3 text-slate-300">
                   <div className="w-5 h-5 bg-blue-500/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                     <Check className="w-3 h-3 text-blue-400" />
                   </div>
-                  <span>{feature}</span>
+                  <span>{feature.label}</span>
                 </li>
               ))}
             </ul>
@@ -109,11 +109,11 @@ export function PricingPlans({ trialOffered }: { trialOffered: boolean }) {
 
           <ul className="space-y-3 mb-8 flex-1">
             {PREMIUM_PLAN_FEATURES.map(feature => (
-              <li key={feature} className="flex items-start gap-3 text-slate-300">
+              <li key={feature.id} className="flex items-start gap-3 text-slate-300">
                 <div className="w-5 h-5 bg-slate-700/50 rounded-full flex items-center justify-center shrink-0 mt-0.5">
                   <Check className="w-3 h-3 text-slate-300" />
                 </div>
-                <span>{feature}</span>
+                <span>{feature.label}</span>
               </li>
             ))}
           </ul>

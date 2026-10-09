@@ -16,6 +16,15 @@ import { logger } from 'utils/logger.js';
  * from the per-guild limit count.
  */
 
+/** Drops every held rollover message in the guild, for a guild that just lost Premium. */
+const clearRollover = async (guildId: Snowflake): Promise<void> => {
+  const rows = await db
+    .select({ channelId: channelTable.channelId })
+    .from(channelTable)
+    .where(eq(channelTable.guildId, guildId));
+  await Data.Channels.Rollover.clear(rows.map(r => r.channelId));
+};
+
 /**
  * Pause the newest serving channels beyond `keep`, keeping the oldest `keep` by
  * `createdAt` (snowflake id as the deterministic tiebreak — a bulk migrate
@@ -109,4 +118,4 @@ const reactivateGuild = async (guildId: Snowflake): Promise<number> => {
   return paused.length;
 };
 
-export const ChannelPausing = { pauseExcess, pauseFiltered, reactivateGuild };
+export const ChannelPausing = { pauseExcess, pauseFiltered, reactivateGuild, clearRollover };

@@ -89,7 +89,7 @@ function buildQuestions(limit: number): Question[] {
     },
     {
       name: 'premium',
-      title: 'Are you interested in priority publishing or message filters?',
+      title: 'Are you interested in Premium features like message filters?',
       choices: yesNo,
     },
   ];
@@ -143,7 +143,7 @@ function buildOutcomes(answers: Answers, limit: number, sunset: string): Outcome
       tone: 'info',
       icon: Filter,
       title: 'Upgrade to Premium after migrating',
-      body: 'Once your server is migrated, you can upgrade to Premium for unlimited channels, message filters and priority publishing.',
+      body: "Once your server is migrated, you can upgrade to Premium for unlimited channels, message filters, and publishing of messages beyond Discord's hourly limit once it resets, for up to 24 hours.",
       action: 'premium',
     });
   }

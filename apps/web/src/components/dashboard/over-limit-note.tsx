@@ -9,22 +9,22 @@ import { useIsPublicInstance } from '@/components/site-config-context';
  * product (it replaced the crown), so it rides only the entitled line — on the
  * free line it would decorate the thing being upsold.
  */
-export function PublishDelayFooter({ hasSubscription }: { hasSubscription: boolean }) {
-  const entitled = usePublishDelayEntitled(hasSubscription);
+export function OverLimitFooter({ hasSubscription }: { hasSubscription: boolean }) {
+  const entitled = useRolloverEntitled(hasSubscription);
   return (
     <span className="flex items-center gap-1.5">
       {entitled && <Zap className="size-3.5 shrink-0" />}
-      {Copy.publishing.delayShort(entitled)}
+      {Copy.publishing.overLimit.short(entitled)}
     </span>
   );
 }
 
 /**
- * Which copy this deployment shows. A self-hosted instance has no billing and
- * no free tier to be queued behind, so it always reads as entitled — otherwise
- * the note would upsell a plan that doesn't exist.
+ * Whether messages beyond Discord's hourly limit are published later. A
+ * self-hosted instance has no billing, so every guild gets it — otherwise the
+ * note would upsell a plan that doesn't exist.
  */
-export function usePublishDelayEntitled(hasSubscription: boolean): boolean {
+export function useRolloverEntitled(hasSubscription: boolean): boolean {
   const isPublicInstance = useIsPublicInstance();
   return hasSubscription || !isPublicInstance;
 }

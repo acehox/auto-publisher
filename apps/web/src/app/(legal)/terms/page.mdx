@@ -101,7 +101,8 @@ the messages that satisfy the Filter.
   introduced, the Bot Publishes from every Announcement Channel until an Administrator selects
   Enabled Channels ([details](/migration)).
 - Premium adds: Filters, whose conditions may refer to a message's text, author, mentions or posting
-  webhook; priority in the Publishing queue (section 3.1); and priority support (section 3.5).
+  webhook; Publishing of messages in excess of Discord's hourly limit after that limit resets
+  (section 3.1); and priority support (section 3.5).
 
 ### 3.1 Technical requirements
 
@@ -110,12 +111,12 @@ the person configuring the Service is an Administrator, and the Bot holds the **
 **Send Messages** and **Manage Messages** permissions in each Enabled Channel. Publishing is subject
 to the following:
 
-- **Discord permits no more than 10 messages per channel to be Published in any hour.** Further
-  messages in that hour are not Published.
-- One Bot serves every Server through a single Publishing queue. When messages are waiting, those
-  from Servers with Premium take priority over those from Servers on the Free Plan, and a limited
-  number of the first messages Published after the Bot is added to a Server, on either plan, take
-  priority over both.
+- **Discord permits no more than 10 messages per channel to be Published in any hour.** This limit
+  is set by Discord, not by us. On the Free Plan, messages in excess of it are not Published.
+- Under a Subscription, the Bot attempts to Publish messages in excess of that limit after the limit
+  resets, in the order in which they were posted, for up to 24 hours after each message was posted.
+  A message not Published within that period is not Published. We do not guarantee that any such
+  message will be Published.
 - If a message contains a link for which Discord has not yet generated a preview, the Bot delays
   Publishing it by five seconds so that the preview can be generated.
 

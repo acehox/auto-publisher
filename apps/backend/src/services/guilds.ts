@@ -153,6 +153,7 @@ const purge = async (guildId: Snowflake, cutoff: Date): Promise<boolean> => {
     }
     // MIGRATION: drop this delete at sunset
     await Data.Drivers.Redis.Guilds.del(RedisKeys.migrated(guildId));
+    await Data.Guilds.Premium.remove(guildId);
 
     logger.debug(`Purged guild ${guildId} and ${channelIds.length} associated channels`);
     return true;

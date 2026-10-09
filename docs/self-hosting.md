@@ -57,8 +57,9 @@ Use the dashboard, or run `/ap enable #your-channel` in Discord to enable publis
 
 ## Things worth knowing
 
-- **Discord allows 10 publishes per hour per channel.** A hard platform limit. The bot queues
-  messages and retries rather than dropping them, so a burst is delayed, not lost.
+- **Discord allows 10 publishes per hour per channel.** A hard platform limit. Messages beyond it
+  are published automatically once the limit resets, oldest first, for up to 24 hours after
+  posting; after that they are not published.
 - **Don't make a busy channel an announcement channel.** Moderation logs or general chat will
   sit permanently against that rate limit.
 - **Messages with a link are held for 5 seconds** so Discord can generate the embed first.

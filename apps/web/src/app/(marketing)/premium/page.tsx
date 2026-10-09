@@ -8,7 +8,7 @@ import { formatNumberFull } from '@/lib/utils';
 export const metadata: Metadata = {
   title: 'Premium',
   description:
-    'Auto Publisher Premium gives your Discord server unlimited announcement channels, message filters for each channel, and priority publishing.',
+    "Auto Publisher Premium gives your Discord server unlimited announcement channels and message filters for each channel, and publishes messages beyond Discord's hourly limit once it resets, for up to 24 hours.",
   alternates: { canonical: '/premium' },
 };
 

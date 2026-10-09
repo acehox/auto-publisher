@@ -45,7 +45,7 @@ interface OverviewState {
   guildId: Snowflake;
   /** MIGRATION: false = legacy guild (publishes every announcement channel). */
   migrated: boolean;
-  /** Whether the guild is on Premium — decides which publish-delay note shows. */
+  /** Whether the guild is on Premium — decides which hourly-limit note shows. */
   premium: boolean;
   /** Registered + serving channels, broken-first. Empty for a legacy guild. */
   channels: OverviewChannel[];
@@ -298,10 +298,7 @@ const renderPausedBlock = (state: OverviewState): string[] | null => {
 };
 
 const renderNotes = (premium: boolean): string =>
-  formatNotes([
-    notes.rateLimit,
-    premium ? notes.publishDelayPremium : notes.publishDelayFree,
-  ]).trimStart();
+  formatNotes([premium ? notes.overLimitPremium : notes.overLimitFree]).trimStart();
 
 const addDashboardSection = (container: ContainerBuilder, guildId: Snowflake, text: string) =>
   container.addSectionComponents(section =>
@@ -311,8 +308,8 @@ const addDashboardSection = (container: ContainerBuilder, guildId: Snowflake, te
   );
 
 /**
- * Nothing serving and nothing paused. Kept compact — the rate-limit and delay
- * notes are noise for a server that hasn't enabled anything yet.
+ * Nothing serving and nothing paused. Kept compact — the hourly-limit note is
+ * noise for a server that hasn't enabled anything yet.
  */
 const buildEmptyContainer = (state: OverviewState): ContainerBuilder => {
   const header = renderGetStartedHeader(state);
