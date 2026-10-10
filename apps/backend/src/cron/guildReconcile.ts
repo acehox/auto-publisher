@@ -43,12 +43,14 @@ const fetchLiveGuildIds = async (): Promise<Set<Snowflake>> => {
       query,
     })) as RESTGetAPICurrentUserGuildsResult;
 
+    const last = page.at(-1);
+    if (!last) break;
+
     for (const g of page) {
       ids.add(g.id);
     }
 
-    if (page.length < PAGE_SIZE) break;
-    after = page[page.length - 1]?.id;
+    after = last.id;
   }
 
   return ids;
