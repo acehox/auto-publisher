@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM oven/bun:1.4.3-alpine AS base
 
 # Stage 1: Install and Build
