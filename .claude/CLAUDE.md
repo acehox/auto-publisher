@@ -362,6 +362,8 @@ SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASSWORD / SMTP_FROM: outbound mail (ba
   from the dev compose overlay (Mailpit), not from an env file — `environment` beats `env_file`, so a
   dev-only SMTP host can never render into prod.
 AUTH_SECRET / DISCORD_CLIENT_ID / DISCORD_CLIENT_SECRET: dashboard login (web)
+AUTH_URL: the public origin. Required behind the tunnel — unset, Auth.js builds its redirects from
+  the container's bind address (HOSTNAME=0.0.0.0) and sends users to https://0.0.0.0:3100.
 DISCORD_BOT_ID: application id of the bot users are invited to. Server-side, NOT NEXT_PUBLIC_.
   Defaults to DISCORD_CLIENT_ID, which is the whole story for a self-host (one application is both
   the OAuth client and the bot); the public instance sets it because its bot is a different,
