@@ -18,13 +18,15 @@ x-proxy-resources: &proxy-resources
       memory: 384M
       cpus: '0.375'
 
+# Sized for ~12k guilds: every guild's channels and roles stay cached for permission checks.
+# 1G was OOM-killed (exit 137) mid-startup at 12 shards on the 4G production VPS.
 x-bot-resources: &bot-resources
   resources:
     limits:
-      memory: 1G
+      memory: 2560M
       cpus: '1.0'
     reservations:
-      memory: 512M
+      memory: 1G
       cpus: '0.5'
 
 services:
