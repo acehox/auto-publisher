@@ -1,5 +1,5 @@
 import { isPublicInstance } from '@ap/config';
-import { type APIResponse, StatusCodes, validateRequest } from '@ap/express';
+import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import { isGuildReconcileInFlight, runGuildReconcile } from 'cron/guildReconcile.js';
 import {
   isSubscriptionReconcileInFlight,
@@ -147,6 +147,23 @@ export const Internal: Router = (() => {
         status: StatusCodes.ACCEPTED,
         message: 'Subscription reconcile started',
       } as APIResponse);
+    });
+
+    /**
+     * GET /internal/supporters
+     * Polled by the helper, which owns the support server's Supporter role.
+     */
+    router.get('/supporters', async (_req, res) => {
+      try {
+        const userIds = await Services.Subscriptions.getSupporterUserIds();
+        res.status(StatusCodes.OK).json({
+          status: StatusCodes.OK,
+          data: { userIds },
+          message: 'Supporters retrieved successfully',
+        } as APIResponse);
+      } catch (error) {
+        sendErrorResponse(res, error, 'Failed to retrieve supporters');
+      }
     });
   }
 

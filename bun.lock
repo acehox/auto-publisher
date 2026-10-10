@@ -59,6 +59,21 @@
         "zlib-sync": "^0.1.10",
       },
     },
+    "apps/helper": {
+      "name": "helper",
+      "dependencies": {
+        "@ap/alerts": "workspace:*",
+        "@ap/config": "workspace:*",
+        "@ap/logger": "workspace:*",
+        "@ap/redis": "workspace:*",
+        "@sapphire/decorators": "^6.2.0",
+        "@sapphire/framework": "^5.4.0",
+        "discord.js": "^14.25.1",
+      },
+      "devDependencies": {
+        "@ap/tsconfig": "*",
+      },
+    },
     "apps/proxy": {
       "name": "proxy",
       "dependencies": {
@@ -1252,6 +1267,8 @@
     "hast-util-whitespace": ["hast-util-whitespace@3.0.0", "", { "dependencies": { "@types/hast": "^3.0.0" } }, "sha512-88JUN06ipLwsnv+dVn+OIYOvAuvBMy/Qoi6O7mQHxdPXpjy+Cd6xRkWwux7DKO+4sYILtLBRIKgsdpS2gQc7qw=="],
 
     "help-me": ["help-me@5.0.0", "", {}, "sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg=="],
+
+    "helper": ["helper@workspace:apps/helper"],
 
     "hermes-estree": ["hermes-estree@0.25.1", "", {}, "sha512-0wUoCcLp+5Ev5pDW2OriHC2MJCbwLwuRx+gAqMTOkGKJJiBCLjtrvy4PWUGn6MIVefecRpzoOZ/UV6iGdOr+Cw=="],
 

@@ -82,6 +82,41 @@ services:
     logging: *prod-logging
     deploy: *bot-resources
 
+  # Supporter role in the support server. Prod only: it needs BOT_SUPPORT_GUILD_ID
+  # and the subscription list, neither of which dev or a self-host has.
+  helper:
+    build:
+      context: ../..
+      dockerfile: apps/helper/Dockerfile
+    restart: unless-stopped
+    # Interpolated (`--env-file`), not env_file: its own token is the only secret
+    # it needs, so the bot token, Paddle, database and SMTP credentials stay out.
+    environment:
+      - DEPLOYMENT_MODE=${DEPLOYMENT_MODE}
+      - HELPER_DISCORD_TOKEN=${HELPER_DISCORD_TOKEN}
+      - BOT_SUPPORT_GUILD_ID=${BOT_SUPPORT_GUILD_ID}
+      - SUPPORTER_ROLE_ID=${SUPPORTER_ROLE_ID}
+      - HELPER_DRY_RUN=${HELPER_DRY_RUN:-true}
+      - DISCORD_ALERT_WEBHOOK_URL=${DISCORD_ALERT_WEBHOOK_URL:-}
+      - NODE_ENV=production
+      - LOGGER_LEVEL=info
+    networks:
+      - ap-network
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging: *prod-logging
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+
   web:
     build:
       context: ../..

@@ -8,7 +8,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loggerLevels } from '@ap/logger';
 import { config as loadDotenv } from 'dotenv';
-import { cleanEnv, num, str } from 'envalid';
+import { bool, cleanEnv, num, str } from 'envalid';
 
 /**
  * Locate the monorepo root by walking up from this module.
@@ -96,6 +96,15 @@ export const env = cleanEnv(process.env, {
   BOT_SHARDS: num({ default: 1 }),
   BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
 
+  // --- Helper (public instance only) -----------------------------------------
+  // Owns the Supporter role in the support server (`BOT_SUPPORT_GUILD_ID`). Its own
+  // Discord application: listing members needs the privileged Server Members
+  // intent, which the main bot must not carry into every guild it serves.
+  HELPER_DISCORD_TOKEN: str({ default: '' }),
+  SUPPORTER_ROLE_ID: str({ default: '' }),
+  /** Logs intended role writes and applies none. Only turn off after auditing current holders. */
+  HELPER_DRY_RUN: bool({ default: true }),
+
   // --- Web dashboard -------------------------------------------------------
   // Required by the web app only; validated at its point of use so that a
   // misconfigured dashboard cannot stop the bot from publishing.
@@ -173,6 +182,8 @@ export const premiumTrialEnabled =
 type EnvScope = {
   billing?: boolean;
   dashboard?: boolean;
+  /** Requires the helper's token instead of the bot's. */
+  helper?: boolean;
 };
 
 const SCOPED_KEYS = {
@@ -187,6 +198,8 @@ const SCOPED_KEYS = {
     'SMTP_PASSWORD',
   ],
   dashboard: ['AUTH_SECRET', 'DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET', 'PADDLE_CLIENT_TOKEN'],
+  // Required in every mode: no default may decide which guild and role get mutated.
+  helper: ['HELPER_DISCORD_TOKEN', 'BOT_SUPPORT_GUILD_ID', 'SUPPORTER_ROLE_ID'],
 } as const satisfies Record<keyof EnvScope, readonly string[]>;
 
 /**
@@ -204,7 +217,7 @@ const SCOPED_KEYS = {
  * existing env file to exercise the self-host path without a second one.
  */
 export const assertRequiredEnv = (scope: EnvScope = {}): void => {
-  const required: string[] = ['DISCORD_BOT_TOKEN'];
+  const required: string[] = scope.helper ? [...SCOPED_KEYS.helper] : ['DISCORD_BOT_TOKEN'];
 
   if (isPublicInstance) {
     if (scope.billing) required.push(...SCOPED_KEYS.billing);
@@ -215,6 +228,11 @@ export const assertRequiredEnv = (scope: EnvScope = {}): void => {
   const problems = missing.length
     ? [`Missing required environment variable(s): ${missing.join(', ')}.`]
     : [];
+
+  // The backend serves the supporter list only where subscriptions exist.
+  if (scope.helper && !isPublicInstance) {
+    problems.push('The helper runs on a public instance only; a self-host has no subscriptions.');
+  }
 
   if (isPublicInstance && scope.billing) {
     // Raw `process.env`, not `env`: the `sandbox` default makes an unset variable
@@ -262,6 +280,12 @@ export const config = {
   discordToken: env.DISCORD_BOT_TOKEN,
   /** The proxy base URL every Discord call is routed through. */
   proxyUrl: env.PROXY_URL,
+  helper: {
+    discordToken: env.HELPER_DISCORD_TOKEN,
+    guildId: env.BOT_SUPPORT_GUILD_ID,
+    supporterRoleId: env.SUPPORTER_ROLE_ID,
+    dryRun: env.HELPER_DRY_RUN,
+  },
   /**
    * Outbound source IP for Discord traffic; empty = default route. Discord's
    * invalid-request ceiling is per IP, so this is what the host rotates if the

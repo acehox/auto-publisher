@@ -91,7 +91,7 @@ bot ──► proxy ──► Discord REST        db (postgres / Supabase)
 `DEPLOYMENT_MODE` selects **billing, not topology**:
 
 - **`self-host`** (the default) — every guild gets the full feature set, no billing. Root `docker-compose.yml`, six always-on services (`bot`, `proxy`, `backend`, `web`, `db`, `redis`); Postgres and Redis are bundled, so the Supabase CLI is maintainer-only. The proxy and `web` stay in: the proxy owns the durable queue and `Retry-After` handling, and a Compose profile for `web` would add a flag to remember for a feature most operators want.
-- **`public`** — the same six services plus Paddle, the statutory withdrawal surface and the pricing pages. `scripts/bot/{dev,prod}` overlays differ from the root compose only in dev tooling, resource limits and the Mailpit catcher.
+- **`public`** — the same six services plus Paddle, the statutory withdrawal surface and the pricing pages, and in prod a seventh, `helper` (see below). `scripts/bot/{dev,prod}` overlays differ from the root compose only in dev tooling, resource limits, the Mailpit catcher and `helper`.
 
 Self-host skips: the Paddle webhook route, the subscription/checkout/withdrawal API routes, the subscription + withdrawal-acknowledgement crons, and every billing surface in the dashboard. Billing code is not stripped from a self-host build (a fork; it is unreachable without subscription rows), so every new billing surface must be gated in both the backend route and the dashboard.
 
@@ -190,11 +190,20 @@ Self-host skips: the Paddle webhook route, the subscription/checkout/withdrawal 
 - **Search metadata resolves against `WEB_APP_ORIGIN` at request time.** `metadataBase`, canonicals, `robots.ts`, `sitemap.ts` and the home page's `WebSite` JSON-LD (what Google shows as the site name) all read `getSiteUrl()`; the web image is built before any env file exists, so every indexable route — the legal group included — is `force-dynamic`, or its absolute URLs would freeze at `localhost`. Pages set a bare `title` against the root `%s | Auto Publisher` template and their own `alternates.canonical` (never in a layout, which every child inherits). Dashboard, login and checkout are `noindex` but deliberately **not** disallowed in `robots.txt`, since a blocked page's `noindex` is never read. `/hr` is `noindex` and off the sitemap — ZZP čl. 60 st. 9 owes the Croatian notice to the consumer before the contract, which the footer, legal nav and upgrade-card links deliver; nothing requires it be findable by search, so those links must stay. A self-host disallows everything and serves an empty sitemap, so it is never indexed as a duplicate of the public site.
 - Detailed per-surface reasoning lives in `CONTEXT.md` under "Dashboard".
 
+**helper** (apps/helper, one instance, **prod overlay only** — needs the support guild and real subscriptions):
+
+- Grants the Supporter role (`SUPPORTER_ROLE_ID`, shown as "Premium") in the support guild (`BOT_SUPPORT_GUILD_ID`) to every member with an entitled subscription and revokes it from everyone else, polling `GET /internal/supporters` every 60s. Entitlement is read from the backend so `ENTITLED_STATUSES` stays its one definition.
+- **Its own Discord application** (`HELPER_DISCORD_TOKEN`): listing members needs the privileged Server Members intent, which the bot must not carry into every guild. Skips the proxy for the same reason — another token, a handful of writes.
+- **Never revoke on a failed read** — an empty list from a broken read looks like "nobody is entitled".
+- **The member cache is the record of who holds the role**: unlimited and unswept, rebuilt by gateway op 8 at startup and on `guildAvailable` (outage or re-identify, whose missed events are never replayed). Op 8 is limited to 1 per guild per 30s, so never on a timer.
+- `HELPER_DRY_RUN` (default `true`) logs `reconcile.plan` and applies nothing; the line precedes the circuit breaker, so it lists every id. Audit current holders against it before turning dry-run off. The breaker (floor 5) aborts the whole pass and never clears alone: remove the role by hand.
+- **Variables by interpolation, never `env_file`**, so no other secret reaches it. A new helper variable goes in its `environment` list in the prod overlay.
+
 **Shared packages** (packages/\*):
 
 - **@ap/database**: Drizzle ORM schema + client for PostgreSQL (Supabase). Exports `db`, `runMigrations`, and schema table references (`guild`, `channel`, `subscription`, `withdrawal` — exactly four; presence is two columns on `guild`, not a table; there is **no** `paddleCustomer` table, only a `paddleCustomerId` column on `subscription`. An older schema did have one, carrying emails, and no `DROP TABLE` migration exists — but no production database has ever existed, so there is nowhere for the legacy table to survive. Verified 2026-08-04; treat this as closed rather than as a latent data-protection issue). Migrations in `packages/database/migrations/`.
 - **@ap/logger**: Pino logging utilities (REST & Bot loggers). Plain JSON when `NODE_ENV=production` (v6 logged ~2.7 GB/day pretty-printed), the `pino-pretty` transport otherwise; read prod with `prod:logs`. Level from `LOGGER_LEVEL` (default `info`).
-- **@ap/alerts**: `createAlerter` — fire-and-forget Discord webhook alerts (`DISCORD_ALERT_WEBHOOK_URL`, disabled when unset), per-key throttle via `Alerts` Redis DB (30 min TTL), minimal embed format. Wired events: duplicate entitled subscription (backend), guild reconcile rails tripped (backend), invalid-request shed (proxy). Bar for new events: actionable, not merely unusual.
+- **@ap/alerts**: `createMassActionGuard` (the circuit breaker, floor per caller: backend 50, helper 5) and `createAlerter` — fire-and-forget Discord webhook alerts (`DISCORD_ALERT_WEBHOOK_URL`, disabled when unset), per-key throttle via `Alerts` Redis DB (30 min TTL), minimal embed format. Wired events: duplicate entitled subscription (backend), mass-action guard tripped (backend, helper), invalid-request shed (proxy). Bar for new events: actionable, not merely unusual.
 - **@ap/utils**: Common utilities (time, regex, discord helpers)
 - **@ap/copy**: user-facing sentences both the dashboard and the bot render, so one fact cannot be stated two ways. **One export, `Copy`**, an i18n-style tree: the path names the thing (`Copy.channels.paused`, `Copy.filters.condition`) and the leaf names its role in the layout (`title`, `body`, `lead`, `detail`, `hint`, `confirm`, `reason`); a leaf is a plain string when it is fixed and a function when it interpolates or pluralizes, and a call site cannot tell which, so turning one into the other touches this package and that site's arguments only. Types are the sole named exports — TypeScript cannot hang a type off a value. A sentence only one surface renders does **not** belong here (the Fix dialog's cause line, say): it stays beside the component, or the package stops being the set of things that must agree. **Single file on purpose** — Turbopack does not resolve the `.js`-extension convention TS ESM uses for relative imports, so every `@ap/*` package the web imports must be one file (same constraint `@ap/config` documents). Wording only: no JSX, no Discord markup, and **no zod or discord.js** — it is bundled into the browser, which is why `PUBLISH_PERMISSION_NAMES` mirrors `@ap/utils`' `PUBLISH_PERMISSION_FLAGS` (that module reaches `@ap/validations`, whose top level builds zod schemas) rather than importing it. `MAX_VALUES` and the filter regexes stay in `@ap/validations`: they are validation, not wording.
 - **@ap/validations**: Zod schemas for validation
@@ -348,7 +357,10 @@ PROXY_URL: proxy base URL (default compose service name)
 EGRESS_LOCAL_ADDRESS: proxy outbound source IP (prod; empty = default route). Discord's
   invalid-request ceiling is per IP, so this is the address to rotate if the shed ever trips.
 BOT_SHARDS / BOT_SHARDS_PER_CLUSTER
-BOT_SUPPORT_GUILD_ID: guild the /admin commands register to; unset = not registered
+BOT_SUPPORT_GUILD_ID: guild the /admin commands register to; unset = not registered. Also the guild
+  the helper manages.
+HELPER_DISCORD_TOKEN / SUPPORTER_ROLE_ID: the helper's own application token and the role it owns.
+HELPER_DRY_RUN (default true)
 DATABASE_URL: postgresql://... (Supabase connection string)
 REDIS_URI: redis://redis:6379 (optional override; defaults to shared Docker Redis)
 DISCORD_ALERT_WEBHOOK_URL: Discord webhook for ops alerts (optional; alerts disabled when unset)
@@ -387,7 +399,7 @@ overlay cannot talk to sandbox while the webhooks talk to live. That failure was
 old client default was `sandbox` whenever the variable was absent. `usePaddle` now
 `console.error`s on both a missing token and a rejected `initializePaddle`.
 
-`DISCORD_BOT_TOKEN` is the only token, read in both modes.
+`DISCORD_BOT_TOKEN` is the bot's token, read in both modes. The only other token is `HELPER_DISCORD_TOKEN`, public prod only.
 
 ## Message publishing flow
 
@@ -407,8 +419,8 @@ old client default was `sandbox` whenever the variable was absent. `usePaddle` n
 - Prod config: `scripts/bot/prod/docker-compose.yml`
 - **Compose project names must all differ** — `auto-publisher` (self-host root), `-prod`, `-dev`, plus `supabase/config.toml` `project_id` = `auto-publisher-dev`. Prod and self-host shared `auto-publisher` while both declare `redis_data` and services `backend`/`redis`: same project + same service is one container to Compose, so on one host they adopt each other's containers and `down -v` on either wipes the other's Redis. Self-host stays unsuffixed — self-hosters read it in `docker compose ps`. Supabase's `project_id` is local naming only (it becomes `com.docker.compose.project`; the cloud ref comes from `supabase link`), and sharing dev's name is safe since `down -v` only removes file-declared volumes.
 - **`env_file` is declared per overlay, never in the base.** Compose _appends_ `env_file` across `-f` layers, so a base-level entry made every prod service load the dev env file first and silently inherit anything prod did not re-declare (verified: prod rendered `SMTP_HOST: ap-mailpit` and `PADDLE_ENVIRONMENT: sandbox`). Dev uses `.env.local`, prod uses `.env`.
-- Services: `bot`, `proxy`, `backend`, `redis` (plus `web` in prod, `cloudflared` in prod and dev), plus `mailpit` in the dev overlay only — prod uses a real provider and self-host has no withdrawal routes, so neither has a mail path to catch. The backend `depends_on` it, which is what pulls it into a bare `up backend`. Both `MP_SMTP_AUTH_*` vars are load-bearing: the backend only sends when `SMTP_USER`/`SMTP_PASSWORD` are set, and nodemailer then does `AUTH LOGIN` in the clear on 1025.
-- Service dependencies: bot → proxy + backend + redis; backend → redis; proxy → redis
+- Services: `bot`, `proxy`, `backend`, `redis` (plus `web` and `helper` in prod, `cloudflared` in prod and dev), plus `mailpit` in the dev overlay only — prod uses a real provider and self-host has no withdrawal routes, so neither has a mail path to catch. The backend `depends_on` it, which is what pulls it into a bare `up backend`. Both `MP_SMTP_AUTH_*` vars are load-bearing: the backend only sends when `SMTP_USER`/`SMTP_PASSWORD` are set, and nodemailer then does `AUTH LOGIN` in the clear on 1025.
+- Service dependencies: bot → proxy + backend + redis; helper → backend + redis; backend → redis; proxy → redis
 - Health checks on proxy, backend & redis
 - Development: File sync with restart, exposed ports, all loopback-bound (`127.0.0.1:3101:8080` backend, `127.0.0.1:3102:8081` backend webhook listener, `127.0.0.1:8081:8080` proxy, `127.0.0.1:6379:6379` redis — a bare `port:port` publishes on every interface, and none of these has auth: the backend's internal routes, a proxy carrying the bot token, Redis without `requirepass`); any subset can be started (`docker compose ... up backend` alone is enough for web/checkout work; `bot` pulls in proxy + backend + redis)
 - Production: No port exposure, health checks enabled

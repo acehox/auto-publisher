@@ -75,3 +75,40 @@ export const createAlerter = (options: {
     },
   };
 };
+
+export type MassActionGuard = {
+  cap(population: number): number;
+  /** Past the cap: logs, alerts (throttled by `key`) and returns false; the caller aborts the WHOLE batch. */
+  guard(options: {
+    key: string;
+    action: string;
+    count: number;
+    population: number;
+    context: string;
+  }): boolean;
+};
+
+const CAP_RATIO = 0.1;
+
+/** `floor` is per caller: populations range from every guild the bot is in to one role's holders. */
+export const createMassActionGuard = (options: {
+  alerter: Alerter;
+  logger: Logger;
+  floor: number;
+}): MassActionGuard => {
+  const { alerter, logger, floor } = options;
+  const cap = (population: number) => Math.max(floor, Math.ceil(population * CAP_RATIO));
+
+  return {
+    cap,
+    guard: ({ key, action, count, population, context }) => {
+      const limit = cap(population);
+      if (count <= limit) return true;
+
+      const detail = `Refused to ${action}: ${count} exceeds cap ${limit} (population ${population}). ${context}`;
+      logger.error(`Mass-action guard tripped [${key}]: ${detail}`);
+      alerter.send(key, { title: 'Mass-action guard tripped', description: detail });
+      return false;
+    },
+  };
+};

@@ -1,6 +1,6 @@
 import { env, premiumTrialEnabled } from '@ap/config';
 import { db, guild, type Subscription, subscription } from '@ap/database';
-import { and, eq, inArray, isNull, lt, notInArray, or } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lt, notInArray, or } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 
@@ -303,6 +303,26 @@ const getEntitledGuildIds = async (): Promise<string[]> => {
   }
 };
 
+/** Throws on a failed read: the helper revokes from this list, so it must never come back falsely empty. */
+const getSupporterUserIds = async (): Promise<string[]> => {
+  try {
+    const rows = await db
+      .selectDistinct({ userId: subscription.subscriberDiscordUserId })
+      .from(subscription)
+      .where(
+        and(
+          inArray(subscription.status, [...ENTITLED_STATUSES]),
+          // Retention nulls the id on long-ended subscriptions
+          isNotNull(subscription.subscriberDiscordUserId)
+        )
+      );
+    return rows.flatMap(row => (row.userId ? [row.userId] : []));
+  } catch (error) {
+    logger.error(error);
+    throw new Error('Failed to retrieve supporter user ids');
+  }
+};
+
 /**
  * Not-entitled subscriptions whose guild still has the bot present — the
  * reconcile cron re-applies the downgrade for these. A guild the bot has left
@@ -432,6 +452,7 @@ export const Subscriptions = {
   applyPaddleSubscription,
   isEntitled,
   getEntitledGuildIds,
+  getSupporterUserIds,
   getRevokedWithBotPresent,
   isRecordableRefund,
   recordRefund,

@@ -1,0 +1,24 @@
+{
+  "name": "helper",
+  "private": true,
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "check-types": "tsc --noEmit",
+    "start": "bun run ."
+  },
+  "dependencies": {
+    "@ap/alerts": "workspace:*",
+    "@ap/config": "workspace:*",
+    "@ap/logger": "workspace:*",
+    "@ap/redis": "workspace:*",
+    "@sapphire/decorators": "^6.2.0",
+    "@sapphire/framework": "^5.4.0",
+    "discord.js": "^14.25.1"
+  },
+  "devDependencies": {
+    "@ap/tsconfig": "*"
+  }
+}
