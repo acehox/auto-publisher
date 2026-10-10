@@ -192,7 +192,7 @@ Self-host skips: the Paddle webhook route, the subscription/checkout/withdrawal 
 
 **helper** (apps/helper, one instance, **prod overlay only** — needs the support guild and real subscriptions):
 
-- Grants the Supporter role (`SUPPORTER_ROLE_ID`, shown as "Premium") in the support guild (`BOT_SUPPORT_GUILD_ID`) to every member with an entitled subscription and revokes it from everyone else, polling `GET /internal/supporters` every 60s. Entitlement is read from the backend so `ENTITLED_STATUSES` stays its one definition.
+- Grants the Subscriber role (`SUBSCRIBER_ROLE_ID`, shown as "Premium") in the support guild (`BOT_SUPPORT_GUILD_ID`) to every member with an entitled subscription and revokes it from everyone else, polling `GET /internal/subscribers` every 60s. Entitlement is read from the backend so `ENTITLED_STATUSES` stays its one definition.
 - **Its own Discord application** (`HELPER_DISCORD_TOKEN`): listing members needs the privileged Server Members intent, which the bot must not carry into every guild. Skips the proxy for the same reason — another token, a handful of writes.
 - **Never revoke on a failed read** — an empty list from a broken read looks like "nobody is entitled".
 - **The member cache is the record of who holds the role**: unlimited and unswept, rebuilt by gateway op 8 at startup and on `guildAvailable` (outage or re-identify, whose missed events are never replayed). Op 8 is limited to 1 per guild per 30s, so never on a timer.
@@ -359,7 +359,7 @@ EGRESS_LOCAL_ADDRESS: proxy outbound source IP (prod; empty = default route). Di
 BOT_SHARDS / BOT_SHARDS_PER_CLUSTER
 BOT_SUPPORT_GUILD_ID: guild the /admin commands register to; unset = not registered. Also the guild
   the helper manages.
-HELPER_DISCORD_TOKEN / SUPPORTER_ROLE_ID: the helper's own application token and the role it owns.
+HELPER_DISCORD_TOKEN / SUBSCRIBER_ROLE_ID: the helper's own application token and the role it owns.
 HELPER_DRY_RUN (default true)
 DATABASE_URL: postgresql://... (Supabase connection string)
 REDIS_URI: redis://redis:6379 (optional override; defaults to shared Docker Redis)

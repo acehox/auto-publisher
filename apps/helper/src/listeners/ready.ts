@@ -11,13 +11,13 @@ import { logger } from 'utils/logger.js';
 })
 export class ReadyListener extends Listener {
   public async run(client: Client<true>) {
-    const { guildId, supporterRoleId, dryRun } = config.helper;
+    const { guildId, subscriberRoleId, dryRun } = config.helper;
     logger.info(
       {
         event: 'helper.ready',
         user: client.user.tag,
         guildId,
-        roleId: supporterRoleId,
+        roleId: subscriberRoleId,
         dryRun,
       },
       dryRun ? 'Helper ready (DRY RUN)' : 'Helper ready'

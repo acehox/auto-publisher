@@ -97,11 +97,11 @@ export const env = cleanEnv(process.env, {
   BOT_SHARDS_PER_CLUSTER: num({ default: 1 }),
 
   // --- Helper (public instance only) -----------------------------------------
-  // Owns the Supporter role in the support server (`BOT_SUPPORT_GUILD_ID`). Its own
+  // Owns the Subscriber role in the support server (`BOT_SUPPORT_GUILD_ID`). Its own
   // Discord application: listing members needs the privileged Server Members
   // intent, which the main bot must not carry into every guild it serves.
   HELPER_DISCORD_TOKEN: str({ default: '' }),
-  SUPPORTER_ROLE_ID: str({ default: '' }),
+  SUBSCRIBER_ROLE_ID: str({ default: '' }),
   /** Logs intended role writes and applies none. Only turn off after auditing current holders. */
   HELPER_DRY_RUN: bool({ default: true }),
 
@@ -199,7 +199,7 @@ const SCOPED_KEYS = {
   ],
   dashboard: ['AUTH_SECRET', 'DISCORD_CLIENT_ID', 'DISCORD_CLIENT_SECRET', 'PADDLE_CLIENT_TOKEN'],
   // Required in every mode: no default may decide which guild and role get mutated.
-  helper: ['HELPER_DISCORD_TOKEN', 'BOT_SUPPORT_GUILD_ID', 'SUPPORTER_ROLE_ID'],
+  helper: ['HELPER_DISCORD_TOKEN', 'BOT_SUPPORT_GUILD_ID', 'SUBSCRIBER_ROLE_ID'],
 } as const satisfies Record<keyof EnvScope, readonly string[]>;
 
 /**
@@ -229,7 +229,7 @@ export const assertRequiredEnv = (scope: EnvScope = {}): void => {
     ? [`Missing required environment variable(s): ${missing.join(', ')}.`]
     : [];
 
-  // The backend serves the supporter list only where subscriptions exist.
+  // The backend serves the subscriber list only where subscriptions exist.
   if (scope.helper && !isPublicInstance) {
     problems.push('The helper runs on a public instance only; a self-host has no subscriptions.');
   }
@@ -283,7 +283,7 @@ export const config = {
   helper: {
     discordToken: env.HELPER_DISCORD_TOKEN,
     guildId: env.BOT_SUPPORT_GUILD_ID,
-    supporterRoleId: env.SUPPORTER_ROLE_ID,
+    subscriberRoleId: env.SUBSCRIBER_ROLE_ID,
     dryRun: env.HELPER_DRY_RUN,
   },
   /**

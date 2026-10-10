@@ -82,7 +82,7 @@ services:
     logging: *prod-logging
     deploy: *bot-resources
 
-  # Supporter role in the support server. Prod only: it needs BOT_SUPPORT_GUILD_ID
+  # Subscriber role in the support server. Prod only: it needs BOT_SUPPORT_GUILD_ID
   # and the subscription list, neither of which dev or a self-host has.
   helper:
     build:
@@ -95,7 +95,7 @@ services:
       - DEPLOYMENT_MODE=${DEPLOYMENT_MODE}
       - HELPER_DISCORD_TOKEN=${HELPER_DISCORD_TOKEN}
       - BOT_SUPPORT_GUILD_ID=${BOT_SUPPORT_GUILD_ID}
-      - SUPPORTER_ROLE_ID=${SUPPORTER_ROLE_ID}
+      - SUBSCRIBER_ROLE_ID=${SUBSCRIBER_ROLE_ID}
       - HELPER_DRY_RUN=${HELPER_DRY_RUN:-true}
       - DISCORD_ALERT_WEBHOOK_URL=${DISCORD_ALERT_WEBHOOK_URL:-}
       - NODE_ENV=production

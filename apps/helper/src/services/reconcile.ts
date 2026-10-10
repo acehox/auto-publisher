@@ -1,16 +1,20 @@
 import { config } from '@ap/config';
-import { fetchSupporterUserIds } from 'data/backend.js';
+import { fetchSubscriberUserIds } from 'data/backend.js';
 import { type Guild, type GuildMember, PermissionFlagsBits, type Role } from 'discord.js';
 import { auditLogReasons, POLL_INTERVAL_MS } from 'lib/constants.js';
 import { guardMassAction, massActionCap } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 
 const resolveRole = (guild: Guild): Role | null => {
-  const role = guild.roles.cache.get(config.helper.supporterRoleId);
+  const role = guild.roles.cache.get(config.helper.subscriberRoleId);
   if (!role) {
     logger.error(
-      { event: 'reconcile.role_missing', roleId: config.helper.supporterRoleId, guildId: guild.id },
-      'Supporter role not found in guild; nothing applied'
+      {
+        event: 'reconcile.role_missing',
+        roleId: config.helper.subscriberRoleId,
+        guildId: guild.id,
+      },
+      'Subscriber role not found in guild; nothing applied'
     );
   }
   return role ?? null;
@@ -40,7 +44,7 @@ const isRoleWritable = (guild: Guild, role: Role): boolean => {
         rolePosition: role.position,
         ownHighestPosition: me.roles.highest.position,
       },
-      "Helper's highest role is not above the Supporter role; every write would 403"
+      "Helper's highest role is not above the Subscriber role; every write would 403"
     );
     return false;
   }
@@ -61,13 +65,13 @@ const applyRoleChange = async (
       if (op === 'grant') await member.roles.add(role, auditLogReasons.grant);
       else await member.roles.remove(role, auditLogReasons.revoke);
       logger.info(
-        { event: `supporter.${pastTense[op]}`, userId: member.id },
-        `Supporter role ${pastTense[op]}`
+        { event: `subscriber.${pastTense[op]}`, userId: member.id },
+        `Subscriber role ${pastTense[op]}`
       );
     } catch (err) {
       logger.error(
-        { event: `supporter.${op}_failed`, userId: member.id, err },
-        `Failed to ${op} Supporter role`
+        { event: `subscriber.${op}_failed`, userId: member.id, err },
+        `Failed to ${op} Subscriber role`
       );
     }
   }
@@ -93,12 +97,12 @@ export const reconcile = async (guild: Guild): Promise<void> => {
 
   let desired: Set<string>;
   try {
-    desired = await fetchSupporterUserIds();
+    desired = await fetchSubscriberUserIds();
   } catch (err) {
     // Never revoke on a failed read: grants are safe to retry, revokes are not
     logger.error(
       { event: 'reconcile.read_failed', err },
-      'Supporter read failed; pass skipped, nothing applied'
+      'Subscriber read failed; pass skipped, nothing applied'
     );
     return;
   }
@@ -148,8 +152,8 @@ export const reconcile = async (guild: Guild): Promise<void> => {
   // Aborts grants too: a tripped guard means the read itself is suspect. A real
   // batch over the cap never clears alone: remove the role by hand.
   const withinCap = guardMassAction({
-    key: 'supporter.revoke',
-    action: `revoke ${revokes.length === 1 ? 'the Supporter role' : 'Supporter roles'}`,
+    key: 'subscriber.revoke',
+    action: `revoke ${revokes.length === 1 ? 'the Subscriber role' : 'Subscriber roles'}`,
     count: revokes.length,
     population: holders.size,
     context: 'Likely a broken subscription read, not a real mass churn.',
@@ -164,18 +168,18 @@ export const reconcile = async (guild: Guild): Promise<void> => {
  * Covers the person who pays before joining the support server. Never revokes:
  * a join says nothing about anyone losing entitlement.
  */
-export const grantIfSupporter = async (member: GuildMember): Promise<void> => {
+export const grantIfSubscriber = async (member: GuildMember): Promise<void> => {
   const role = resolveRole(member.guild);
   if (!role || member.roles.cache.has(role.id) || !isRoleWritable(member.guild, role)) return;
 
   try {
     // At most one poll interval stale; a payment newer than that is granted next pass
-    const desired = lastDesired ?? (await fetchSupporterUserIds());
+    const desired = lastDesired ?? (await fetchSubscriberUserIds());
     if (!desired.has(member.id)) return;
   } catch (err) {
     logger.error(
       { event: 'join_check.read_failed', userId: member.id, err },
-      'Supporter check failed on join; the next poll will cover this member'
+      'Subscriber check failed on join; the next poll will cover this member'
     );
     return;
   }

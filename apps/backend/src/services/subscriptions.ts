@@ -304,7 +304,7 @@ const getEntitledGuildIds = async (): Promise<string[]> => {
 };
 
 /** Throws on a failed read: the helper revokes from this list, so it must never come back falsely empty. */
-const getSupporterUserIds = async (): Promise<string[]> => {
+const getSubscriberUserIds = async (): Promise<string[]> => {
   try {
     const rows = await db
       .selectDistinct({ userId: subscription.subscriberDiscordUserId })
@@ -319,7 +319,7 @@ const getSupporterUserIds = async (): Promise<string[]> => {
     return rows.flatMap(row => (row.userId ? [row.userId] : []));
   } catch (error) {
     logger.error(error);
-    throw new Error('Failed to retrieve supporter user ids');
+    throw new Error('Failed to retrieve subscriber user ids');
   }
 };
 
@@ -452,7 +452,7 @@ export const Subscriptions = {
   applyPaddleSubscription,
   isEntitled,
   getEntitledGuildIds,
-  getSupporterUserIds,
+  getSubscriberUserIds,
   getRevokedWithBotPresent,
   isRecordableRefund,
   recordRefund,

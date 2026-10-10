@@ -150,19 +150,19 @@ export const Internal: Router = (() => {
     });
 
     /**
-     * GET /internal/supporters
-     * Polled by the helper, which owns the support server's Supporter role.
+     * GET /internal/subscribers
+     * Polled by the helper, which owns the support server's Subscriber role.
      */
-    router.get('/supporters', async (_req, res) => {
+    router.get('/subscribers', async (_req, res) => {
       try {
-        const userIds = await Services.Subscriptions.getSupporterUserIds();
+        const userIds = await Services.Subscriptions.getSubscriberUserIds();
         res.status(StatusCodes.OK).json({
           status: StatusCodes.OK,
           data: { userIds },
-          message: 'Supporters retrieved successfully',
+          message: 'Subscribers retrieved successfully',
         } as APIResponse);
       } catch (error) {
-        sendErrorResponse(res, error, 'Failed to retrieve supporters');
+        sendErrorResponse(res, error, 'Failed to retrieve subscribers');
       }
     });
   }
