@@ -70,22 +70,14 @@ export const env = cleanEnv(process.env, {
 
   // --- The bot -------------------------------------------------------------
   DISCORD_BOT_TOKEN: str({ default: '' }),
-  PROXY_URL: str({ default: 'http://proxy:8080' }),
 
-  /**
-   * Outbound source IP for Discord traffic; empty = default route.
-   *
-   * Discord restricts IP addresses, not tokens, so this is the only real lever
-   * on the 10k-invalid-requests/10min Cloudflare ceiling. Pinning it keeps the
-   * stack's Discord egress on a known address the host can rotate.
-   */
-  EGRESS_LOCAL_ADDRESS: str({ default: '' }),
+  // Compose service names; override only for a process outside the stack.
+  PROXY_URL: str({ default: 'http://proxy:8080' }),
+  REDIS_URI: str({ default: 'redis://redis:6379' }),
+  BACKEND_URL: str({ default: 'http://backend:8080' }),
 
   // Backend
   DATABASE_URL: str({ default: 'postgresql://postgres:postgres@localhost:54322/postgres' }),
-
-  // Redis
-  REDIS_URI: str({ default: 'redis://redis:6379' }),
 
   // Alerts (optional; alerts are disabled when unset)
   DISCORD_ALERT_WEBHOOK_URL: str({ default: '' }),
@@ -122,8 +114,6 @@ export const env = cleanEnv(process.env, {
    */
   DISCORD_BOT_ID: str({ default: '' }),
   WEB_APP_ORIGIN: str({ default: 'http://localhost:3100' }),
-  /** Backend base URL the dashboard calls server-side (never from the browser). */
-  BACKEND_URL: str({ default: 'http://backend:8080' }),
 
   // --- Public instance only: billing + statutory mail ----------------------
   PADDLE_ENVIRONMENT: str({ default: 'sandbox', choices: ['sandbox', 'production'] }),
@@ -286,12 +276,6 @@ export const config = {
     subscriberRoleId: env.SUBSCRIBER_ROLE_ID,
     dryRun: env.HELPER_DRY_RUN,
   },
-  /**
-   * Outbound source IP for Discord traffic; empty = default route. Discord's
-   * invalid-request ceiling is per IP, so this is what the host rotates if the
-   * proxy's self-shed ever trips for real.
-   */
-  egressLocalAddress: env.EGRESS_LOCAL_ADDRESS,
   /**
    * MIGRATION: the date legacy mode stops working, as `YYYY-MM-DD` (UTC).
    *

@@ -1,9 +1,13 @@
 // Imported first so the repo-root env file is loaded into `process.env` before
 // Auth.js reads AUTH_SECRET itself. The whole monorepo shares one env file and
 // one validated schema — the web app has no env file of its own.
-import { env } from '@ap/config';
+import { env, isPublicInstance } from '@ap/config';
 import NextAuth from 'next-auth';
 import Discord from 'next-auth/providers/discord';
+
+// Behind the tunnel Auth.js otherwise redirects to its bind address (0.0.0.0:3100).
+// Not on self-host, where `trustHost` keeps login working from any address.
+if (isPublicInstance) process.env.AUTH_URL ||= env.WEB_APP_ORIGIN;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [

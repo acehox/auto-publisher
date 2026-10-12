@@ -55,11 +55,8 @@ services:
     env_file: [.env]
     environment:
       - NODE_ENV=production
-      # Service names on the compose network; override in .env only for an
-      # external database.
+      # Override in .env only for an external database.
       - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:postgres@db:5432/postgres}
-      - REDIS_URI=redis://redis:6379
-      - PROXY_URL=http://proxy:8080
     networks: [ap-network]
     depends_on:
       db:
@@ -82,9 +79,6 @@ services:
     env_file: [.env]
     environment:
       - NODE_ENV=production
-      # Reached over the compose network, never from the browser: every
-      # dashboard call to the backend is server-side.
-      - BACKEND_URL=http://backend:8080
     ports:
       - "${WEB_PORT:-3100}:3100"
     networks: [ap-network]

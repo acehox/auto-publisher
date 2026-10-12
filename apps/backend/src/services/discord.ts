@@ -5,9 +5,9 @@ import type { Snowflake } from 'discord-api-types/globals';
 import { type APIChannel, type APIUser, ChannelType, Routes } from 'discord-api-types/v10';
 import { logger } from 'utils/logger.js';
 
-// The one REST client, routed through the proxy so Discord traffic leaves on
-// the proxy's pinned egress IP and obeys its global limiter. An unset token
-// fails client-side in @discordjs/rest before any HTTP is sent.
+// The one REST client, routed through the proxy so Discord traffic obeys its
+// global limiter. An unset token fails client-side in @discordjs/rest before
+// any HTTP is sent.
 const rest = new REST({ api: `${config.proxyUrl}/api` }).setToken(config.discordToken);
 
 const hasToken = (): boolean => Boolean(config.discordToken);

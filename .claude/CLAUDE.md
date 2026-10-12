@@ -110,7 +110,6 @@ Self-host skips: the Paddle webhook route, the subscription/checkout/withdrawal 
 - Redis DBs `CrosspostQueue` and `GatedChannels` (sublimit lock, blocked, rollover backlogs + drain claims) plus the shared `Alerts`.
 - **One plain FIFO queue, no priority** (ADR 0001): since Discord's 2026-10-08 per-channel crosspost bucket the queue does not back up, so reordering it buys nothing. One queue also because discord.js tracks the 50 req/s global limit client-side **per REST instance** — two instances each believe they have a full 50 and manufacture the 429s a split is meant to avoid.
 - **Sublimit = Discord's shared 429, never our own count.** A 429 with `X-RateLimit-Scope: shared` classifies as `sublimit` regardless of discord.js's `global` flag (that flag is its own local 50/s counter, not Discord's verdict); `rest.ts` rejects on `scope === 'shared'`, keeping the `timeToReset > 60s` fallback for the pre-flight path, where discord.js hardcodes scope `'user'`. It writes `sublimit_lock:{channelId}` = `'1'` with `EX ceil(retry_after)`; presence = locked. Shared 429s are free (not counted toward the ban), so a few extra requests per busy channel per hour are the accepted cost. Discord's limits on the route: 10/hour/channel (the shared 429) and 5/1s per channel (bucket `271468c73b85b82232d661d806f88cb4`, paced by discord.js).
-- Egress IP pinning: `config.egressLocalAddress` (from `EGRESS_LOCAL_ADDRESS`) sets an undici `Agent({ connect: { localAddress } })`. Discord's invalid-request ceiling is per **IP**, not per token, so this pin is the whole of the ban mitigation. Unset = default route (dev).
 - Sync pre-check pipeline (gate), at enqueue, in the worker and at the start of each drain run: `invalid_requests` shed → one round trip for the `GatedChannels` pair (`GET blocked:` + `PTTL sublimit_lock:`, the lock's remaining ms riding on the `sublimit` verdict). Free path: a blocked or locked channel gets 204 at enqueue and is skipped in the worker — the message is dropped.
 - **Rollover** (ADR 0001, `crosspost/rollover.ts`): every `rollover=1` message goes into its channel's backlog `rollover:{channelId}` **even when the channel is not locked** — a sorted set, member = messageId, score = post time decoded from the snowflake (`postedAt`), `ZADD NX` (a repeat push is a no-op), `PEXPIRE` 24h on each add. Strict post order needs one sender per channel: per-message jobs get reordered by worker concurrency, a 5xx retry or a transient-429 delay. One `drain` job per channel (same queue) publishes oldest first, one at a time: `ZREM` on success, already-crossposted or another 4xx (Unknown Message); the first shared 429 writes the lock and `moveToDelayed`s the drain for exactly the lock's lifetime (no attempt spent); at most `DRAIN_BATCH` (10) publishes per run, then it re-queues itself at once so other channels get a worker slot; a 5xx throws to BullMQ backoff, which resumes at the same oldest message; 401/403 clears the backlog. Entries past `ROLLOVER_MAX_AGE_MS` (24h since posting) are dropped at the start of each run and refused at enqueue (204, counting the lock wait). **Drain uniqueness is the claim key `rollover_drain:{channelId}`** (`SET NX PX` wait + 10 min slack, re-armed on every delay), not the BullMQ `jobId`: an active drain finishing would swallow a re-add. `finishDrain` is one `MULTI` (`DEL` claim + `ZCARD`), re-scheduling if non-empty, so a concurrent hold either finds no claim and starts a drain or is counted — never neither. A drain's final failure releases the claim; the channel's next held message starts a new one. The lock lifetime is `lockTtlMs` (`retry_after` rounded up to whole seconds, what `EX` stores), returned by `gatedChannels.lock` — one definition of the expiry. The backend `DEL`s a backlog when its channel leaves the allowlist or its guild loses Premium (see backend).
 - BullMQ worker (concurrency 50) runs `crosspost` jobs (free, one per message) and `drain` jobs (rollover, one per channel), classifying Discord error outcomes:
@@ -122,7 +121,7 @@ Self-host skips: the Paddle webhook route, the subscription/checkout/withdrawal 
 - Cloudflare-ban self-shed at 5,000 invalid requests / 10 min (half of Discord's 10k ceiling). Tracked in-memory via `RESTEvents.Response`, excluding shared 429s.
 - **Logs**: one `info` `crosspost.metrics` line per minute (counters reset each window, emitted even when idle, so a missing line means the proxy is down); per-request events log at `debug`, and `rest.rate_limited` (discord.js waiting on its own 50/s cap — 43% of v6 log bytes) is gone. Info and above in production is startup lines, the metrics line and real problems.
 - Runs on port 8080 (internal); dev exposes it on 8081. Healthcheck on `/health`. Stats on `/info`.
-- Tech stack: `@discordjs/rest`, BullMQ + ioredis (queue), Express, undici (egress pinning), pino via `@ap/logger`.
+- Tech stack: `@discordjs/rest`, BullMQ + ioredis (queue), Express, pino via `@ap/logger`.
 
 **bot** (apps/bot, one instance — one token via `config.discordToken`):
 
@@ -216,11 +215,11 @@ Self-host skips: the Paddle webhook route, the subscription/checkout/withdrawal 
 
 **Single backend, single database**: one backend, one Postgres, one Redis. A backend per plan breaks the upgrade funnel (checkout routes to a backend with no billing routes), loses config on a plan switch, and doubles `GET /users/@me/guilds`. Not up for reconsideration.
 
-**One bot, Premium as a guild property**: there is no entitlement gate on join and nothing leaves a guild on a plan change. Premium is filters, unlimited channels and rollover (messages past Discord's 10/hour/channel limit published once it resets, in strict post order, best effort, up to 24h after posting), not queue position (ADR 0001). A plan change is a channel trim, run from `Plans.reconcileChannelServing` on the Paddle webhook in **both** directions. The split's stated purpose — Cloudflare-ban isolation — was folklore: Discord restricts **IP addresses**, not tokens, and `EGRESS_LOCAL_ADDRESS` already delivers that with one token. Its one real benefit is the per-**token** 50 req/s ceiling, which is the sole reason anyone would want the split back — and splitting halves the case for a rate-limit increase, which Discord grants per application on size.
+**One bot, Premium as a guild property**: there is no entitlement gate on join and nothing leaves a guild on a plan change. Premium is filters, unlimited channels and rollover (messages past Discord's 10/hour/channel limit published once it resets, in strict post order, best effort, up to 24h after posting), not queue position (ADR 0001). A plan change is a channel trim, run from `Plans.reconcileChannelServing` on the Paddle webhook in **both** directions. The split's stated purpose — Cloudflare-ban isolation — was folklore: Discord restricts **IP addresses**, not tokens, so a second token on the same host isolates nothing. Its one real benefit is the per-**token** 50 req/s ceiling, which is the sole reason anyone would want the split back — and splitting halves the case for a rate-limit increase, which Discord grants per application on size.
 
 **No bot-side plan logic, and no bot-side leave.** The bot joins every guild it is invited to and never leaves on its own. It learns a guild's plan only from `premium` on `GET /guild/:id/channels`, for slash-command gating — never on the publish path. The reconcile sweep repairs guilds whose `guildCreate` was missed.
 
-**Proxy service** (single): `apps/proxy` owns all Discord REST traffic for the token — the async crosspost queue and the generic `/api/*` passthrough — sharing a single `@discordjs/rest` instance. Replaces the previous `discord-proxy` (generic container) + `crosspost-worker` (custom in-memory queue) pair. Production pins its outbound source IP (`EGRESS_LOCAL_ADDRESS`), which is the whole of the Cloudflare-ban mitigation.
+**Proxy service** (single): `apps/proxy` owns all Discord REST traffic for the token — the async crosspost queue and the generic `/api/*` passthrough — sharing a single `@discordjs/rest` instance. Replaces the previous `discord-proxy` (generic container) + `crosspost-worker` (custom in-memory queue) pair.
 
 **BullMQ-backed queue**: Jobs survive proxy restarts. `jobId: ${channelId}-${messageId}` prevents duplicate enqueues. Plain FIFO, no priority (ADR 0001). Per-outcome handling: only intentional skips (`already_done` / `blocked` / `sublimit` / `fatal_4xx`) drop messages; transient errors become delayed retries (≤5 min cap) or BullMQ exponential backoff (10 attempts). Rollover messages are not jobs: they sit in a per-channel Redis backlog drained by one sequential `drain` job per channel, which waits out the lock instead of dropping (24h cap, strict post order) — per-message jobs could not hold post order under concurrency and retries.
 
@@ -345,7 +344,7 @@ Docker is a prerequisite and stays OS-agnostic. Sharding vars are absent from th
 surface entirely: the default of one shard covers any self-hosted scale, so naming them only
 invites tuning nobody needs.
 
-Everything else defaults. There is no proxy URL, no Paddle, no SMTP, no egress, and no `NEXT_PUBLIC_*` — the dashboard image takes **no build args** because its config is server-rendered into the client tree (`getSiteConfig` → `SiteConfigProvider`), not inlined at build time.
+Everything else defaults. There is no proxy URL, no Paddle, no SMTP and no `NEXT_PUBLIC_*` — the dashboard image takes **no build args** because its config is server-rendered into the client tree (`getSiteConfig` → `SiteConfigProvider`), not inlined at build time.
 
 **Public instance** (`docs/public-instance/.env.example`): adds `DEPLOYMENT_MODE=public` plus the billing and tuning surface. The topology is identical — same one bot, one proxy.
 
@@ -355,16 +354,12 @@ DEPLOYMENT_MODE: self-host|public (absent = self-host)
 DISCORD_BOT_TOKEN: the bot's token. Use the LONG-LIVED application the existing servers already
   have — Discord cannot move servers between applications, so switching means every server
   re-inviting.
-PROXY_URL: proxy base URL (default compose service name)
-EGRESS_LOCAL_ADDRESS: proxy outbound source IP (prod; empty = default route). Discord's
-  invalid-request ceiling is per IP, so this is the address to rotate if the shed ever trips.
 BOT_SHARDS / BOT_SHARDS_PER_CLUSTER
 BOT_SUPPORT_GUILD_ID: guild the /admin commands register to; unset = not registered. Also the guild
   the helper manages.
 HELPER_DISCORD_TOKEN / SUBSCRIBER_ROLE_ID: the helper's own application token and the role it owns.
 HELPER_DRY_RUN (default true)
 DATABASE_URL: postgresql://... (Supabase connection string)
-REDIS_URI: redis://redis:6379 (optional override; defaults to shared Docker Redis)
 DISCORD_ALERT_WEBHOOK_URL: Discord webhook for ops alerts (optional; alerts disabled when unset)
 PADDLE_ENVIRONMENT / PADDLE_API_KEY / PADDLE_WEBHOOK_SECRET / PADDLE_PRICE_ID_MONTHLY / PADDLE_PRICE_ID_YEARLY
 PADDLE_PRICE_ID_MONTHLY_TRIAL / PADDLE_PRICE_ID_YEARLY_TRIAL: the same two prices with a 14-day trial_period.
@@ -376,13 +371,16 @@ SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASSWORD / SMTP_FROM: outbound mail (ba
   from the dev compose overlay (Mailpit), not from an env file — `environment` beats `env_file`, so a
   dev-only SMTP host can never render into prod.
 AUTH_SECRET / DISCORD_CLIENT_ID / DISCORD_CLIENT_SECRET: dashboard login (web)
-AUTH_URL: the public origin. Required behind the tunnel — unset, Auth.js builds its redirects from
-  the container's bind address (HOSTNAME=0.0.0.0) and sends users to https://0.0.0.0:3100.
+WEB_APP_ORIGIN: public origin; on the public instance also Auth.js's AUTH_URL — unset, Auth.js
+  behind the tunnel redirects to its bind address (0.0.0.0:3100). Not on self-host, where
+  `trustHost` keeps login working from any address. An explicit AUTH_URL wins.
 DISCORD_BOT_ID: application id of the bot users are invited to. Server-side, NOT NEXT_PUBLIC_.
   Defaults to DISCORD_CLIENT_ID, which is the whole story for a self-host (one application is both
   the OAuth client and the bot); the public instance sets it because its bot is a different,
   long-lived application than its login client.
-BACKEND_URL: single backend base URL (web, server-only)
+PROXY_URL / REDIS_URI / BACKEND_URL: default to the compose service names. Set only for a process
+  outside the stack (`.env.local` has `BACKEND_URL=http://localhost:3101` for `pnpm dev:web`),
+  never in a package script or compose `environment`.
 PADDLE_CLIENT_TOKEN: client-side token for Paddle.js, which runs in the browser — but served at
   RUNTIME through getSiteConfig() → SiteConfigProvider like the bot ids, NOT inlined as a
   NEXT_PUBLIC_ build-time value. There are now NO NEXT_PUBLIC_* variables in the whole repo.

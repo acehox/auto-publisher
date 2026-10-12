@@ -21,8 +21,7 @@
     "bullmq": "^5.76.7",
     "discord-api-types": "^0.38.37",
     "express": "^5.2.1",
-    "ioredis": "^5.10.1",
-    "undici": "6.21.3"
+    "ioredis": "^5.10.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.6"

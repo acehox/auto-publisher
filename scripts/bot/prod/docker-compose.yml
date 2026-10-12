@@ -129,8 +129,6 @@ services:
     env_file:
       - ../../.env
     environment:
-      # Server-side only; the browser never calls the backend directly.
-      - BACKEND_URL=http://backend:8080
       - TUNNEL_TOKEN=
       - NODE_ENV=production
     ports:
