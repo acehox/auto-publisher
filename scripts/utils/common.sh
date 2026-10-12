@@ -37,9 +37,12 @@ is_docker_running() {
 is_docker_services_running() {
     local ENV_NAME="$1"
     local FILES="$2"
+    # The netcup host has npm but no pnpm.
+    local RUNNER=pnpm
+    [ "$ENV_NAME" = "prod" ] && RUNNER=npm
 
     if ! docker compose $FILES ps --services --filter "status=running" | grep -q "bot\|backend\|proxy"; then
-        echo "⚠️  Bot services are not running. Start them first with: bun run $ENV_NAME:start"
+        echo "⚠️  Bot services are not running. Start them first with: $RUNNER run $ENV_NAME:start"
         exit 1
     fi
 }

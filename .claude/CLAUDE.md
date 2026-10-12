@@ -12,7 +12,7 @@ Use Context7 MCP to search documentation for framework/library references instea
 - Docker for containerization
   - Docker container networking for inter-service communication
   - Development & production scripts in ./scripts
-- bun runtime & package manager
+- bun runtime, pnpm package manager
 - TypeScript & ES modules
 - Biome.js for linting & formatting
 
@@ -33,12 +33,12 @@ Maintainer dev keeps `.env.local`, which takes precedence over `.env`.
 ### Development (public stack)
 
 ```bash
-bun run dev:start           # Start full dev environment (Docker Compose)
-bun run dev:watch           # Start with hot reload (--watch)
-bun run dev:stop            # Stop everything (down + volumes + Supabase + prune)
-bun run dev:logs            # View dev logs
-bun run dev:ps              # List dev containers
-bun run dev:cache           # Access Redis cache container
+pnpm run dev:start          # Start full dev environment (Docker Compose)
+pnpm run dev:watch          # Start with hot reload (--watch)
+pnpm run dev:stop           # Stop everything (down + volumes + Supabase + prune)
+pnpm run dev:logs           # View dev logs
+pnpm run dev:ps             # List dev containers
+pnpm run dev:cache          # Access Redis cache container
 ```
 
 Outbound mail is caught locally by the `mailpit` service — inbox and REST API at
@@ -47,22 +47,24 @@ http://localhost:8025, SMTP on `127.0.0.1:1025`.
 ### Production
 
 ```bash
-bun run prod:start       # Start production containers
-bun run prod:stop        # Stop production containers
-bun run prod:logs        # View production logs (JSON piped through bunx pino-pretty)
-bun run prod:ps          # List production containers
+npm run prod:start       # Start production containers
+npm run prod:stop        # Stop production containers
+npm run prod:logs        # View production logs (JSON piped through `npx pino-pretty`)
+npm run prod:ps          # List production containers
 ```
+
+Run on the netcup host, which has npm but no pnpm or bun. Deploy is `npm run prod:stop` then `npm run prod:start`, never a build beside the running bot: the host has ~1.2 GiB free with prod up and a build needs ~2 GiB, so the build OOM-kills the bot. `prod:start` also builds the images one at a time, since five installs plus `next build` at once is the build's memory peak; that was not slower (cold, Mac, one run each: 109 s one at a time, 144 s in parallel).
 
 ### Build & Code Quality
 
 ```bash
-bun run build            # Build all workspace packages
-bun run clean            # Clean build artifacts
-bun run check-types      # Type check all packages
-bun run check            # Lint/format check (Biome)
-bun run check:fix        # Lint/format auto-fix
-bun run db:generate      # Generate Drizzle SQL migration files
-bun run db:migrate       # Apply pending migrations to database
+pnpm run build           # Build all workspace packages
+pnpm run clean           # Clean build artifacts
+pnpm run check-types     # Type check all packages
+pnpm run check           # Lint/format check (Biome)
+pnpm run check:fix       # Lint/format auto-fix
+pnpm run db:generate     # Generate Drizzle SQL migration files
+pnpm run db:migrate      # Apply pending migrations to database
 ```
 
 ### Supabase (local dev)
@@ -299,7 +301,7 @@ withdrawal {
 - Backend Docker containers connect via `DATABASE_URL=postgresql://postgres:postgres@host.docker.internal:54322/postgres`
 - Production: cloud Supabase connection string in `DATABASE_URL`
 - Config: `supabase/config.toml` (committed, no sensitive data)
-- Migrations: `packages/database/migrations/` (committed SQL files, run via `bun run db:migrate`)
+- Migrations: `packages/database/migrations/` (committed SQL files, run via `pnpm run db:migrate`)
 - `runMigrations()` is called automatically at backend startup
 
 ### Redis structure
@@ -413,7 +415,16 @@ old client default was `sandbox` whenever the variable was absent. `usePaddle` n
 ## Docker configuration
 
 - **Self-host: `docker-compose.yml` at the repo root** — standalone (does NOT extend the files below), services `bot` / `proxy` / `backend` / `web` / `db` / `redis`, all always-on, no profiles and no flags. Reads `.env`, which is the reason that is the self-host filename: Compose only auto-reads `.env` from the project directory. `db` is `postgres:17-alpine` and is named `db` because `packages/database/src/client.ts` already whitelists that hostname in its no-TLS regex. Nothing but `web` publishes a port. `bot`/`proxy`/`backend`/`web` set `NODE_ENV=production` (unset means development: pretty logs and the backend's per-request logger).
-- **`apps/web/Dockerfile`** — `output: 'standalone'` with `outputFileTracingRoot` at the monorepo root (otherwise the `@ap/*` workspace packages are not traced in). Builds with bun, runs on `node:22-alpine` because standalone emits a Node entrypoint. Takes **no build args**.
+- **One root `Dockerfile` builds every image.** Compose picks `target` — `app` (the four bun apps in prod), `dev` (the bun apps in the dev overlay) or `web` — plus `args: { APP: <app> }` for the bun targets. Each pin appears once: `BUN_IMAGE` (`oven/bun:1.4.3-alpine`), `NODE_IMAGE` (`node:22-alpine`), `PNPM_VERSION` and its two checksums. Stages: `pnpm` (download) → `install-inputs` (a `scratch` stage holding the pnpm binary, the `pnpm-capped` wrapper and the manifests, so each base takes them in one `COPY`) → `deps` (install) → `build` (`COPY . .`, `pnpm deploy --prod`) → `app`; `web-build` takes the same `install-inputs`. **No compile step for the bun apps**: bun runs `src/` (`CMD ["bun", "run", "."]`, `main` is `src/index.ts`), so `tsc` output was unused apart from one `dist/index.js` whose imports resolved straight back into `src/`. Type checking is `check-types`.
+- **pnpm is a checksummed standalone binary**, not corepack or `install.sh`: `@pnpm/exe.linux-<x64|arm64>-musl` from registry.npmjs.org, `sha256sum -c` against `PNPM_SHA256_<arch>`, then `/usr/local/bin`. It needs no Node, so one stage serves both bases. Corepack would add a second runtime to the bun images; `install.sh` is itself unpinned and comes from another host. A bump: change `packageManager` in the root `package.json`, run `pnpm install`, and replace both sha256 values with those of the two new tarballs (the lockfile's leading document carries their sha512 `integrity`, a cross-check for the same files). `ENV pnpm_config_pm_on_fail=error` is set in each builder base, because pnpm 12's default (`download`) silently fetches whatever `packageManager` names when the running pnpm differs; it cannot move into `pnpm-workspace.yaml`, where it would also stop the Mac's pnpm from switching versions.
+- **Install flags: `--frozen-lockfile --trust-lockfile --filter "<app>..."`, plus `--no-optional` for the bun apps.** `--trust-lockfile` because pnpm 12 otherwise re-checks every lockfile entry against its release-age and trust policies — ~935 registry lookups per build, the same npm-CDN exposure that stalls builds; resolution on the Mac still checks. `--no-optional` keeps the root dev tools' platform binaries (Supabase CLI ~60 MB, biome, turbo) out of the bun builds, and `tsc` needs none of them; `pnpm deploy` still installs optional packages, so the runtime gets its prebuilds. The dev images share the `deps` layer and so also skip optional deps: the dev proxy runs msgpack in plain JS (accepted). Web cannot take the flag — Next's SWC binary and sharp's prebuild are optional packages — so a cold web build still downloads the Supabase CLI, which stays a root devDependency.
+- **Every registry-bound pnpm step runs through `pnpm-capped`** (`timeout -k 10 $INSTALL_TIMEOUT`, 600 s, written by a heredoc in the Dockerfile), and the pnpm binary download under `wget -T 60`. pnpm's own timeouts do not bound a stall: once one request times out it drops to one request per host, so with every npm-CDN connection silent each package times out in turn (24+ min measured on the Mac, no end in sight). With the cap it fails at the limit with `pnpm stopped after …s: the npm registry is not answering`. Measured: web cold install 21 s clean, 60 s with 25% of connections silent, so 600 s is ~10× headroom. The message prints only when the elapsed time reached the cap, never on exit code alone: an OOM kill also ends pnpm by signal (137), and blaming the registry for it sends the operator to the network. The wrapper being a script is load-bearing: run as the shell's last command, pnpm (via busybox `timeout`, which execs it in place) would become PID 1, which no signal from inside the container kills, so the cap would silently do nothing. The script is PID 1 instead and pnpm its child.
+- **No `turbo prune`, and no turbo in any image.** pnpm installs straight from the full lockfile with `--filter`. Prune would mean a second pinned binary from a second host (GitHub) for one benefit: a dependency change in one app not re-running other apps' installs, which costs ~3 s on a warm store.
+- **Runtime is `pnpm deploy --prod` output only** (`/prod` → `/app`, user `bun`), not a copy of the whole builder `/app`: backend 133 MB, proxy 135, bot 142, helper 141 (were 461–495). The workdir is `/app`, and the bot's `ClusterManager` spawns `src/lib/shard.ts` relative to it, so the deployed package must keep `src/` — a `files` field in `apps/bot/package.json` would break every cluster spawn. The bot no longer runs `db:generate` (it wrote migration SQL into an image that never read it) and has no compiler toolchain (zlib-sync and bufferutil are gone).
+- **The runtime reads `tsconfig.json`, so `@ap/tsconfig` is a `dependency` of the four bun apps, not a devDependency**, and they extend it by relative path (`./node_modules/@ap/tsconfig/bot.json`), not by package name: bun 1.4 silently ignores a package name in `extends` (measured; 1.2 defaults to legacy decorators, which hid it on the Mac), so the bot and helper ran TC39 decorators while `tsc` checked them as legacy (`experimentalDecorators`). `bot.json` is Sapphire's `@sapphire/ts-config` presets copied in rather than extended: that package depends on `typescript`, which would otherwise ride into every runtime image. Packages and web keep the package-name form — only `tsc` reads theirs.
+- **Native smoke checks at build time**, because a missing prebuild otherwise fails silently: web's runtime stage `require`s sharp (else `/_next/image` breaks at runtime); the `app` stage runs `bun run --if-present check:native`, which only the proxy defines (`apps/proxy/scripts/check-native.ts` throws unless `msgpackr.isNativeAccelerationEnabled` — bullmq falls back to plain-JS msgpack without a word). Backend has no native packages.
+- **Web** builds on `node:22-alpine` (its graph is only `tsc` + `next build`, no bun) and runs there because `output: 'standalone'` emits a Node entrypoint; `outputFileTracingRoot` is the monorepo root, otherwise the `@ap/*` workspace packages are not traced in. Takes **no build args**.
+- **`dev` target** = the shared `deps` layer + `COPY --chown=bun:bun . .`, `USER bun`, workdir `/app/apps/<app>`, `bun run start`. `bun` must own the tree because `develop.watch` syncs into `src/` and `packages/`. `develop.watch` rebuilds on `pnpm-lock.yaml`, `pnpm-workspace.yaml`, the root and the app's `package.json` — not on `packages/*/package.json`, so a shared-package dependency change relies on the lockfile rewrite to trigger it.
 - Base config: `scripts/bot/docker-compose.base.yml`
 - Dev config: `scripts/bot/dev/docker-compose.yml` (extends base)
 - Prod config: `scripts/bot/prod/docker-compose.yml`
@@ -421,19 +432,20 @@ old client default was `sandbox` whenever the variable was absent. `usePaddle` n
 - **`env_file` is declared per overlay, never in the base.** Compose _appends_ `env_file` across `-f` layers, so a base-level entry made every prod service load the dev env file first and silently inherit anything prod did not re-declare (verified: prod rendered `SMTP_HOST: ap-mailpit` and `PADDLE_ENVIRONMENT: sandbox`). Dev uses `.env.local`, prod uses `.env`.
 - Services: `bot`, `proxy`, `backend`, `redis` (plus `web` and `helper` in prod, `cloudflared` in prod and dev), plus `mailpit` in the dev overlay only — prod uses a real provider and self-host has no withdrawal routes, so neither has a mail path to catch. The backend `depends_on` it, which is what pulls it into a bare `up backend`. Both `MP_SMTP_AUTH_*` vars are load-bearing: the backend only sends when `SMTP_USER`/`SMTP_PASSWORD` are set, and nodemailer then does `AUTH LOGIN` in the clear on 1025.
 - Service dependencies: bot → proxy + backend + redis; helper → backend + redis; backend → redis; proxy → redis
-- Health checks on proxy, backend & redis
+- **Healthchecks live in compose** (proxy, backend, redis, plus `cloudflared` in prod), not the image. Web is the exception: its `HEALTHCHECK` stays in its stage (`127.0.0.1`, not `localhost` — Next binds IPv4 only and `localhost` resolves to `[::1]` first), and prod's `cloudflared` waits on it. The bot has none.
 - Development: File sync with restart, exposed ports, all loopback-bound (`127.0.0.1:3101:8080` backend, `127.0.0.1:3102:8081` backend webhook listener, `127.0.0.1:8081:8080` proxy, `127.0.0.1:6379:6379` redis — a bare `port:port` publishes on every interface, and none of these has auth: the backend's internal routes, a proxy carrying the bot token, Redis without `requirepass`); any subset can be started (`docker compose ... up backend` alone is enough for web/checkout work; `bot` pulls in proxy + backend + redis)
 - Production: No port exposure, health checks enabled
 - **Public ingress is the prod overlay's `cloudflared` service** (remotely-managed tunnel, routes in the Cloudflare dashboard, one hostname `auto-publisher.gg`): path `^/webhooks/paddle$` → `backend:8081`, everything else → `web:3100`, plus a WAF rule allowing `/webhooks*` only as `POST /webhooks/paddle` from Paddle's IPs. No `api.` subdomain — the approved domain needs no extra DNS, cert or Paddle review. Hardening, each piece load-bearing: image pinned; `--metrics 127.0.0.1:…` (the default binds `0.0.0.0` and serves `/config` + pprof to the network); read-only, no capabilities; on the `ap-edge` network only, shared with `web` + `backend`, so it has no route to the passwordless Redis. The token lives in the one root `.env` but reaches `cloudflared` by Compose **interpolation** (`--env-file .env` in `BOT_COMPOSE_FILES_PROD`), not `env_file`, so the container holds no other secret. Every other prod service blanks it with `TUNNEL_TOKEN=` in `environment` (beats `env_file`) — **a new prod service must too**, or a leak from it lets an attacker run a second connector. `prod/start.sh` checks it is set; not `:?`, which would also block `prod:stop`. Never run two connectors on one token: Cloudflare splits traffic between them. Setup and cutover: `docs/public-instance/billing-paddle-setup.md` "Webhook ingress". **Dev runs its own `cloudflared`** on a separate, locally-managed tunnel: `TUNNEL_TOKEN` in `.env.local` (interpolated via `--env-file .env.local` in `BOT_COMPOSE_FILES_DEV`), routes in the committed `scripts/bot/dev/cloudflared.yml` rather than the dashboard, so `dev:start` needs no separate CLI tunnel.
-- **`.dockerignore` patterns need the `**/` prefix.** Docker matches each pattern against the whole context-relative path, so a bare `node_modules` excludes only the root one; root-only patterns left a **482 MB** context (almost all `apps/web/.next`) that `COPY . .` baked into the bot/backend/proxy images and `COPY --from=builder /app .` carried into their runtime stages — ~920 MB each, now ~470 MB. `**/*.md` still does not match the dashboard's `.mdx` legal routes; that asymmetry is load-bearing.
-- **The install layer must depend on manifests only** — root `package.json`/`bun.lock`/`turbo.json`, then `COPY --parents packages/*/package.json apps/<app>/package.json ./`, then `bun install`; source arrives later via `COPY . .`. A single `COPY packages/ ./packages/` ahead of the install put shared-package source in that layer, so any edit under `packages/*/src` forced a full reinstall — on every `dev:start`, which always passes `--build`. Every package's manifest goes in every image even though each app uses a subset: bun resolves the whole workspace graph, so a new `packages/*` is picked up by the glob with no Dockerfile edit. `--parents` is what preserves the directory structure (a plain glob flattens all ten onto one path). It needs **Dockerfile frontend 1.20+** — verified by bisect: 1.16 through 1.19 answer `unknown flag: --parents`, 1.20 accepts it — which is why all seven files pin `# syntax=docker/dockerfile:1` (currently 1.26.0). The flag also works with no `# syntax=` line on a new enough daemon, but that depends on the host's built-in frontend, and a self-hoster on an older Docker is exactly who the pin protects. It spent its early life behind `dockerfile:1-labs`; that tag is no longer needed and is not what these files use.
-- **`bun install` runs under a BuildKit cache mount**, with `BUN_INSTALL_CACHE_DIR=/bun-cache` set on the command rather than as `ENV` so it neither persists into the image nor drifts when a stage changes `USER`; `sharing=locked` because the dev stack builds four images against the one cache. Without the mount the cache is written inside the layer and discarded with it — a property of the layering, not of bun, which is why switching package manager was not the fix. Installs are still unpinned: the copied workspace set does not match `bun.lock` (which lists all four apps), so `--frozen-lockfile` is unusable until `turbo prune --docker` supplies a pruned lockfile — turbo parses the text `bun.lock`, not `bun.lockb`.
+- **`.dockerignore` patterns need the `**/` prefix.** Docker matches each pattern against the whole context-relative path, so a bare `node_modules` excludes only the root one; root-only patterns left a **482 MB** context (almost all `apps/web/.next`) that `COPY . .` baked into the build stages. `**/*.md` still does not match the dashboard's `.mdx` legal routes; that asymmetry is load-bearing. `**/Dockerfile` also excludes the root `Dockerfile` from the context, which is harmless (BuildKit reads it separately). `scripts/` matches only the root folder, so `apps/proxy/scripts/` reaches the build.
+- **The install layer must depend on manifests only** — root `package.json`/`pnpm-lock.yaml`/`pnpm-workspace.yaml`, then `COPY --parents apps/*/package.json packages/*/package.json ./`, then `pnpm install`; source arrives later via `COPY . .`. A single `COPY packages/ ./packages/` ahead of the install put shared-package source in that layer, so any edit under `packages/*/src` forced a full reinstall — on every `dev:start`, which always passes `--build`. With it, a source edit rebuilds in ~14 s with the install `CACHED`. Every manifest goes in every image even though each app uses a subset: `--frozen-lockfile` needs the full workspace the lockfile describes, and a new `apps/*` or `packages/*` is picked up by the glob with no Dockerfile edit. `--parents` is what preserves the directory structure (a plain glob flattens them onto one path). It needs **Dockerfile frontend 1.20+** — verified by bisect: 1.16 through 1.19 answer `unknown flag: --parents`, 1.20 accepts it — which is why the file pins `# syntax=docker/dockerfile:1` (currently 1.26.0). The flag also works with no `# syntax=` line on a new enough daemon, but that depends on the host's built-in frontend, and a self-hoster on an older Docker is exactly who the pin protects.
+- **The pnpm store is a BuildKit cache mount, one per app** (`id=pnpm-store-${APP}`, `--store-dir /pnpm-store`, `sharing=locked`; `${APP}` expands inside the `id`). Without a mount the store is written inside the layer and discarded with it. Per app rather than one store because `sharing=locked` on a single cache serialised every image's install, so one registry stall blocked all builds; one shared store with `sharing=shared` is unverified, since pnpm coordinates concurrent store use through lock files in `/tmp`, which each `RUN` has its own of. Cost: a cold build downloads shared packages once per image. `docker builder prune` wipes these stores.
 
 ## Import conventions
 
 - Shared packages: `@ap/*` (e.g., `@ap/database`, `@ap/logger`, `@ap/utils`, `@ap/redis`, `@ap/config`)
 - Import extensions required: `.js` for TS files (ES modules)
-- Workspace dependencies managed by bun workspaces
+- Workspace dependencies managed by pnpm workspaces (`pnpm-workspace.yaml`)
+- No `.d.ts` output: `@ap/tsconfig`'s `base.json` and `bot.json` leave it off. Every `@ap/*` package's `main` is `src/index.ts`, so nothing reads declarations, and under pnpm's isolated layout emitting them fails (TS2742) on any inferred type from a package the workspace member does not list itself — `createLogger`'s pino `Logger`, `@ap/database` types in the bot — which forced those packages into every app's dependencies.
 
 ## Discord.js specifics
 

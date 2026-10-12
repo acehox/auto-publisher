@@ -6,7 +6,10 @@ services:
   bot:
     build:
       context: .
-      dockerfile: apps/bot/Dockerfile
+      dockerfile: Dockerfile
+      target: app
+      args:
+        APP: bot
     restart: unless-stopped
     env_file: [.env]
     environment:
@@ -22,7 +25,10 @@ services:
   proxy:
     build:
       context: .
-      dockerfile: apps/proxy/Dockerfile
+      dockerfile: Dockerfile
+      target: app
+      args:
+        APP: proxy
     restart: unless-stopped
     env_file: [.env]
     environment:
@@ -41,7 +47,10 @@ services:
   backend:
     build:
       context: .
-      dockerfile: apps/backend/Dockerfile
+      dockerfile: Dockerfile
+      target: app
+      args:
+        APP: backend
     restart: unless-stopped
     env_file: [.env]
     environment:
@@ -67,7 +76,8 @@ services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: Dockerfile
+      target: web
     restart: unless-stopped
     env_file: [.env]
     environment:

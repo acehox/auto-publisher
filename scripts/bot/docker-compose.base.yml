@@ -13,7 +13,10 @@ services:
   proxy:
     build:
       context: ../..
-      dockerfile: apps/proxy/Dockerfile
+      dockerfile: Dockerfile
+      target: app
+      args:
+        APP: proxy
     restart: unless-stopped
     networks:
       - ap-network
@@ -30,7 +33,10 @@ services:
   bot:
     build:
       context: ../..
-      dockerfile: apps/bot/Dockerfile
+      dockerfile: Dockerfile
+      target: app
+      args:
+        APP: bot
     restart: unless-stopped
     networks:
       - ap-network
@@ -45,7 +51,10 @@ services:
   backend:
     build:
       context: ../..
-      dockerfile: apps/backend/Dockerfile
+      dockerfile: Dockerfile
+      target: app
+      args:
+        APP: backend
     restart: unless-stopped
     networks:
       - ap-network

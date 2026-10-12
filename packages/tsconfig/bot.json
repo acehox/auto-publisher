@@ -1,14 +1,33 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": [
-    "@sapphire/ts-config",
-    "@sapphire/ts-config/decorators",
-    "@sapphire/ts-config/verbatim"
-  ],
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "alwaysStrict": true,
+    "declaration": false,
+    "declarationMap": false,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "importHelpers": false,
     "incremental": false,
+    "lib": ["esnext"],
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "newLine": "lf",
+    "noEmitHelpers": false,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "skipLibCheck": true
+    "preserveConstEnums": true,
+    "pretty": true,
+    "removeComments": false,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "verbatimModuleSyntax": true
   }
 }

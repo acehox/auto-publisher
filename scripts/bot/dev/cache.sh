@@ -14,7 +14,7 @@ is_docker_services_running "dev" "$BOT_COMPOSE_FILES_DEV"
 # Check if redis service is running
 if ! docker compose $BOT_COMPOSE_FILES_DEV ps --services --filter "status=running" | grep -q "redis"; then
     echo "⚠️  Redis cache service (redis) is not running."
-    echo "🚀 Start the development environment first: bun run dev:start"
+    echo "🚀 Start the development environment first: pnpm run dev:start"
     exit 1
 fi
 

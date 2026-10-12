@@ -12,11 +12,15 @@ is_docker_running
 check_env_exists ".env"
 check_env_var_set ".env" "TUNNEL_TOKEN"
 
-echo "📦 Building and starting production services..."
+echo "📦 Building production images..."
 
-# Build and start services with production overrides
-# Docker Compose will handle health checks and service dependencies automatically
-docker compose $BOT_COMPOSE_FILES_PROD up --build -d
+# One image at a time: five installs and `next build` side by side exceed this host's memory.
+for SERVICE in $(docker compose $BOT_COMPOSE_FILES_PROD config --services); do
+    docker compose $BOT_COMPOSE_FILES_PROD build "$SERVICE"
+done
+
+echo "🚀 Starting production services..."
+docker compose $BOT_COMPOSE_FILES_PROD up -d
 
 echo "✅ Production environment started!"
 echo ""
@@ -25,5 +29,5 @@ docker compose $BOT_COMPOSE_FILES_PROD ps
 echo ""
 print_resource_usage "$BOT_COMPOSE_FILES_PROD"
 echo ""
-echo "📄 View logs: bun run prod:logs"
-echo "🛑 Stop services: bun run prod:stop"
+echo "📄 View logs: npm run prod:logs"
+echo "🛑 Stop services: npm run prod:stop"

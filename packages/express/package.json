@@ -28,6 +28,8 @@
   "devDependencies": {
     "@ap/tsconfig": "workspace:*",
     "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6"
+    "@types/express": "^5.0.6",
+    "@types/express-serve-static-core": "^5.1.0",
+    "@types/qs": "^6.14.0"
   }
 }

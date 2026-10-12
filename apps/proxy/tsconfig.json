@@ -1,5 +1,5 @@
 {
-  "extends": "@ap/tsconfig/base.json",
+  "extends": "./node_modules/@ap/tsconfig/base.json",
   "compilerOptions": {
     "baseUrl": "src",
     "outDir": "dist",

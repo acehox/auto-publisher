@@ -17,16 +17,21 @@
     "@ap/express": "workspace:*",
     "@ap/logger": "workspace:*",
     "@ap/redis": "workspace:*",
+    "@ap/tsconfig": "workspace:*",
     "@ap/utils": "workspace:*",
     "@ap/validations": "workspace:*",
     "@discordjs/rest": "^2.6.0",
     "@paddle/paddle-node-sdk": "^3.8.0",
     "@sapphire/snowflake": "^3.5.5",
     "cron": "^4.4.0",
+    "discord-api-types": "^0.38.37",
+    "drizzle-orm": "^0.44.2",
     "express": "^5.2.1",
-    "nodemailer": "^9.0.5"
+    "nodemailer": "^9.0.5",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "@types/nodemailer": "^8.0.1"
   }
 }

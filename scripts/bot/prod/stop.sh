@@ -15,4 +15,4 @@ docker compose $BOT_COMPOSE_FILES_PROD down
 
 echo "✅ Production services stopped!"
 echo "💡 Redis data is preserved"
-echo "🚀 To restart: bun run prod:start"
+echo "🚀 To restart: npm run prod:start"

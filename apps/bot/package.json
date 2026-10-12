@@ -14,6 +14,7 @@
     "@ap/copy": "workspace:*",
     "@ap/logger": "workspace:*",
     "@ap/redis": "workspace:*",
+    "@ap/tsconfig": "workspace:*",
     "@ap/utils": "workspace:*",
     "@ap/validations": "workspace:*",
     "@sapphire/decorators": "^6.2.0",
@@ -23,12 +24,5 @@
     "@sapphire/utilities": "^3.18.2",
     "discord-hybrid-sharding": "^3.0.1",
     "discord.js": "^14.25.1"
-  },
-  "optionalDependencies": {
-    "bufferutil": "^4.0.9",
-    "zlib-sync": "^0.1.10"
-  },
-  "devDependencies": {
-    "@ap/tsconfig": "*"
   }
 }

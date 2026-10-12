@@ -23,7 +23,9 @@ x-dev-watch-proxy: &dev-watch-proxy
   - action: rebuild
     path: ../../package.json
   - action: rebuild
-    path: ../../bun.lock
+    path: ../../pnpm-lock.yaml
+  - action: rebuild
+    path: ../../pnpm-workspace.yaml
 
 x-dev-watch-bot: &dev-watch-bot
   - action: sync+restart
@@ -45,7 +47,9 @@ x-dev-watch-bot: &dev-watch-bot
   - action: rebuild
     path: ../../package.json
   - action: rebuild
-    path: ../../bun.lock
+    path: ../../pnpm-lock.yaml
+  - action: rebuild
+    path: ../../pnpm-workspace.yaml
 
 services:
   proxy:
@@ -53,7 +57,10 @@ services:
       file: docker-compose.base.yml
       service: proxy
     build:
-      dockerfile: apps/proxy/Dockerfile.dev
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        APP: proxy
     env_file:
       - ../../.env.local
     environment:
@@ -76,7 +83,10 @@ services:
       file: docker-compose.base.yml
       service: bot
     build:
-      dockerfile: apps/bot/Dockerfile.dev
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        APP: bot
     env_file:
       - ../../.env.local
     environment:
@@ -100,7 +110,10 @@ services:
       file: docker-compose.base.yml
       service: backend
     build:
-      dockerfile: apps/backend/Dockerfile.dev
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        APP: backend
     env_file:
       - ../../.env.local
     environment:
@@ -144,7 +157,9 @@ services:
         - action: rebuild
           path: ../../package.json
         - action: rebuild
-          path: ../../bun.lock
+          path: ../../pnpm-lock.yaml
+        - action: rebuild
+          path: ../../pnpm-workspace.yaml
 
   # Catches the one email the stack sends (the statutory withdrawal acknowledgement).
   # Dev overlay only: prod uses a real provider, and self-host has no withdrawal routes.

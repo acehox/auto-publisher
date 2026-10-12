@@ -14,7 +14,7 @@ export const createLogger = (name: string, pid?: string): PinoLogger => {
 
   if (process.env.NODE_ENV !== 'production') {
     options.transport = {
-      target: 'pino-pretty',
+      target: import.meta.resolve('pino-pretty'),
       options: {
         colorize: true,
         translateTime: 'UTC:yyyy-mm-dd HH:MM:ss.l o',

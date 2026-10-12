@@ -123,7 +123,7 @@ PADDLE_CLIENT_TOKEN = "test_..."              # client-side token; runtime, not 
 
 ### Test it
 
-1. `supabase start`, `bun run dev:start`, run the web app.
+1. `supabase start`, `pnpm run dev:start`, run the web app.
 2. Dashboard → guild → Subscription → toggle interval. On a guild that has never had a
    subscription row the button reads **Start 14-day free trial** and the card states the
    payment-required terms; on one that has, it reads **Upgrade to Premium** with no trial copy
@@ -182,7 +182,7 @@ The `cloudflared` service in the prod compose is the only public ingress, on the
 
 Paddle does not follow redirects, so the URL must be exactly the one above. The token goes in the root `.env` as `TUNNEL_TOKEN`; the prod scripts pass `--env-file .env` so Compose interpolates it into `cloudflared`, which therefore holds no other secret. Every other prod service blanks it with `TUNNEL_TOKEN=` in `environment` (it loads the same `.env` via `env_file`); a new prod service must too. `prod:start` refuses to run without the token.
 
-**Cutover from the web-only stack**: one token on two connectors splits traffic randomly between them, so stop the old one first — build the prod images, `docker compose -f scripts/web-only/docker-compose.yml down` in the web-only checkout, then `bun run prod:start`. Rollback is the reverse.
+**Cutover from the web-only stack**: one token on two connectors splits traffic randomly between them, so stop the old one first — `docker compose -f scripts/web-only/docker-compose.yml down` in the web-only checkout and `npm run prod:stop` here, then `npm run prod:start`, which builds the images. Nothing may run during the build: with prod up this host has ~1.2 GiB free and a build needs ~2 GiB, so the OOM killer takes the bot. Rollback is the reverse.
 
 **Verify**: from outside Paddle's IPs, `curl -i -X POST https://auto-publisher.gg/webhooks/paddle` → 403 from Cloudflare; `curl -i https://auto-publisher.gg/internal/info` → the website's 404. Then send a simulator event whose type the handler ignores and confirm a 200 in the destination's logs.
 

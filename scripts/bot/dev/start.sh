@@ -50,9 +50,9 @@ fi
 
 info() {
   echo "📬 Mail UI: http://localhost:8025"
-  echo "📄 View logs: bun run dev:logs"
-  echo "📋 Check status: bun run dev:ps"
-  echo "🛑 Stop services: bun run dev:stop"
+  echo "📄 View logs: pnpm run dev:logs"
+  echo "📋 Check status: pnpm run dev:ps"
+  echo "🛑 Stop services: pnpm run dev:stop"
 }
 
 # Run info() when Ctrl+C (SIGINT) is received

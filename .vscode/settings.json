@@ -1,5 +1,5 @@
 {
-  "npm.packageManager": "bun",
+  "npm.packageManager": "pnpm",
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "biomejs.biome",
   "editor.codeActionsOnSave": {

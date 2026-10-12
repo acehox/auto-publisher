@@ -1,5 +1,5 @@
 {
-  "extends": "@ap/tsconfig/bot.json",
+  "extends": "./node_modules/@ap/tsconfig/bot.json",
   "compilerOptions": {
     "baseUrl": "src",
     "outDir": "dist",
