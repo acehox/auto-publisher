@@ -170,17 +170,14 @@ The `cloudflared` service in the prod compose is the only public ingress, on the
    ```
    (http.host eq "auto-publisher.gg" and starts_with(http.request.uri.path, "/webhooks") and not (http.request.method eq "POST" and http.request.uri.path eq "/webhooks/paddle" and ip.src in {34.232.58.13 34.195.105.136 34.237.3.244 35.155.119.135 52.11.166.252 34.212.5.7}))
    ```
-2. **Tunnel routes** (Zero Trust → Networks → Tunnels → the tunnel → Published application routes), in this order — first match wins, and the path is an unanchored regex, so keep `^…$`:
-   1. `auto-publisher.gg`, path `^/webhooks/paddle$` → `http://backend:8081`
-   2. `auto-publisher.gg` → `http://web:3100`
-   3. catch-all → `http_status:404`
-
-   Never route to `backend:8080`: it serves `/internal`, `/guild` and `/channel` with no auth.
+2. **Tunnel routes** live in the committed `scripts/bot/prod/cloudflared.yml`, not the Cloudflare dashboard: the tunnel is locally-managed, so `TUNNEL_TOKEN` only identifies it. A dashboard-managed tunnel lost its webhook route once and every Paddle delivery 404'd into the website. Check a change with `docker run --rm -v "$PWD/scripts/bot/prod/cloudflared.yml:/c.yml:ro" cloudflare/cloudflared:2026.9.3 tunnel --config /c.yml ingress rule https://auto-publisher.gg/webhooks/paddle`. Never route to `backend:8080`: it serves `/internal`, `/guild` and `/channel` with no auth.
 3. **Backend `:8081`** mounts only the webhook router, so even a mis-scoped route reaches nothing else.
 4. **`ap-edge` network**: `cloudflared` shares it with `web` and `backend` only — no route to Redis (no password), the proxy or the bot.
 5. **Signature** (`Paddle-Signature`, SDK `unmarshal`): rejects timestamps older than **5 s**, so the host clock must be NTP-synced (`timedatectl` → `System clock synchronized: yes`).
 
 Paddle does not follow redirects, so the URL must be exactly the one above. The token goes in the root `.env` as `TUNNEL_TOKEN`; the prod scripts pass `--env-file .env` so Compose interpolates it into `cloudflared`, which therefore holds no other secret. Every other prod service blanks it with `TUNNEL_TOKEN=` in `environment` (it loads the same `.env` via `env_file`); a new prod service must too. `prod:start` refuses to run without the token.
+
+**Creating the tunnel** (once, on any machine with `cloudflared`): `cloudflared tunnel login`, `cloudflared tunnel create <name>`, `cloudflared tunnel route dns --overwrite-dns <name> auto-publisher.gg`, then `cloudflared tunnel token <name>` → `TUNNEL_TOKEN` in `.env`. It must not be created in the dashboard: a dashboard-managed tunnel takes its routes from the dashboard, not the file.
 
 **Cutover from the web-only stack**: one token on two connectors splits traffic randomly between them, so stop the old one first — `docker compose -f scripts/web-only/docker-compose.yml down` in the web-only checkout and `npm run prod:stop` here, then `npm run prod:start`, which builds the images. Nothing may run during the build: with prod up this host has ~1.2 GiB free and a build needs ~2 GiB, so the OOM killer takes the bot. Rollback is the reverse.
 

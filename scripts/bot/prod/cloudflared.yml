@@ -1,0 +1,10 @@
+# Routes for the locally-managed prod tunnel (TUNNEL_TOKEN in .env only
+# identifies it). First match wins, and `path` is an unanchored regex.
+# Never route to backend:8080: it serves /internal, /guild and /channel with no auth.
+ingress:
+  - hostname: auto-publisher.gg
+    path: ^/webhooks/paddle$
+    service: http://backend:8081
+  - hostname: auto-publisher.gg
+    service: http://web:3100
+  - service: http_status:404

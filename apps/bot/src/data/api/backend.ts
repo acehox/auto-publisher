@@ -5,12 +5,19 @@ import { logger } from 'utils/logger.js';
 
 const baseUrl = 'http://backend:8080';
 
-const request = async (path: string, init?: RequestInit): Promise<Response> => {
+// `handledStatuses` are answers the caller turns into a user-facing reply, so
+// they are not failures worth a warn
+const request = async (
+  path: string,
+  init?: RequestInit,
+  handledStatuses: readonly number[] = []
+): Promise<Response> => {
   const response = await fetch(`${baseUrl}${path}`, init);
   if (!response.ok) {
     // Surface backend rejections — swallowed, a failed registration is
     // indistinguishable from success (bot in guild, dashboard says absent)
-    logger.warn(
+    const level = handledStatuses.includes(response.status) ? 'debug' : 'warn';
+    logger[level](
       `Backend request failed: ${init?.method ?? RequestMethod.Get} ${path} → ${response.status}`
     );
   }
@@ -42,13 +49,18 @@ const addChannel = async (
   channelId: Snowflake,
   options: { clearFilters?: boolean } = {}
 ) => {
-  return request(`/channel/${channelId}`, {
-    method: RequestMethod.Put,
-    headers: {
-      'Content-Type': 'application/json',
+  return request(
+    `/channel/${channelId}`,
+    {
+      method: RequestMethod.Put,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ guildId, ...(options.clearFilters ? { clearFilters: true } : {}) }),
     },
-    body: JSON.stringify({ guildId, ...(options.clearFilters ? { clearFilters: true } : {}) }),
-  });
+    // `/ap enable` replies to both: 409 already enabled, 400 cap / filters / not announcement
+    [400, 409]
+  );
 };
 
 const removeChannel = async (channelId: Snowflake) => {

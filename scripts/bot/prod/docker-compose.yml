@@ -151,17 +151,19 @@ services:
           memory: 256M
           cpus: '0.25'
 
-  # Sole public ingress; routes live in the Cloudflare dashboard.
+  # Sole public ingress; routes live in prod/cloudflared.yml.
   # See docs/public-instance/billing-paddle-setup.md "Webhook ingress".
   cloudflared:
     image: cloudflare/cloudflared:2026.9.3
     # The default metrics bind is 0.0.0.0, serving /config and pprof to the network.
-    command: tunnel --metrics 127.0.0.1:20241 --management-diagnostics=false run
+    command: tunnel --metrics 127.0.0.1:20241 --management-diagnostics=false --config /etc/cloudflared/config.yml run
     restart: unless-stopped
     # Interpolated (`--env-file`), not env_file, so no other secret lands here.
     # Presence is checked in prod/start.sh: `:?` would also block prod:stop.
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    volumes:
+      - ./prod/cloudflared.yml:/etc/cloudflared/config.yml:ro
     read_only: true
     cap_drop:
       - ALL
