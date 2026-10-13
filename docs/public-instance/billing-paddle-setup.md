@@ -20,7 +20,7 @@ web (Paddle.js overlay)                    premium backend
 
 - Entitled statuses: `active`, `trialing`, `past_due`. Revoked: `canceled`, `paused`.
 - "Manage Billing" opens a Paddle Customer Portal session (cancel, payment method, invoices) — created server-side, subscriber-only.
-- Daily cron (04:00) re-lists all subscriptions from Paddle and repairs any drift from missed webhooks.
+- Daily cron (04:30) re-lists all subscriptions from Paddle and repairs any drift from missed webhooks.
 
 ## 1. Sandbox setup (testing)
 

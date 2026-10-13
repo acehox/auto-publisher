@@ -1,23 +1,20 @@
 import { config } from '@ap/config';
 import { channel, db, guild } from '@ap/database';
 import { CronJob } from 'cron';
+import { createReconcileRunner } from 'cron/reconcileRunner.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { type RESTGetAPICurrentUserGuildsResult, Routes } from 'discord-api-types/v10';
 import { and, count, gt, inArray, isNotNull, isNull, lt } from 'drizzle-orm';
 import { Discord } from 'services/discord.js';
 import { Services } from 'services/index.js';
-import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 import { guardMassAction, massActionCap } from 'utils/massActionGuard.js';
+import { withRetry } from 'utils/retry.js';
 
 const PAGE_SIZE = 200;
 const BATCH_SIZE = 1000;
 const JOIN_RACE_GUARD_MS = 60 * 60 * 1000;
 const PURGE_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
-
-let inFlight = false;
-
-export const isGuildReconcileInFlight = () => inFlight;
 
 const chunk = <T>(items: T[], size: number): T[][] => {
   const chunks: T[][] = [];
@@ -28,8 +25,8 @@ const chunk = <T>(items: T[], size: number): T[][] => {
 };
 
 /**
- * Fetch the bot's full guild list via the proxy. Throws on any page error — the
- * sweep must never act on a partial snapshot.
+ * Fetch the bot's full guild list via the proxy. Throws once a page keeps
+ * failing — the sweep must never act on a partial snapshot.
  */
 const fetchLiveGuildIds = async (): Promise<Set<Snowflake>> => {
   const ids = new Set<Snowflake>();
@@ -39,9 +36,11 @@ const fetchLiveGuildIds = async (): Promise<Set<Snowflake>> => {
     const query = new URLSearchParams({ limit: String(PAGE_SIZE) });
     if (after) query.set('after', after);
 
-    const page = (await Discord.rest.get(Routes.userGuilds(), {
-      query,
-    })) as RESTGetAPICurrentUserGuildsResult;
+    const page = (await withRetry(
+      'Guild reconcile page',
+      () => Discord.rest.get(Routes.userGuilds(), { query }),
+      Discord.isTransientError
+    )) as RESTGetAPICurrentUserGuildsResult;
 
     const last = page.at(-1);
     if (!last) break;
@@ -195,6 +194,7 @@ const purgeAbandonedGuilds = async (): Promise<void> => {
 const reconcileGuilds = async () => {
   let swept: Snowflake[] = [];
   let sweepCompleted = true;
+  let sweepError: unknown;
 
   if (!Discord.hasToken()) {
     logger.warn('Guild reconcile: no bot token configured, skipping sweep');
@@ -204,47 +204,42 @@ const reconcileGuilds = async () => {
       swept = await sweepPresence();
     } catch (error) {
       sweepCompleted = false;
-      logger.error(error, 'Guild reconcile sweep failed');
-      alerter.send('guild-reconcile-failed', {
-        title: 'Guild reconcile sweep aborted',
-        description: `The sweep failed before completion (pagination or DB error): ${error instanceof Error ? error.message : String(error)}. Guild presence was not reconciled today.`,
-      });
+      sweepError = error;
     }
   }
 
-  // Both steps read the reconciled rows: acting on a half-swept snapshot could
-  // pause a paying guild's channels off a presence that is simply stale.
-  if (sweepCompleted) {
-    await Services.Plans.reconcileChannelServingMany(swept);
-    await enforceChannelLimitBackstop();
-  } else if (swept.length > 0) {
-    logger.warn(
-      `Guild reconcile: skipping serving reconcile for ${swept.length} guilds (sweep did not complete)`
-    );
-  }
-
-  await purgeAbandonedGuilds();
-};
-
-export const runGuildReconcile = async (): Promise<void> => {
-  if (inFlight) {
-    logger.warn('Guild reconcile already in flight, skipping');
-    return;
-  }
-
-  inFlight = true;
   try {
-    await reconcileGuilds();
+    // Both steps read the reconciled rows: acting on a half-swept snapshot could
+    // pause a paying guild's channels off a presence that is simply stale.
+    if (sweepCompleted) {
+      await Services.Plans.reconcileChannelServingMany(swept);
+      await enforceChannelLimitBackstop();
+    } else if (swept.length > 0) {
+      logger.warn(
+        `Guild reconcile: skipping serving reconcile for ${swept.length} guilds (sweep did not complete)`
+      );
+    }
+
+    await purgeAbandonedGuilds();
   } catch (error) {
-    logger.error(error, 'Guild reconcile failed');
-    alerter.send('guild-reconcile-failed', {
-      title: 'Guild reconcile aborted',
-      description: `Sweep failed before completion: ${error instanceof Error ? error.message : String(error)}. Guild presences were not reconciled today.`,
-    });
-  } finally {
-    inFlight = false;
+    // The sweep's error is the root cause, so it is the one reported
+    if (!sweepError) throw error;
+    logger.error(error, 'Guild reconcile: purge failed after the sweep failed');
   }
+
+  // Thrown last: the purge does not depend on the sweep
+  if (sweepError) throw sweepError;
 };
+
+const runner = createReconcileRunner({
+  name: 'Guild reconcile',
+  alertKey: 'guild-reconcile-failed',
+  impact: 'Guild presence was not reconciled today.',
+  reconcile: reconcileGuilds,
+});
+
+export const runGuildReconcile = runner.run;
+export const isGuildReconcileInFlight = runner.isInFlight;
 
 export const startGuildReconcile = () => {
   const job = new CronJob('30 3 * * *', runGuildReconcile);

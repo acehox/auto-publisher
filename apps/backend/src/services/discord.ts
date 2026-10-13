@@ -119,6 +119,13 @@ const evictGuildRoles = (guildId: Snowflake): void => {
   discordReadCache.delete(Routes.guildRoles(guildId));
 };
 
+/**
+ * A 4xx `DiscordAPIError` is Discord's verdict; anything else may pass on a
+ * retry. That includes a body cut mid-stream, which `@discordjs/rest` never
+ * retries because it reads the body after its own retry loop.
+ */
+const isTransientError = (error: unknown): boolean => !(error instanceof DiscordAPIError);
+
 /** Outcome of a live membership check; `unknown` = Discord could not answer. */
 export type BotMembership = 'present' | 'absent' | 'unknown';
 
@@ -152,7 +159,7 @@ const getBotMembership = async (guildId: Snowflake): Promise<BotMembership> => {
     await rest.get(Routes.guildMember(guildId, selfId));
     return 'present';
   } catch (error) {
-    if (error instanceof DiscordAPIError) return 'absent';
+    if (!isTransientError(error)) return 'absent';
     logger.warn(error, `Membership check for guild ${guildId} was inconclusive`);
     return 'unknown';
   }
@@ -201,4 +208,5 @@ export const Discord = {
   getBotMembership,
   isBotInGuild,
   getUsername,
+  isTransientError,
 };

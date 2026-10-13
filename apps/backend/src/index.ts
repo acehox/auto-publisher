@@ -116,7 +116,7 @@ if (isPublicInstance) {
 // re-emits a missed join, so without this a DB reset or downtime during an
 // invite leaves the dashboard wrong until the 03:30 cron (errors are handled
 // and alerted inside). Subscription reconcile runs after so its bot-present
-// backstop reads fresh presence (same ordering as the 03:30/04:00 crons)
+// backstop reads fresh presence (same ordering as the 03:30/04:30 crons)
 void (isPublicInstance ? runGuildReconcile().then(runSubscriptionReconcile) : runGuildReconcile());
 
 // Drain before exiting: a webhook cut off between `applyPaddleSubscription` and

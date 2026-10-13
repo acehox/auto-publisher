@@ -1,4 +1,5 @@
 import { CronJob } from 'cron';
+import { createReconcileRunner } from 'cron/reconcileRunner.js';
 import { Services } from 'services/index.js';
 import { logger } from 'utils/logger.js';
 import { guardMassAction } from 'utils/massActionGuard.js';
@@ -16,10 +17,6 @@ import { guardMassAction } from 'utils/massActionGuard.js';
  * `canceled` leaves the subscriber's Discord user id sitting there indefinitely, which
  * is what services/retention.ts exists to fix.
  */
-let inFlight = false;
-
-export const isSubscriptionReconcileInFlight = () => inFlight;
-
 const reconcileSubscriptions = async () => {
   let processed = 0;
   let changed = 0;
@@ -96,24 +93,20 @@ const reconcileSubscriptions = async () => {
   );
 };
 
-export const runSubscriptionReconcile = async (): Promise<void> => {
-  if (inFlight) {
-    logger.warn('Subscription reconcile already in flight, skipping');
-    return;
-  }
+const runner = createReconcileRunner({
+  name: 'Subscription reconcile',
+  alertKey: 'subscription-reconcile-failed',
+  impact: 'Subscriptions were not reconciled against Paddle today.',
+  reconcile: reconcileSubscriptions,
+});
 
-  inFlight = true;
-  try {
-    await reconcileSubscriptions();
-  } catch (error) {
-    logger.error(error, 'Subscription reconcile failed');
-  } finally {
-    inFlight = false;
-  }
-};
+export const runSubscriptionReconcile = runner.run;
+export const isSubscriptionReconcileInFlight = runner.isInFlight;
 
 export const startSubscriptionReconcile = () => {
-  const job = new CronJob('0 4 * * *', runSubscriptionReconcile);
+  // After the guild reconcile's 04:00 rerun, so a failed 03:30 sweep is retried
+  // before this reads presence
+  const job = new CronJob('30 4 * * *', runSubscriptionReconcile);
   job.start();
-  logger.info('Subscription reconcile cron started (daily at 04:00)');
+  logger.info('Subscription reconcile cron started (daily at 04:30)');
 };

@@ -8,6 +8,7 @@ import {
   type Transaction as PaddleTransaction,
 } from '@paddle/paddle-node-sdk';
 import { logger } from 'utils/logger.js';
+import { withRetry } from 'utils/retry.js';
 
 const paddle = env.PADDLE_API_KEY
   ? new Paddle(env.PADDLE_API_KEY, {
@@ -191,12 +192,26 @@ const cancelSubscriptionImmediately = async (
 };
 
 /**
+ * A `request_error` is Paddle's verdict on the request. Anything else may pass
+ * on a retry: a network failure, a gateway's non-JSON 502 page, or an
+ * `api_error` (which covers 429).
+ */
+const isTransientPaddleError = (error: unknown): boolean =>
+  !(error instanceof ApiError) || error.type === 'api_error';
+
+/**
  * Iterates all subscriptions in Paddle (all statuses) — reconciliation cron input.
  */
 async function* listAllSubscriptions(): AsyncGenerator<PaddleSubscription> {
   const collection = ensurePaddle().subscriptions.list({ perPage: 200 });
-  for await (const sub of collection) {
-    yield sub;
+  // A failed `next()` leaves the collection's cursor in place, so a retry
+  // re-reads the same page
+  while (collection.hasMore) {
+    yield* await withRetry(
+      'Paddle subscription page',
+      () => collection.next(),
+      isTransientPaddleError
+    );
   }
 }
 
