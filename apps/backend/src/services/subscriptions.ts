@@ -1,6 +1,6 @@
 import { env, premiumTrialEnabled } from '@ap/config';
 import { db, guild, type Subscription, subscription } from '@ap/database';
-import { and, eq, inArray, isNotNull, isNull, lt, notInArray, or } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, isNull, lt, notInArray, or } from 'drizzle-orm';
 import { alerter } from 'utils/alerts.js';
 import { logger } from 'utils/logger.js';
 
@@ -303,6 +303,15 @@ const getEntitledGuildIds = async (): Promise<string[]> => {
   }
 };
 
+/** Entitled subscriptions, whether or not the bot is still in the guild. */
+const countEntitled = async (): Promise<number> => {
+  const [row] = await db
+    .select({ value: count() })
+    .from(subscription)
+    .where(inArray(subscription.status, [...ENTITLED_STATUSES]));
+  return row?.value ?? 0;
+};
+
 /** Throws on a failed read: the helper revokes from this list, so it must never come back falsely empty. */
 const getSubscriberUserIds = async (): Promise<string[]> => {
   try {
@@ -452,6 +461,7 @@ export const Subscriptions = {
   applyPaddleSubscription,
   isEntitled,
   getEntitledGuildIds,
+  countEntitled,
   getSubscriberUserIds,
   getRevokedWithBotPresent,
   isRecordableRefund,

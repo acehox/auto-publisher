@@ -112,6 +112,15 @@ const countPresent = async (): Promise<number> => {
   return row?.value ?? 0;
 };
 
+/** Present guilds on the allowlist model. MIGRATION: drop at sunset. */
+const countMigrated = async (): Promise<number> => {
+  const [row] = await db
+    .select({ value: count() })
+    .from(guild)
+    .where(and(isNull(guild.leftAt), isNotNull(guild.migratedAt)));
+  return row?.value ?? 0;
+};
+
 /** Subset of `guildIds` the bot is currently in (`leftAt IS NULL`) */
 const filterPresent = async (guildIds: Snowflake[]): Promise<Snowflake[]> => {
   if (guildIds.length === 0) return [];
@@ -473,6 +482,7 @@ export const Guilds = {
   softDelete,
   isBotPresent,
   countPresent,
+  countMigrated,
   filterPresent,
   purge,
   activatePresence,

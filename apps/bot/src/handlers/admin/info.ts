@@ -2,6 +2,16 @@ import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { ContainerBuilder, MessageFlags } from 'discord.js';
 import { client } from 'lib/shard.js';
 import { Services } from 'services/index.js';
+import type { ProxyInfo } from 'services/info.js';
+
+const formatInvalidRequests = (
+  invalidRequests: ProxyInfo['rest']['invalidRequests'] | undefined
+) => {
+  if (!invalidRequests) return 'N/A';
+  if (invalidRequests.count === 0) return '0';
+  const resetsAt = Math.floor((Date.now() + invalidRequests.expiresInMs) / 1_000);
+  return `${invalidRequests.count} (resets <t:${resetsAt}:R>)`;
+};
 
 export async function chatInputInfo(
   this: Subcommand,
@@ -17,6 +27,8 @@ export async function chatInputInfo(
   const botContent = [
     '### Overview:',
     `> Guilds: ${guildsCount}`,
+    `> Migrated guilds: ${backend?.migratedGuildsCount ?? 'N/A'}`,
+    `> Subscribed guilds: ${backend?.subscribedGuildsCount ?? 'N/A'}`,
     `> Enabled channels: ${backend?.channelsCacheSize ?? 'N/A'}`,
     `> Rate-limited channels: ${proxy?.sublimitCount ?? 'N/A'}`,
     `> Blocked channels: ${proxy?.blockedCount ?? 'N/A'}`,
@@ -33,11 +45,7 @@ export async function chatInputInfo(
     `> Global remaining: ${proxy?.rest.globalRemaining ?? 'N/A'}`,
     `> Handlers: ${proxy?.rest.activeHandlers ?? 'N/A'} active / ${proxy?.rest.handlers ?? 'N/A'} total`,
     `> Hashes: ${proxy?.rest.hashes ?? 'N/A'}`,
-    `> Invalid requests: ${proxy?.rest.invalidRequests.count ?? 'N/A'} (resets <t:${
-      proxy
-        ? Math.floor(Date.now() / 1_000 + proxy.rest.invalidRequests.expiresInMs / 1_000)
-        : 'N/A'
-    }:R>)`,
+    `> Invalid requests: ${formatInvalidRequests(proxy?.rest.invalidRequests)}`,
   ].join('\n');
 
   const replyContainer = new ContainerBuilder()

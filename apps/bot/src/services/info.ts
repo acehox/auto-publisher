@@ -20,6 +20,8 @@ export type ProxyInfo = {
 
 export type BackendInfo = {
   channelsCacheSize: number;
+  migratedGuildsCount: number;
+  subscribedGuildsCount: number;
 };
 
 export type AggregatedInfo = {
