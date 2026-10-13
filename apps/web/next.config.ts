@@ -38,6 +38,8 @@ const nextConfig: NextConfig = {
     staleTimes: {
       dynamic: 60,
     },
+    // Docker builds start from a clean layer, so the cache is written and never read.
+    turbopackFileSystemCacheForBuild: false,
   },
 };
 
