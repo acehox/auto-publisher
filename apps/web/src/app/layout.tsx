@@ -25,7 +25,6 @@ export const metadata: Metadata = {
   description:
     'Auto Publisher automatically publishes messages in your announcement channels, ensuring they reach your followers automatically. Trusted by 17,000+ Discord servers.',
   keywords: ['Discord', 'bot', 'announcements', 'auto publish', 'Discord bot'],
-  authors: [{ name: 'acehox' }],
   openGraph: { siteName: 'Auto Publisher' },
   // X falls back to `og:image` (from `opengraph-image.png`) but shows it as a small thumbnail
   // unless told to use the large card.
