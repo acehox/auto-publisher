@@ -25,13 +25,12 @@
     "@sapphire/snowflake": "^3.5.5",
     "cron": "^4.4.0",
     "discord-api-types": "^0.38.37",
-    "drizzle-orm": "^0.44.2",
+    "drizzle-orm": "^0.45.4",
     "express": "^5.2.1",
-    "nodemailer": "^9.0.5",
+    "nodemailer": "^10.1.0",
     "zod": "^4.1.13"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6",
-    "@types/nodemailer": "^8.0.1"
+    "@types/express": "^5.0.6"
   }
 }

@@ -9,3 +9,5 @@ allowBuilds:
 overrides:
   # GHSA-rj75-hqrm-r3gf. Drop when @tailwindcss/typography depends on postcss-selector-parser 7.x.
   "@tailwindcss/typography>postcss-selector-parser": "7.1.6"
+  # GHSA-67mh-4wv8-2f99. drizzle-kit never loads this package. Drop when drizzle-kit 1.0 stable is adopted (it no longer declares it).
+  "drizzle-kit>@esbuild-kit/esm-loader": "-"
