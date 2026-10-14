@@ -6,7 +6,6 @@ export type ProxyInfo = {
     globalRemaining: number;
     handlers: number;
     activeHandlers: number;
-    hashes: number;
     invalidRequests: { count: number; expiresInMs: number };
   };
   queue: {

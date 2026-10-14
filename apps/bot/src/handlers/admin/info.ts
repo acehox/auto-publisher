@@ -24,34 +24,32 @@ export async function chatInputInfo(
     .broadcastEval('this.guilds.cache.size')
     .then((results: number[]) => results.reduce((p: number, n: number) => p + n));
 
-  const botContent = [
-    '### Overview:',
-    `> Guilds: ${guildsCount}`,
-    `> Migrated guilds: ${backend?.migratedGuildsCount ?? 'N/A'}`,
-    `> Subscribed guilds: ${backend?.subscribedGuildsCount ?? 'N/A'}`,
-    `> Enabled channels: ${backend?.channelsCacheSize ?? 'N/A'}`,
-    `> Rate-limited channels: ${proxy?.sublimitCount ?? 'N/A'}`,
-    `> Blocked channels: ${proxy?.blockedCount ?? 'N/A'}`,
+  const guildsContent = [
+    '### Guilds',
+    `> Total: ${guildsCount}`,
+    `> Migrated: ${backend?.migratedGuildsCount ?? 'N/A'}`,
+    `> Subscribed: ${backend?.subscribedGuildsCount ?? 'N/A'}`,
   ].join('\n');
 
-  const queueContent = [
-    '### Crosspost queue:',
-    `> Waiting: ${proxy?.queue.waiting ?? 'N/A'}`,
-    `> Active: ${proxy?.queue.active ?? 'N/A'}`,
+  const channelsContent = [
+    '### Channels',
+    `> Enabled: ${backend?.channelsCacheSize ?? 'N/A'}`,
+    `> Rate-limited: ${proxy?.sublimitCount ?? 'N/A'}`,
+    `> Blocked: ${proxy?.blockedCount ?? 'N/A'}`,
   ].join('\n');
 
   const restContent = [
-    '### REST:',
+    '### REST',
     `> Global remaining: ${proxy?.rest.globalRemaining ?? 'N/A'}`,
     `> Handlers: ${proxy?.rest.activeHandlers ?? 'N/A'} active / ${proxy?.rest.handlers ?? 'N/A'} total`,
-    `> Hashes: ${proxy?.rest.hashes ?? 'N/A'}`,
+    `> Crosspost queue: ${proxy?.queue.waiting ?? 'N/A'} waiting / ${proxy?.queue.active ?? 'N/A'} active`,
     `> Invalid requests: ${formatInvalidRequests(proxy?.rest.invalidRequests)}`,
   ].join('\n');
 
   const replyContainer = new ContainerBuilder()
-    .addTextDisplayComponents(textDisplay => textDisplay.setContent(botContent))
+    .addTextDisplayComponents(textDisplay => textDisplay.setContent(guildsContent))
     .addSeparatorComponents(separator => separator)
-    .addTextDisplayComponents(textDisplay => textDisplay.setContent(queueContent))
+    .addTextDisplayComponents(textDisplay => textDisplay.setContent(channelsContent))
     .addSeparatorComponents(separator => separator)
     .addTextDisplayComponents(textDisplay => textDisplay.setContent(restContent));
 
