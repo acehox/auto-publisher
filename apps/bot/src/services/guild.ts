@@ -1,7 +1,7 @@
-import { Data } from 'data/index.js';
 import type { Guild as DiscordGuild, Snowflake } from 'discord.js';
-import { getAnnouncementChannels } from 'utils/channels.js';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { getAnnouncementChannels } from '#utils/channels.js';
+import { logger } from '#utils/logger.js';
 import { Permissions } from './permissions.js';
 
 // Joins that arrived during an outage. discord.js emits guildAvailable, not

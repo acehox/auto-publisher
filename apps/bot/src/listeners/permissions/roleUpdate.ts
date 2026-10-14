@@ -1,8 +1,8 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { Events, type Role } from 'discord.js';
-import { Services } from 'services/index.js';
-import { getAnnouncementChannels } from 'utils/channels.js';
+import { Services } from '#services/index.js';
+import { getAnnouncementChannels } from '#utils/channels.js';
 
 @ApplyOptions<Listener.Options>({
   event: Events.GuildRoleUpdate,

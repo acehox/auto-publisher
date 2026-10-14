@@ -1,9 +1,9 @@
 import { channel as channelTable, db } from '@ap/database';
 import { type Filter, FilterMatchMode } from '@ap/validations';
-import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { eq } from 'drizzle-orm';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { logger } from '#utils/logger.js';
 
 /**
  * Get channel from DB

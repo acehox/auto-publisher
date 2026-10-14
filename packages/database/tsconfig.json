@@ -1,9 +1,9 @@
 {
   "extends": "@ap/tsconfig/base.json",
   "compilerOptions": {
-    "baseUrl": "src",
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "types": ["node"]
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

@@ -1,6 +1,6 @@
 import { createEnabledChannelsCache } from '@ap/redis';
-import { Drivers } from 'data/drivers/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
+import { Drivers } from '#data/drivers/index.js';
 import { Rollover } from './rollover.js';
 
 const enabledChannels = createEnabledChannelsCache(Drivers.Redis.EnabledChannels);

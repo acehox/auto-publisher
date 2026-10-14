@@ -1,5 +1,5 @@
 import { createRedisClient, DatabaseIDs, type RedisClient } from '@ap/redis';
-import { logger } from 'utils/logger.js';
+import { logger } from '#utils/logger.js';
 
 const enabledChannelsClient = await createRedisClient(DatabaseIDs.EnabledChannels, logger);
 const guildsClient = await createRedisClient(DatabaseIDs.Guilds, logger);

@@ -1,6 +1,6 @@
 import { StatusCodes, sendErrorResponse } from '@ap/express';
 import express, { type Response, type Router } from 'express';
-import { Services } from 'services/index.js';
+import { Services } from '#services/index.js';
 
 export const Info: Router = (() => {
   const router = express.Router();

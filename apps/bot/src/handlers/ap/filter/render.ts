@@ -9,7 +9,7 @@ import {
   type Snowflake,
   StringSelectMenuBuilder,
 } from 'discord.js';
-import { emojis } from 'lib/constants/index.js';
+import { emojis } from '#lib/constants/index.js';
 
 /**
  * Component ids the panel collector routes on. Anything after the first `:` is the

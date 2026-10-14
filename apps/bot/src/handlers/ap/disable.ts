@@ -10,10 +10,10 @@ import {
   MessageFlags,
   type Snowflake,
 } from 'discord.js';
-import { emojis } from 'lib/constants/index.js';
-import { Services } from 'services/index.js';
-import { logger } from 'utils/logger.js';
-import { buildReply, replyPayload } from 'utils/reply.js';
+import { emojis } from '#lib/constants/index.js';
+import { Services } from '#services/index.js';
+import { logger } from '#utils/logger.js';
+import { buildReply, replyPayload } from '#utils/reply.js';
 
 const disabledContainer = (channelId: Snowflake) =>
   buildReply({

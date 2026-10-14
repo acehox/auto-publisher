@@ -13,10 +13,10 @@ import type { SetChannelFilters } from '@ap/validations';
 import { DiscordAPIError, HTTPError } from '@discordjs/rest';
 import { type APIGuild, type APIRole, Routes } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
-import { Discord } from 'services/discord.js';
-import { Services } from 'services/index.js';
-import { isEntitledStatus } from 'services/subscriptions.js';
-import { logger } from 'utils/logger.js';
+import { Discord } from '#services/discord.js';
+import { Services } from '#services/index.js';
+import { isEntitledStatus } from '#services/subscriptions.js';
+import { logger } from '#utils/logger.js';
 import {
   GuildChannelEnableReqSchema,
   GuildChannelReqSchema,
@@ -25,7 +25,7 @@ import {
   GuildSetChannelFiltersReqSchema,
   SubscriptionCheckoutReqSchema,
   WithdrawalSubmitReqSchema,
-} from 'utils/validations.js';
+} from '#utils/validations.js';
 
 /**
  * Guard shared by every filter-write route. Filters are a Premium feature, and

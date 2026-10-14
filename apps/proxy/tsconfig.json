@@ -1,7 +1,6 @@
 {
   "extends": "./node_modules/@ap/tsconfig/base.json",
   "compilerOptions": {
-    "baseUrl": "src",
     "outDir": "dist",
     "rootDir": "src"
   },

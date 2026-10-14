@@ -1,9 +1,9 @@
 import { channel as channelTable, db } from '@ap/database';
 import { FilterMatchMode } from '@ap/validations';
-import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { and, asc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { logger } from '#utils/logger.js';
 
 /**
  * Channel soft-pause primitives. Pure DB + cache operations with no

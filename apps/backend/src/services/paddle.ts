@@ -7,8 +7,8 @@ import {
   type Subscription as PaddleSubscription,
   type Transaction as PaddleTransaction,
 } from '@paddle/paddle-node-sdk';
-import { logger } from 'utils/logger.js';
-import { withRetry } from 'utils/retry.js';
+import { logger } from '#utils/logger.js';
+import { withRetry } from '#utils/retry.js';
 
 const paddle = env.PADDLE_API_KEY
   ? new Paddle(env.PADDLE_API_KEY, {

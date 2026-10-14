@@ -1,13 +1,13 @@
 import { MAX_JOIN_DATES_PER_PUSH } from '@ap/validations';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
-import { Data } from 'data/index.js';
 import { type Client, Events } from 'discord.js';
-import { setBotInvite } from 'lib/constants/index.js';
-import { hydrateEmojis } from 'lib/emojis.js';
-import { Services } from 'services/index.js';
-import { getAnnouncementChannels } from 'utils/channels.js';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { setBotInvite } from '#lib/constants/index.js';
+import { hydrateEmojis } from '#lib/emojis.js';
+import { Services } from '#services/index.js';
+import { getAnnouncementChannels } from '#utils/channels.js';
+import { logger } from '#utils/logger.js';
 
 // Cap concurrent per-guild pushes so a large shard doesn't burst the backend.
 const SWEEP_CONCURRENCY = 10;

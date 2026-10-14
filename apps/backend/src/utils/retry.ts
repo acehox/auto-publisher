@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises';
-import { logger } from 'utils/logger.js';
+import { logger } from '#utils/logger.js';
 
 const DEFAULT_DELAYS_MS = [5_000, 15_000];
 

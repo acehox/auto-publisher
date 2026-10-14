@@ -1,7 +1,7 @@
 import { RegExPatterns, secToMs, sleep } from '@ap/utils';
-import { Data } from 'data/index.js';
 import { type Message, MessageFlags, type NewsChannel, type Snowflake } from 'discord.js';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { logger } from '#utils/logger.js';
 import { Services } from './index.js';
 
 /**

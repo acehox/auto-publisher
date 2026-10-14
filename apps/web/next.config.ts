@@ -7,6 +7,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   pageExtensions: ['ts', 'tsx', 'mdx'],
+  // Otherwise `next dev` writes an AGENTS.md into the app when it detects a coding agent.
+  agentRules: false,
   // Self-contained server bundle for the Docker image. Tracing must start at
   // the monorepo root or the `@ap/*` workspace packages are left out.
   output: 'standalone',

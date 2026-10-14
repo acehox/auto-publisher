@@ -1,7 +1,7 @@
 import { assertRequiredEnv, config } from '@ap/config';
 import { SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits as IntentBits, Options } from 'discord.js';
-import { logger } from 'utils/logger.js';
+import { logger } from '#utils/logger.js';
 
 assertRequiredEnv({ helper: true });
 

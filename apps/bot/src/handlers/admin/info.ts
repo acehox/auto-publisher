@@ -1,8 +1,8 @@
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { ContainerBuilder, MessageFlags } from 'discord.js';
-import { client } from 'lib/shard.js';
-import { Services } from 'services/index.js';
-import type { ProxyInfo } from 'services/info.js';
+import { client } from '#lib/shard.js';
+import { Services } from '#services/index.js';
+import type { ProxyInfo } from '#services/info.js';
 
 const formatInvalidRequests = (
   invalidRequests: ProxyInfo['rest']['invalidRequests'] | undefined

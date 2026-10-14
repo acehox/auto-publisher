@@ -443,6 +443,7 @@ old client default was `sandbox` whenever the variable was absent. `usePaddle` n
 - Shared packages: `@ap/*` (e.g., `@ap/database`, `@ap/logger`, `@ap/utils`, `@ap/redis`, `@ap/config`)
 - Import extensions required: `.js` for TS files (ES modules)
 - Workspace dependencies managed by pnpm workspaces (`pnpm-workspace.yaml`)
+- Own-package imports in backend/bot/helper are Node subpath imports (`"imports": { "#*": "./src/*" }` in `package.json`, written `#utils/logger.js`), because TypeScript 7 removed `baseUrl`. Not `#/`: bun 1.4 and Node 22 reject it. Web keeps Next's `@/*` tsconfig alias.
 - No `.d.ts` output: `@ap/tsconfig`'s `base.json` and `bot.json` leave it off. Every `@ap/*` package's `main` is `src/index.ts`, so nothing reads declarations, and under pnpm's isolated layout emitting them fails (TS2742) on any inferred type from a package the workspace member does not list itself — `createLogger`'s pino `Logger`, `@ap/database` types in the bot — which forced those packages into every app's dependencies.
 
 ## Discord.js specifics

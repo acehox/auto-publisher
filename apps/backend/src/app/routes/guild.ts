@@ -1,7 +1,11 @@
 import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import express, { type Router } from 'express';
-import { Services } from 'services/index.js';
-import { GuildDeleteReqSchema, GuildRegisterReqSchema, GuildReqSchema } from 'utils/validations.js';
+import { Services } from '#services/index.js';
+import {
+  GuildDeleteReqSchema,
+  GuildRegisterReqSchema,
+  GuildReqSchema,
+} from '#utils/validations.js';
 
 export const Guild: Router = (() => {
   const router = express.Router({ mergeParams: true });

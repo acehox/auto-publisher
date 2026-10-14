@@ -1,6 +1,6 @@
 import { assertRequiredEnv, config, env } from '@ap/config';
-import { ClusterManager } from 'lib/structures/clusterManager.js';
-import { logger } from 'utils/logger.js';
+import { ClusterManager } from '#lib/structures/clusterManager.js';
+import { logger } from '#utils/logger.js';
 
 // Fail fast with a named variable rather than an opaque Discord auth error later
 assertRequiredEnv();

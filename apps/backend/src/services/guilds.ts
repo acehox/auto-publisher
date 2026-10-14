@@ -2,10 +2,10 @@ import { channel, db, guild } from '@ap/database';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import { RedisKeys } from '@ap/redis';
 import { FilterMatchMode } from '@ap/validations';
-import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import { and, count, eq, inArray, isNotNull, isNull, lt, notInArray, or, sql } from 'drizzle-orm';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { logger } from '#utils/logger.js';
 import { Discord } from './discord.js';
 import { Plans } from './plans.js';
 

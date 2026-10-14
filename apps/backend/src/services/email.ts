@@ -1,6 +1,6 @@
 import { env } from '@ap/config';
 import nodemailer, { type Transporter } from 'nodemailer';
-import { logger } from 'utils/logger.js';
+import { logger } from '#utils/logger.js';
 
 /**
  * Outbound email — plain SMTP, one caller: the statutory withdrawal acknowledgement

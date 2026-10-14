@@ -3,7 +3,7 @@ import { createTtlCache, sortBySidebarOrder } from '@ap/utils';
 import { DiscordAPIError, REST } from '@discordjs/rest';
 import type { Snowflake } from 'discord-api-types/globals';
 import { type APIChannel, type APIUser, ChannelType, Routes } from 'discord-api-types/v10';
-import { logger } from 'utils/logger.js';
+import { logger } from '#utils/logger.js';
 
 // The one REST client, routed through the proxy so Discord traffic obeys its
 // global limiter. An unset token fails client-side in @discordjs/rest before

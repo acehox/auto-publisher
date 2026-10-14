@@ -1,8 +1,8 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { type DMChannel, Events, type GuildChannel } from 'discord.js';
-import { Services } from 'services/index.js';
-import { logger } from 'utils/logger.js';
+import { Services } from '#services/index.js';
+import { logger } from '#utils/logger.js';
 
 @ApplyOptions<Listener.Options>({
   event: Events.ChannelDelete,

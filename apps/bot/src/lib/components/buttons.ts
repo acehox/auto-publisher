@@ -1,6 +1,6 @@
 import { Copy } from '@ap/copy';
 import { ButtonBuilder, ButtonStyle, type Snowflake } from 'discord.js';
-import { emojis, links } from 'lib/constants/index.js';
+import { emojis, links } from '#lib/constants/index.js';
 
 export const website = new ButtonBuilder()
   .setLabel(links.hostname)

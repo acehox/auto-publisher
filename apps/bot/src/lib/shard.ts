@@ -1,8 +1,8 @@
 import { config } from '@ap/config';
 import { ActivityType, GatewayIntentBits as IntentBits, Options, Partials } from 'discord.js';
 import { getInfo } from 'discord-hybrid-sharding';
-import { BotClient } from 'lib/structures/client.js';
-import { logger } from 'utils/logger.js';
+import { BotClient } from '#lib/structures/client.js';
+import { logger } from '#utils/logger.js';
 // import { links } from './constants/index.js';
 
 export const client = new BotClient({

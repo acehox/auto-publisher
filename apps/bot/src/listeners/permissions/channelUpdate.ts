@@ -1,7 +1,7 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { ChannelType, type DMChannel, Events, type NonThreadGuildBasedChannel } from 'discord.js';
-import { Services } from 'services/index.js';
+import { Services } from '#services/index.js';
 
 @ApplyOptions<Listener.Options>({
   event: Events.ChannelUpdate,

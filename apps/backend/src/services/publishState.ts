@@ -1,8 +1,8 @@
 import { RedisKeys } from '@ap/redis';
-import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
 import type { APIChannel } from 'discord-api-types/v10';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { logger } from '#utils/logger.js';
 import { BotPermissions, type PublishEntry } from './botPermissions.js';
 
 /**

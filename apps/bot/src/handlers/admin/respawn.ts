@@ -1,6 +1,6 @@
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { MessageFlags } from 'discord.js';
-import { respawnClusters } from 'utils/process.js';
+import { respawnClusters } from '#utils/process.js';
 
 export async function chatInputRespawn(
   this: Subcommand,

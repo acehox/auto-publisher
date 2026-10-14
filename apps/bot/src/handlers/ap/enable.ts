@@ -11,13 +11,13 @@ import {
   MessageFlags,
   type Snowflake,
 } from 'discord.js';
-import { Buttons } from 'lib/components/buttons.js';
-import { emojis, notes } from 'lib/constants/index.js';
-import { Services } from 'services/index.js';
-import { logger } from 'utils/logger.js';
-import { formatNotes } from 'utils/notes.js';
-import { checkChannelPermissions, renderPermissionSteps } from 'utils/permissions.js';
-import { buildReply, replyPayload } from 'utils/reply.js';
+import { Buttons } from '#lib/components/buttons.js';
+import { emojis, notes } from '#lib/constants/index.js';
+import { Services } from '#services/index.js';
+import { logger } from '#utils/logger.js';
+import { formatNotes } from '#utils/notes.js';
+import { checkChannelPermissions, renderPermissionSteps } from '#utils/permissions.js';
+import { buildReply, replyPayload } from '#utils/reply.js';
 
 const failureContainer = (channelId: Snowflake) =>
   buildReply({

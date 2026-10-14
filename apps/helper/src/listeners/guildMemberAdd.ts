@@ -2,7 +2,7 @@ import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { Events, type GuildMember } from 'discord.js';
-import { grantIfSubscriber } from 'services/reconcile.js';
+import { grantIfSubscriber } from '#services/reconcile.js';
 
 @ApplyOptions<Listener.Options>({
   event: Events.GuildMemberAdd,

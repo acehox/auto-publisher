@@ -9,7 +9,7 @@ import {
   type PartialMessage,
   type Snowflake,
 } from 'discord.js';
-import { Services } from 'services/index.js';
+import { Services } from '#services/index.js';
 
 @ApplyOptions<Listener.Options>({
   event: Events.MessageBulkDelete,

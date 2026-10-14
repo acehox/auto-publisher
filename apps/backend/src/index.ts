@@ -10,17 +10,17 @@ import {
   createRequestLogger,
   createRequireGuildPermission,
 } from '@ap/express';
-import { App } from 'app/index.js';
-import { runGuildReconcile, startGuildReconcile } from 'cron/guildReconcile.js';
+import express, { type Express } from 'express';
+import { App } from '#app/index.js';
+import { runGuildReconcile, startGuildReconcile } from '#cron/guildReconcile.js';
 import {
   runSubscriptionReconcile,
   startSubscriptionReconcile,
-} from 'cron/subscriptionReconcile.js';
-import { startWithdrawalAcknowledgeRetry } from 'cron/withdrawalAcknowledge.js';
-import { Data } from 'data/index.js';
-import express, { type Express } from 'express';
-import { Services } from 'services/index.js';
-import { logger } from 'utils/logger.js';
+} from '#cron/subscriptionReconcile.js';
+import { startWithdrawalAcknowledgeRetry } from '#cron/withdrawalAcknowledge.js';
+import { Data } from '#data/index.js';
+import { Services } from '#services/index.js';
+import { logger } from '#utils/logger.js';
 
 // Fail fast with a named variable rather than an opaque Discord auth error later.
 // Asserts the dashboard scope on the web app's behalf — see `assertRequiredEnv`.

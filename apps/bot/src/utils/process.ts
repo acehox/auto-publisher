@@ -1,4 +1,4 @@
-import { client } from 'lib/shard.js';
+import { client } from '#lib/shard.js';
 
 // Respawn all bot clusters
 export const respawnClusters = () => {

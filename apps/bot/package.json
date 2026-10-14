@@ -3,6 +3,9 @@
   "private": true,
   "main": "src/index.ts",
   "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",

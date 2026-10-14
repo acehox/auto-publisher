@@ -1,7 +1,7 @@
 import { getDiscordFormat } from '@ap/utils';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { MessageFlags } from 'discord.js';
-import { client } from 'lib/shard.js';
+import { client } from '#lib/shard.js';
 
 export async function chatInputUptime(
   this: Subcommand,

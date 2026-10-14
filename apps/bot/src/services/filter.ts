@@ -1,7 +1,7 @@
 import { anyKeywordMatches } from '@ap/utils';
 import { type Filter, FilterMatchMode, FilterType } from '@ap/validations';
 import type { Message } from 'discord.js';
-import { extractMessageText } from 'utils/messageText.js';
+import { extractMessageText } from '#utils/messageText.js';
 import type { ChannelRule } from './channel.js';
 
 /**

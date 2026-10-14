@@ -2,7 +2,7 @@ import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { Events, type Guild } from 'discord.js';
-import { resyncMembers } from 'services/reconcile.js';
+import { resyncMembers } from '#services/reconcile.js';
 
 /**
  * Fires after a guild outage and after every re-identify (READY marks guilds
