@@ -10,15 +10,18 @@ export interface NavLinkItem {
 const routeLinks: NavLinkItem[] = [
   { href: '/how-it-works', label: 'How It Works', external: false },
   { href: '/premium', label: 'Premium', external: false },
+  { href: '/guides', label: 'Guides', external: false },
   // TODO: re-enable when the Status page is ready.
   // { href: '/status', label: 'Status', external: false },
   { href: links.githubRepo, label: 'GitHub', external: true },
 ];
 
-// A self-hosted instance has no billing, so /premium 404s — don't link to it.
+// Both 404 on a self-hosted instance: it has no billing, and the guides describe the public bot.
+export const publicOnlyHrefs = new Set(['/premium', '/guides']);
+
 export const siteLinks: NavLinkItem[] = isPublicInstance
   ? routeLinks
-  : routeLinks.filter(link => link.href !== '/premium');
+  : routeLinks.filter(link => !publicOnlyHrefs.has(link.href));
 
 // MIGRATION: drop the migration guide with the rest of the migration UX at sunset.
 export const dashboardLinks: NavLinkItem[] = [

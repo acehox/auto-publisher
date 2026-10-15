@@ -5,12 +5,14 @@ import { links, values } from '@/lib/constants';
 import { legalDocuments } from '@/lib/legal/documents';
 import { formatNumberFull } from '@/lib/utils';
 import { Logo } from './logo';
+import { publicOnlyHrefs } from './nav-config';
 
 const quickLinks = [
   { href: '/', label: 'Home' },
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/premium', label: 'Premium' },
+  { href: '/guides', label: 'Guides' },
   { href: links.githubRepo, label: 'GitHub' },
   // TODO: re-enable when the Status page is ready.
   // { href: '/status', label: 'Status' },
@@ -22,10 +24,9 @@ const supportLinks = [
 ];
 
 export function Footer() {
-  // A self-hosted instance has no billing, so /premium 404s — don't link to it.
   const visibleQuickLinks = isPublicInstance
     ? quickLinks
-    : quickLinks.filter(link => link.href !== '/premium');
+    : quickLinks.filter(link => !publicOnlyHrefs.has(link.href));
 
   return (
     <footer className="border-t border-slate-800 bg-slate-950/50 backdrop-blur-sm">

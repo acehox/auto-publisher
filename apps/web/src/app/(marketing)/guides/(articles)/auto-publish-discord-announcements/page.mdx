@@ -1,0 +1,76 @@
+import { config } from '@ap/config';
+import { Copy } from '@ap/copy';
+import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
+import { GuideInviteButton } from '@/components/guides/guide-invite-button';
+import { getGuide, guideMetadata } from '@/lib/guides';
+
+export const guide = getGuide('auto-publish-discord-announcements');
+export const metadata = guideMetadata(guide);
+
+# {guide.title}
+
+## Why aren't my announcements published on their own?
+
+A message posted in an announcement channel stays in your server until someone presses **Publish**
+(Discord's API calls this a crosspost). Only then does Discord send it to the servers that follow the channel, where it appears as a
+regular message
+([Discord: Announcement Channel FAQ](https://support.discord.com/hc/en-us/articles/360032008192-Announcement-Channel-FAQ)).
+
+That is easy to forget when a person posts, and impossible to keep up with when a bot does. Auto
+Publisher ([auto-publisher.gg](/)) is for Discord server admins who run announcement channels, especially ones where other
+bots, webhooks or RSS and news feeds post messages that would otherwise have to be published by
+hand.
+
+## How do I set up auto-publishing?
+
+1. **Invite Auto Publisher** to your server. You need the Manage Server permission there to add a bot.
+
+   <GuideInviteButton className="my-4" />
+
+2. **Enable the channel.** In Discord, run `/ap enable` and pick the announcement channel. Or sign in to the [dashboard](/dashboard), choose your server,
+   open **Channels** and switch the channel on.
+3. **Give the bot three permissions** in that channel:
+
+   <div className="not-prose my-6">
+     <PermissionSteps />
+   </div>
+
+4. **Check it.** Run `/ap overview` to see the publishing status of every channel in your server.
+   The dashboard shows the same, and points out any channel that is missing a permission.
+
+Enable only the channels you want published. A channel you never enable is left alone.
+
+## Which messages does it publish?
+
+Every message posted in an enabled channel: yours, your moderators', and those from other bots and
+webhooks. Auto Publisher never writes messages of its own, it only publishes the ones already
+there. It skips system messages and messages that are already published.
+
+**Premium** filters let a channel publish only the messages you choose: by text, author, mention
+or webhook. Text filters also read embeds, so feed posts can be filtered too.
+
+## Why does it wait 5 seconds on some links?
+
+A message with a link that has no preview yet is held 5 seconds so followers get the preview.
+Discord builds a link's preview after the message is posted, and a message published before then
+reaches the following servers without it.
+
+## Is Auto Publisher free?
+
+Yes. Auto Publisher is free for up to {config.limits.freeChannelsPerGuild} announcement channels per
+server. [Premium](/premium) adds unlimited channels, filters, and publishing past Discord's hourly limit.
+
+## What happens past Discord's limit of 10 messages per hour?
+
+{Copy.publishing.overLimit.body(false)}
+
+## Why is there no Publish button in my channel?
+
+Only announcement channels have one, and Discord offers announcement channels only to servers with
+Community turned on
+([Discord: Enabling Your Community Server](https://support.discord.com/hc/en-us/articles/360047132851-Enabling-Your-Community-Server)).
+To turn an existing text channel into one, open **Edit Channel**, switch on **Announcement
+Channel** and press **Save Changes**. Auto Publisher can then be enabled in it like any other
+announcement channel.
+
+For every command and permission in one place, see [How It Works](/how-it-works).
