@@ -1,6 +1,6 @@
 import type { InfoResponse } from '@ap/express';
-import { Services } from 'services/index.js';
-import { logger } from 'utils/logger.js';
+import { Services } from '#services/index.js';
+import { logger } from '#utils/logger.js';
 
 /** Backend-side info. Proxy stats live on the proxy's /info. */
 const get = async (): Promise<InfoResponse> => {

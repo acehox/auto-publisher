@@ -2,8 +2,8 @@ import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { type Client, Events } from 'discord.js';
-import { startReconcileLoop, syncMembers } from 'services/reconcile.js';
-import { logger } from 'utils/logger.js';
+import { startReconcileLoop, syncMembers } from '#services/reconcile.js';
+import { logger } from '#utils/logger.js';
 
 @ApplyOptions<Listener.Options>({
   once: true,

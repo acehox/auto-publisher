@@ -1,8 +1,8 @@
 import { env, premiumTrialEnabled } from '@ap/config';
 import { db, guild, type Subscription, subscription } from '@ap/database';
 import { and, count, eq, inArray, isNotNull, isNull, lt, notInArray, or } from 'drizzle-orm';
-import { alerter } from 'utils/alerts.js';
-import { logger } from 'utils/logger.js';
+import { alerter } from '#utils/alerts.js';
+import { logger } from '#utils/logger.js';
 
 /** Statuses that keep a guild entitled to premium (past_due rides out Paddle dunning) */
 export const ENTITLED_STATUSES = ['active', 'trialing', 'past_due'] as const;

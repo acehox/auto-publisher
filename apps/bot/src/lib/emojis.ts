@@ -1,6 +1,6 @@
 import type { Client } from 'discord.js';
-import { emojiNames, emojis } from 'lib/constants/index.js';
-import { logger } from 'utils/logger.js';
+import { emojiNames, emojis } from '#lib/constants/index.js';
+import { logger } from '#utils/logger.js';
 
 type EmojiKey = keyof typeof emojis;
 

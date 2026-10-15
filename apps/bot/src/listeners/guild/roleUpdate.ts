@@ -1,7 +1,7 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { Events, type Role } from 'discord.js';
-import { Services } from 'services/index.js';
+import { Services } from '#services/index.js';
 
 // Keeps the backend's cached role list fresh (see roleCreate). Explicit `name`
 // because the permissions store already has a `roleUpdate` piece (permission

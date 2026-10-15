@@ -1,6 +1,6 @@
 import { createTtlCache } from '@ap/utils';
 import type { Snowflake } from 'discord-api-types/globals';
-import { logger } from 'utils/logger.js';
+import { logger } from '#utils/logger.js';
 import { Discord } from './discord.js';
 import { Guilds } from './guilds.js';
 import { Plans } from './plans.js';

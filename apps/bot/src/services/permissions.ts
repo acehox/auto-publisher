@@ -1,7 +1,7 @@
 import { missingPublishPermissions, PUBLISH_PERMISSIONS_MASK } from '@ap/utils';
-import { Data } from 'data/index.js';
 import type { GuildBasedChannel, NewsChannel } from 'discord.js';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { logger } from '#utils/logger.js';
 
 /**
  * Whether this bot can crosspost in the channel — the hot-path check. Uses the

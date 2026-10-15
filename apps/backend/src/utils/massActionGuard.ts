@@ -1,6 +1,6 @@
 import { createMassActionGuard } from '@ap/alerts';
-import { alerter } from 'utils/alerts.js';
-import { logger } from 'utils/logger.js';
+import { alerter } from '#utils/alerts.js';
+import { logger } from '#utils/logger.js';
 
 /**
  * Floor of 50: keeps a bad upstream snapshot — a truncated Discord guild list, a

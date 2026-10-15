@@ -59,7 +59,8 @@ export const createRolloverBacklog = (redis: RedisClient): RolloverBacklog => ({
     return added === 1 ? 'held' : 'duplicate';
   },
   oldest: async channelId => {
-    const [member] = await redis.zrange(RedisKeys.rollover(channelId), 0, 0);
+    // String stop: ioredis 6.0.0 types reject a number here. Revert once a fixed ioredis 6 ships.
+    const [member] = await redis.zrange(RedisKeys.rollover(channelId), 0, '0');
     if (member === undefined) return null;
     const waitForPreview = member.endsWith(PREVIEW_MARK);
     const messageId = waitForPreview ? member.slice(0, -PREVIEW_MARK.length) : member;

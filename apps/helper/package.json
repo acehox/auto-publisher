@@ -3,6 +3,9 @@
   "private": true,
   "main": "src/index.ts",
   "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
@@ -16,7 +19,7 @@
     "@ap/redis": "workspace:*",
     "@ap/tsconfig": "workspace:*",
     "@sapphire/decorators": "^6.2.0",
-    "@sapphire/framework": "^5.4.0",
-    "discord.js": "^14.25.1"
+    "@sapphire/framework": "^5.5.1",
+    "discord.js": "^14.27.0"
   }
 }

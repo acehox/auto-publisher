@@ -3,7 +3,7 @@ import { config } from '@ap/config';
 import { createHttpError, HttpError, StatusCodes } from '@ap/express';
 import type { CreateFilter, Filter } from '@ap/validations';
 import type { Snowflake } from 'discord-api-types/globals';
-import { logger } from 'utils/logger.js';
+import { logger } from '#utils/logger.js';
 import * as ChannelOps from './operations.js';
 
 /**

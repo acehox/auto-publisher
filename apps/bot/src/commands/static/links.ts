@@ -2,7 +2,7 @@ import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import { ActionRowBuilder, type ButtonBuilder, ContainerBuilder, MessageFlags } from 'discord.js';
-import { Buttons } from 'lib/components/buttons.js';
+import { Buttons } from '#lib/components/buttons.js';
 
 @ApplyOptions<Command.Options>({
   description: 'Find helpful resources, invite the bot, and connect with our community!',

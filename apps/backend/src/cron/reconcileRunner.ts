@@ -1,5 +1,5 @@
-import { alerter } from 'utils/alerts.js';
-import { logger } from 'utils/logger.js';
+import { alerter } from '#utils/alerts.js';
+import { logger } from '#utils/logger.js';
 
 const RERUN_DELAY_MS = 30 * 60 * 1000;
 

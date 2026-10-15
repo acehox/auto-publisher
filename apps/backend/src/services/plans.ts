@@ -1,8 +1,8 @@
 import { config, isPublicInstance } from '@ap/config';
 import { db, guild } from '@ap/database';
-import { Data } from 'data/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { logger } from '#utils/logger.js';
 import { ChannelPausing } from './channels/pausing.js';
 import { isEntitledStatus, Subscriptions } from './subscriptions.js';
 

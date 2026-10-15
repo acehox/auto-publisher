@@ -1,7 +1,7 @@
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import { ActionRowBuilder, type ButtonBuilder, MessageFlags } from 'discord.js';
-import { Buttons } from 'lib/components/buttons.js';
+import { Buttons } from '#lib/components/buttons.js';
 
 @ApplyOptions<Command.Options>({
   description: 'Invite Auto Publisher to your server and automate your announcements!',

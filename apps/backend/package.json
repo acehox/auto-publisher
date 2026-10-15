@@ -3,6 +3,9 @@
   "private": true,
   "main": "src/index.ts",
   "type": "module",
+  "imports": {
+    "#*": "./src/*"
+  },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf dist",
@@ -20,18 +23,17 @@
     "@ap/tsconfig": "workspace:*",
     "@ap/utils": "workspace:*",
     "@ap/validations": "workspace:*",
-    "@discordjs/rest": "^2.6.0",
-    "@paddle/paddle-node-sdk": "^3.8.0",
+    "@discordjs/rest": "^2.6.3",
+    "@paddle/paddle-node-sdk": "^3.10.0",
     "@sapphire/snowflake": "^3.5.5",
     "cron": "^4.4.0",
-    "discord-api-types": "^0.38.37",
-    "drizzle-orm": "^0.44.2",
-    "express": "^5.2.1",
-    "nodemailer": "^9.0.5",
-    "zod": "^4.1.13"
+    "discord-api-types": "^0.38.56",
+    "drizzle-orm": "^0.45.4",
+    "express": "^5.3.0",
+    "nodemailer": "^10.1.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6",
-    "@types/nodemailer": "^8.0.1"
+    "@types/express": "^5.0.6"
   }
 }

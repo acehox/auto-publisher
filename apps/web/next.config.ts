@@ -7,6 +7,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   pageExtensions: ['ts', 'tsx', 'mdx'],
+  // Otherwise `next dev` writes an AGENTS.md into the app when it detects a coding agent.
+  agentRules: false,
   // Self-contained server bundle for the Docker image. Tracing must start at
   // the monorepo root or the `@ap/*` workspace packages are left out.
   output: 'standalone',
@@ -38,6 +40,8 @@ const nextConfig: NextConfig = {
     staleTimes: {
       dynamic: 60,
     },
+    // Docker builds start from a clean layer, so the cache is written and never read.
+    turbopackFileSystemCacheForBuild: false,
   },
 };
 

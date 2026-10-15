@@ -3,7 +3,7 @@ import {
   type Cluster,
   type ClusterManagerOptions,
 } from 'discord-hybrid-sharding';
-import { logger } from 'utils/logger.js';
+import { logger } from '#utils/logger.js';
 
 const RESPAWN_BACKOFF_MS = [5_000, 30_000, 60_000, 300_000, 600_000];
 const FAILURE_RESET_MS = 600_000;

@@ -1,6 +1,6 @@
 import { RedisKeys } from '@ap/redis';
-import { Drivers } from 'data/drivers/index.js';
 import type { Snowflake } from 'discord-api-types/globals';
+import { Drivers } from '#data/drivers/index.js';
 
 const client = Drivers.Redis.GatedChannels;
 

@@ -12,12 +12,12 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
-    "drizzle-orm": "^0.44.2",
-    "postgres": "^3.4.7"
+    "drizzle-orm": "^0.45.4",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*",
-    "@types/node": "^22",
-    "drizzle-kit": "^0.31.2"
+    "@types/node": "^26.6.5",
+    "drizzle-kit": "^0.31.11"
   }
 }

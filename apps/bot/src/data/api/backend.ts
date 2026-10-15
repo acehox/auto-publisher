@@ -1,7 +1,7 @@
 import { secToMs, sleep } from '@ap/utils';
 import type { CreateFilter, FilterMatchMode } from '@ap/validations';
 import { RequestMethod, type Snowflake } from 'discord.js';
-import { logger } from 'utils/logger.js';
+import { logger } from '#utils/logger.js';
 
 const baseUrl = 'http://backend:8080';
 

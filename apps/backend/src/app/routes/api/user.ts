@@ -1,10 +1,10 @@
 import { db, guild, subscription } from '@ap/database';
 import { type APIResponse, fetchUserGuilds, StatusCodes, sendErrorResponse } from '@ap/express';
-import { Data } from 'data/index.js';
 import { inArray } from 'drizzle-orm';
 import express, { type Request, type Response, type Router } from 'express';
-import { isEntitledStatus } from 'services/subscriptions.js';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { isEntitledStatus } from '#services/subscriptions.js';
+import { logger } from '#utils/logger.js';
 
 const MANAGE_GUILD = BigInt(0x20);
 

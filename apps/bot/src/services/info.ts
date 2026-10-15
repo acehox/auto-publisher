@@ -1,5 +1,5 @@
-import { Data } from 'data/index.js';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { logger } from '#utils/logger.js';
 
 export type ProxyInfo = {
   rest: {

@@ -110,7 +110,7 @@ services:
       start_period: 10s
 
   redis:
-    image: redis:8-alpine
+    image: redis:8.10-alpine
     restart: unless-stopped
     volumes:
       - redis_data:/data

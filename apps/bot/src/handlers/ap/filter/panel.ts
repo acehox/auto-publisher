@@ -3,7 +3,6 @@ import { Copy } from '@ap/copy';
 import { normalizeFilterValues } from '@ap/utils';
 import { type Filter, FilterMatchMode, FilterType } from '@ap/validations';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
-import { Data } from 'data/index.js';
 import {
   type ChannelType,
   type ContainerBuilder,
@@ -12,10 +11,11 @@ import {
   type ModalSubmitInteraction,
   type Snowflake,
 } from 'discord.js';
-import { emojis } from 'lib/constants/index.js';
-import { Services } from 'services/index.js';
-import { handlePremiumCheck } from 'utils/interactions.js';
-import { logger } from 'utils/logger.js';
+import { Data } from '#data/index.js';
+import { emojis } from '#lib/constants/index.js';
+import { Services } from '#services/index.js';
+import { handlePremiumCheck } from '#utils/interactions.js';
+import { logger } from '#utils/logger.js';
 import { buildFilterModal, extractModalValues, fitsEditModal, modalCustomId } from './modal.js';
 import {
   buildFocusView,

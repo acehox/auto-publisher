@@ -1,6 +1,6 @@
 import { createAlerter, createMassActionGuard } from '@ap/alerts';
 import { createRedisClient, DatabaseIDs } from '@ap/redis';
-import { logger } from 'utils/logger.js';
+import { logger } from '#utils/logger.js';
 
 const alerter = createAlerter({
   redis: await createRedisClient(DatabaseIDs.Alerts, logger),

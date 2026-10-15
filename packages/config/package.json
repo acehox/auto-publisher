@@ -12,8 +12,8 @@
   "dependencies": {
     "@ap/api-types": "workspace:*",
     "@ap/logger": "workspace:*",
-    "dotenv": "^17.2.3",
-    "envalid": "^8.1.1"
+    "dotenv": "^18.0.7",
+    "envalid": "^8.2.0"
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*"

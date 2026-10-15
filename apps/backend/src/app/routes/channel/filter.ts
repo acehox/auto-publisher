@@ -1,13 +1,13 @@
 import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import type { CreateFilter } from '@ap/validations';
 import express, { type Router } from 'express';
-import { Services } from 'services/index.js';
+import { Services } from '#services/index.js';
 import {
   AddFilterReqSchema,
   FilterReqSchema,
   RemoveFilterReqSchema,
   UpdateFilterReqSchema,
-} from 'utils/validations.js';
+} from '#utils/validations.js';
 
 export const Filter: Router = (() => {
   const router = express.Router({ mergeParams: true });

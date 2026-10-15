@@ -12,8 +12,8 @@ import {
   TextInputStyle,
   UserSelectMenuBuilder,
 } from 'discord.js';
-import { emojis } from 'lib/constants/index.js';
-import { logger } from 'utils/logger.js';
+import { emojis } from '#lib/constants/index.js';
+import { logger } from '#utils/logger.js';
 
 /** Custom id of the modal's single value input, whatever its component type. */
 const VALUE_ID = 'value';

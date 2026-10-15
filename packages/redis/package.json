@@ -16,8 +16,8 @@
     "@ap/database": "workspace:*",
     "@ap/logger": "workspace:*",
     "@ap/validations": "workspace:*",
-    "discord-api-types": "^0.38.37",
-    "ioredis": "^5.10.1"
+    "discord-api-types": "^0.38.56",
+    "ioredis": "^6.0.0"
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*"

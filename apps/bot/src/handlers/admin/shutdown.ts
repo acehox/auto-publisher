@@ -1,6 +1,6 @@
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import { MessageFlags } from 'discord.js';
-import { shutdown } from 'utils/process.js';
+import { shutdown } from '#utils/process.js';
 
 export async function chatInputShutdown(
   this: Subcommand,

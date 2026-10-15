@@ -6,7 +6,7 @@ import {
   type UserError,
 } from '@sapphire/framework';
 import { ContainerBuilder, MessageFlags } from 'discord.js';
-import { emojis } from 'lib/constants/index.js';
+import { emojis } from '#lib/constants/index.js';
 
 @ApplyOptions<Listener.Options>({
   event: Events.ChatInputCommandDenied,

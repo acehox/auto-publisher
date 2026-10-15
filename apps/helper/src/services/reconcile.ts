@@ -1,9 +1,9 @@
 import { config } from '@ap/config';
-import { fetchSubscriberUserIds } from 'data/backend.js';
 import { type Guild, type GuildMember, PermissionFlagsBits, type Role } from 'discord.js';
-import { auditLogReasons, POLL_INTERVAL_MS } from 'lib/constants.js';
-import { guardMassAction, massActionCap } from 'utils/alerts.js';
-import { logger } from 'utils/logger.js';
+import { fetchSubscriberUserIds } from '#data/backend.js';
+import { auditLogReasons, POLL_INTERVAL_MS } from '#lib/constants.js';
+import { guardMassAction, massActionCap } from '#utils/alerts.js';
+import { logger } from '#utils/logger.js';
 
 const resolveRole = (guild: Guild): Role | null => {
   const role = guild.roles.cache.get(config.helper.subscriberRoleId);

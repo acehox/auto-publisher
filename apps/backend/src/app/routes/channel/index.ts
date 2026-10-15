@@ -1,11 +1,11 @@
 import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } from '@ap/express';
 import express, { type Router } from 'express';
-import { Services } from 'services/index.js';
+import { Services } from '#services/index.js';
 import {
   ChannelEnableReqSchema,
   ChannelReqSchema,
   SetFilterModeReqSchema,
-} from 'utils/validations.js';
+} from '#utils/validations.js';
 import { Filter } from './filter.js';
 
 export const Channel: Router = (() => {
