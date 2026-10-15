@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  ArrowUpRight,
   Check,
   Filter,
   Hash,
@@ -11,12 +12,16 @@ import {
 } from 'lucide-react';
 import { easeOut, motion, useReducedMotion, useTime, useTransform } from 'motion/react';
 import { useRef } from 'react';
+import { DiscordIcon } from '@/components/icons/discord-icon';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { links } from '@/lib/constants';
 import { PREMIUM_PLAN_FEATURES, type PremiumFeatureId } from '@/lib/plans';
 import { PREMIUM_TRIAL_DAYS } from '@/lib/pricing';
 
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
+
+const FEATURES_DONE_AT = 0.56 + PREMIUM_PLAN_FEATURES.length * 0.08;
 
 /**
  * Motion's own loading-ripple recipe (motion.dev/examples/react-loading-ripple):
@@ -252,7 +257,30 @@ export function PremiumWelcomeModal({ guildName, trialing, onClose }: PremiumWel
           })}
         </ul>
 
-        <motion.div {...rise(0.56 + PREMIUM_PLAN_FEATURES.length * 0.08)} className="mt-9">
+        {/* A quiet card, not a second gradient button: closing stays the obvious path. */}
+        <motion.div
+          {...rise(FEATURES_DONE_AT)}
+          className="mt-7 grid grid-cols-[auto_1fr] items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-left sm:grid-cols-[auto_1fr_auto]"
+        >
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#5865F2]/15 text-[#8891F7]">
+            <DiscordIcon className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-white">Claim your Premium role</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-slate-400">
+              Join our support server for priority support. The role is added automatically.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" asChild className="col-span-2 sm:col-span-1">
+            <a href={links.discordSupportServer} target="_blank" rel="noopener noreferrer">
+              Join
+              <ArrowUpRight aria-hidden="true" />
+              <span className="sr-only">(opens Discord in a new tab)</span>
+            </a>
+          </Button>
+        </motion.div>
+
+        <motion.div {...rise(FEATURES_DONE_AT + 0.08)} className="mt-7">
           <Button
             size="xl"
             onClick={onClose}
