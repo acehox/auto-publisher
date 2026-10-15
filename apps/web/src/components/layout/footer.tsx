@@ -12,13 +12,13 @@ const quickLinks = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/premium', label: 'Premium' },
-  { href: '/guides', label: 'Guides' },
   { href: links.githubRepo, label: 'GitHub' },
   // TODO: re-enable when the Status page is ready.
   // { href: '/status', label: 'Status' },
 ];
 
 const supportLinks = [
+  { href: '/guides', label: 'Guides' },
   { href: links.discordSupportServer, label: 'Support Server' },
   { href: '/migration', label: 'Migration Guide' },
 ];
@@ -62,7 +62,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-white font-medium mb-4">Support</h4>
+            <h4 className="text-white font-medium mb-4">Resources</h4>
             <ul className="space-y-2">
               {supportLinks.map(link => (
                 <li key={link.label}>
