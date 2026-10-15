@@ -1,4 +1,5 @@
 import { config } from '@ap/config';
+import { Copy } from '@ap/copy';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Command } from '@sapphire/framework';
 import { InteractionContextType, MessageFlags, PermissionFlagsBits } from 'discord.js';
@@ -8,7 +9,7 @@ import { logger } from '#utils/logger.js';
 import { buildReply } from '#utils/reply.js';
 
 @ApplyOptions<Command.Options>({
-  description: 'Discover all the ways you can use Auto Publisher to manage your channels!',
+  description: Copy.commands.help,
 })
 export class HelpCommand extends Command {
   public override registerApplicationCommands(registry: Command.Registry) {

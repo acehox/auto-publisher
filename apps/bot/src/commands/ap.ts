@@ -1,3 +1,4 @@
+import { Copy } from '@ap/copy';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Subcommand } from '@sapphire/plugin-subcommands';
 import { ChannelType, InteractionContextType, PermissionFlagsBits } from 'discord.js';
@@ -9,7 +10,7 @@ import {
 } from '../handlers/ap/index.js';
 
 @ApplyOptions<Subcommand.Options>({
-  description: 'Configure publishing in your announcement channels',
+  description: 'Set up auto-publishing for announcement channels',
   requiredUserPermissions: [PermissionFlagsBits.ManageChannels],
   runIn: ['GUILD_ANY'],
   preconditions: ['GuildOnly'],
@@ -31,11 +32,11 @@ export class APCommand extends Subcommand {
         .addSubcommand(subcommand =>
           subcommand //
             .setName('enable')
-            .setDescription('Enable auto-publishing in announcement channel')
+            .setDescription(Copy.commands.ap.enable)
             .addChannelOption(option =>
               option
                 .setName('channel')
-                .setDescription('The announcement channel to enable auto-publishing in')
+                .setDescription('Announcement channel to auto-publish')
                 .setRequired(true)
                 .addChannelTypes([ChannelType.GuildAnnouncement])
             )
@@ -43,11 +44,11 @@ export class APCommand extends Subcommand {
         .addSubcommand(subcommand =>
           subcommand //
             .setName('disable')
-            .setDescription('Disable auto-publishing in announcement channel')
+            .setDescription(Copy.commands.ap.disable)
             .addChannelOption(option =>
               option
                 .setName('channel')
-                .setDescription('The announcement channel to disable auto-publishing in')
+                .setDescription('Announcement channel to stop auto-publishing')
                 .setRequired(true)
                 .addChannelTypes([ChannelType.GuildAnnouncement])
             )
@@ -55,7 +56,7 @@ export class APCommand extends Subcommand {
         .addSubcommand(subcommand =>
           subcommand //
             .setName('overview')
-            .setDescription('See publishing status for every channel in this server')
+            .setDescription(Copy.commands.ap.overview)
         );
 
       // Registered unconditionally: one bot serves both plans, so the command
@@ -63,11 +64,11 @@ export class APCommand extends Subcommand {
       command.addSubcommand(subcommand =>
         subcommand //
           .setName('filters')
-          .setDescription('Choose exactly which messages auto-publish from each channel')
+          .setDescription(Copy.commands.ap.filters)
           .addChannelOption(option =>
             option //
               .setName('channel')
-              .setDescription('The announcement channel to manage conditions for')
+              .setDescription('Announcement channel to set filters for')
               .setRequired(true)
               .addChannelTypes([ChannelType.GuildAnnouncement])
           )

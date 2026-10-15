@@ -305,4 +305,25 @@ const legacy = {
   learnMore: 'Learn what is changing',
 } as const;
 
-export const Copy = { publishing, permissions, filters, premium, channels, legacy } as const;
+/* Slash commands ----------------------------------------------------------- */
+
+/** Discord's command picker shows these and the web lists them; Discord caps each at 100 chars. */
+const commands = {
+  ap: {
+    enable: 'Auto-publish new messages in an announcement channel',
+    disable: 'Stop auto-publishing in an announcement channel',
+    overview: 'Show the publishing status of every channel in this server',
+    filters: 'Choose which messages a channel auto-publishes',
+  },
+  help: 'See the available commands and where to get help',
+} as const;
+
+export const Copy = {
+  publishing,
+  permissions,
+  filters,
+  premium,
+  channels,
+  legacy,
+  commands,
+} as const;

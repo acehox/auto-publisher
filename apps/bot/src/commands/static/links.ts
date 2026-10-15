@@ -5,7 +5,7 @@ import { ActionRowBuilder, type ButtonBuilder, ContainerBuilder, MessageFlags } 
 import { Buttons } from '#lib/components/buttons.js';
 
 @ApplyOptions<Command.Options>({
-  description: 'Find helpful resources, invite the bot, and connect with our community!',
+  description: 'Invite the bot, find helpful resources, and join our community',
 })
 export class LinksCommand extends Command {
   public override registerApplicationCommands(registry: Command.Registry) {

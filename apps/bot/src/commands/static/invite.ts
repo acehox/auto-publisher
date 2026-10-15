@@ -4,7 +4,7 @@ import { ActionRowBuilder, type ButtonBuilder, MessageFlags } from 'discord.js';
 import { Buttons } from '#lib/components/buttons.js';
 
 @ApplyOptions<Command.Options>({
-  description: 'Invite Auto Publisher to your server and automate your announcements!',
+  description: 'Add Auto Publisher to your server',
 })
 export class InviteCommand extends Command {
   public override registerApplicationCommands(registry: Command.Registry) {

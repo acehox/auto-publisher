@@ -1,3 +1,4 @@
+import { Copy } from '@ap/copy';
 import { Zap } from 'lucide-react';
 
 interface Command {
@@ -6,25 +7,14 @@ interface Command {
   premium?: boolean;
 }
 
-// Verbatim from the bot's own command registration (`apps/bot/src/commands/ap.ts`,
-// `commands/static/help.ts`) — this table is a picture of what Discord shows in
-// the command picker, so paraphrasing it would make the two disagree.
+// Shared with the bot's command registration: this table is a picture of what
+// Discord shows in the command picker, so the two must not disagree.
 const commands: Command[] = [
-  { name: '/ap enable', description: 'Enable auto-publishing in announcement channel' },
-  { name: '/ap disable', description: 'Disable auto-publishing in announcement channel' },
-  {
-    name: '/ap overview',
-    description: 'See publishing status for every channel in this server',
-  },
-  {
-    name: '/ap filters',
-    description: 'Choose exactly which messages auto-publish from each channel',
-    premium: true,
-  },
-  {
-    name: '/help',
-    description: 'Discover all the ways you can use Auto Publisher to manage your channels!',
-  },
+  { name: '/ap enable', description: Copy.commands.ap.enable },
+  { name: '/ap disable', description: Copy.commands.ap.disable },
+  { name: '/ap overview', description: Copy.commands.ap.overview },
+  { name: '/ap filters', description: Copy.commands.ap.filters, premium: true },
+  { name: '/help', description: Copy.commands.help },
 ];
 
 export function CommandsReference() {

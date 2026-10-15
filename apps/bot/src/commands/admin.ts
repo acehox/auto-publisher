@@ -13,7 +13,7 @@ import {
 const prefix = '[BOT ADMIN]';
 
 @ApplyOptions<Subcommand.Options>({
-  description: `${prefix} Utility command for bot admins`,
+  description: `${prefix} Bot maintenance tools`,
   requiredUserPermissions: [PermissionFlagsBits.Administrator],
   preconditions: ['SupportGuild'],
   subcommands: [
@@ -42,27 +42,27 @@ export class AdminCommand extends Subcommand {
           .addSubcommand(subcommand =>
             subcommand //
               .setName('info')
-              .setDescription(`${prefix} Get information about the bot`)
+              .setDescription(`${prefix} Show bot information`)
           )
           .addSubcommand(subcommand =>
             subcommand //
               .setName('ping')
-              .setDescription(`${prefix} Check the bot's latency`)
+              .setDescription(`${prefix} Show the bot's latency`)
           )
           .addSubcommand(subcommand =>
             subcommand //
               .setName('respawn')
-              .setDescription(`${prefix} Respawn the bot`)
+              .setDescription(`${prefix} Restart all bot clusters`)
           )
           .addSubcommand(subcommand =>
             subcommand //
               .setName('shutdown')
-              .setDescription(`${prefix} Shutdown the bot`)
+              .setDescription(`${prefix} Shut down the bot`)
           )
           .addSubcommand(subcommand =>
             subcommand //
               .setName('uptime')
-              .setDescription(`${prefix} Check how long the bot has been online`)
+              .setDescription(`${prefix} Show how long the bot has been online`)
           ),
       {
         guildIds: [env.BOT_SUPPORT_GUILD_ID],
