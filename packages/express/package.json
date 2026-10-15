@@ -14,13 +14,13 @@
   "dependencies": {
     "@ap/config": "workspace:*",
     "cors": "^2.8.6",
-    "discord-api-types": "^0.38.37",
+    "discord-api-types": "^0.38.56",
     "express-rate-limit": "^8.7.1",
     "http-status-codes": "^2.3.0",
-    "pino": "^10.1.0",
+    "pino": "^10.4.0",
     "pino-http": "^11.0.0",
     "rate-limit-redis": "^6.0.1",
-    "zod": "^4.1.13"
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
     "express": "^5"
@@ -29,7 +29,7 @@
     "@ap/tsconfig": "workspace:*",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "@types/express-serve-static-core": "^5.1.0",
-    "@types/qs": "^6.14.0"
+    "@types/express-serve-static-core": "^5.1.3",
+    "@types/qs": "^6.15.1"
   }
 }

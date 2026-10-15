@@ -17,10 +17,10 @@
     "@ap/redis": "workspace:*",
     "@ap/tsconfig": "workspace:*",
     "@ap/utils": "workspace:*",
-    "@discordjs/rest": "^2.6.0",
-    "bullmq": "^6.3.14",
-    "discord-api-types": "^0.38.37",
-    "express": "^5.2.1",
+    "@discordjs/rest": "^2.6.3",
+    "bullmq": "^6.3.15",
+    "discord-api-types": "^0.38.56",
+    "express": "^5.3.0",
     "ioredis": "^6.0.0"
   },
   "devDependencies": {
