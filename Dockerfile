@@ -2,7 +2,7 @@
 # One file for every image: compose picks `target` (app, dev, web) and `args: { APP }`.
 # `--parents` below needs frontend 1.20+, which the syntax line pins.
 ARG BUN_IMAGE=oven/bun:1.4.3-alpine
-ARG NODE_IMAGE=node:22-alpine
+ARG NODE_IMAGE=node:26-alpine
 # Wall-clock cap on every registry-bound pnpm step; a cold install takes 6-60 s.
 ARG INSTALL_TIMEOUT=600
 

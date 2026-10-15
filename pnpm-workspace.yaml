@@ -11,3 +11,5 @@ overrides:
   "@tailwindcss/typography>postcss-selector-parser": "7.1.6"
   # GHSA-67mh-4wv8-2f99. drizzle-kit never loads this package. Drop when drizzle-kit 1.0 stable is adopted (it no longer declares it).
   "drizzle-kit>@esbuild-kit/esm-loader": "-"
+  # One copy: two break @ap/express type-checking. Move together with the web image's Node major.
+  "@types/node": "^26.6.5"
