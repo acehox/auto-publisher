@@ -164,7 +164,7 @@ services:
   # Catches the one email the stack sends (the statutory withdrawal acknowledgement).
   # Dev overlay only: prod uses a real provider, and self-host has no withdrawal routes.
   mailpit:
-    image: axllent/mailpit:v1.30.7
+    image: axllent/mailpit:v1.31.5
     restart: unless-stopped
     environment:
       # Both are load-bearing: the backend always authenticates (SMTP_USER/SMTP_PASSWORD
@@ -183,7 +183,7 @@ services:
 
   # Public HTTPS for Paddle sandbox webhooks; reaches only the 8081 listener.
   cloudflared:
-    image: cloudflare/cloudflared:2026.9.3
+    image: cloudflare/cloudflared:2026.10.0
     command: tunnel --no-autoupdate --metrics 127.0.0.1:20241 --config /etc/cloudflared/config.yml run
     restart: unless-stopped
     # Interpolated (`--env-file` in BOT_COMPOSE_FILES_DEV), not env_file.
