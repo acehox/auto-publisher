@@ -20,6 +20,34 @@ export const guides = [
       'Set up Auto Publisher, a Discord bot that automatically publishes (crossposts) the messages in your announcement channels to every server that follows them.',
     updated: '2026-10-15',
   },
+  {
+    slug: 'discord-crossposting-explained',
+    title: 'Discord crossposting explained: Publish, Follow and announcement channels',
+    description:
+      'What Discord announcement channels, the Publish button and crossposting are, how other servers follow a channel, and why messages from bots and webhooks stay unpublished.',
+    updated: '2026-10-15',
+  },
+  {
+    slug: 'filter-which-announcements-publish',
+    title: 'How to auto-publish only some messages in Discord',
+    description:
+      'Use Auto Publisher filters to publish (crosspost) only the announcement channel messages you choose, by text, author, mention or webhook, including RSS and news feed embeds.',
+    updated: '2026-10-15',
+  },
+  {
+    slug: 'discord-publish-limit',
+    title: "How to publish messages past Discord's limit of 10 per hour",
+    description:
+      'Discord lets each announcement channel publish (crosspost) 10 messages per hour. How to get the messages past that limit published once it resets, and how to use less of it.',
+    updated: '2026-10-15',
+  },
+  {
+    slug: 'announcement-not-publishing',
+    title: "Why isn't my Discord announcement being published?",
+    description:
+      'A checklist for announcement channel messages that are not published (crossposted) to following servers: enabled channels, the three permissions, paused channels, filters and the hourly limit.',
+    updated: '2026-10-15',
+  },
 ] as const satisfies readonly Guide[];
 
 export type GuideSlug = (typeof guides)[number]['slug'];

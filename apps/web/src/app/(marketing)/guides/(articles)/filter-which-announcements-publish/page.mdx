@@ -1,0 +1,110 @@
+import { Copy } from '@ap/copy';
+import { FilterRule } from '@/components/marketing/filter-rule';
+import { GuideInviteButton } from '@/components/guides/guide-invite-button';
+import { getGuide, guideMetadata } from '@/lib/guides';
+
+export const guide = getGuide('filter-which-announcements-publish');
+export const metadata = guideMetadata(guide);
+export const { labels } = Copy.filters.fields;
+export const { operators } = Copy.filters;
+
+# {guide.title}
+
+## Can a bot publish only some of my announcements?
+
+Yes. Auto Publisher ([auto-publisher.gg](/)) publishes your announcement channel messages for you,
+and with Premium it publishes only the ones you choose: by text, author, mention or webhook. Text filters also read
+embeds, so feed posts can be filtered too. Messages that don't match are never published
+(crossposted) and stay in your server.
+
+## How do I set up a filter?
+
+1. **Add Auto Publisher** to your server and enable the channel, as described in
+   [How to auto-publish announcement channel messages](/guides/auto-publish-discord-announcements).
+
+   <GuideInviteButton className="my-4" />
+
+2. **Get [Premium](/premium)** for that server. Filters are a Premium feature.
+3. **Open the channel's rule.** In Discord, run `/ap filters` and pick the channel (you need the
+   Manage Channels permission). Or sign in to the [dashboard](/dashboard), choose your server and
+   open **Filters**.
+4. **Add conditions** and pick **{Copy.filters.matchModes.labels.all}** or
+   **{Copy.filters.matchModes.labels.any}**. The change applies from the next message.
+
+A channel with no conditions publishes every message.
+
+## What can a filter match?
+
+A filter is one rule per channel. The rule is a list of conditions, and each condition is a field,
+an operator and one or more values. A condition matches when any one of its values matches.
+
+| Field | Operators | Values |
+| --- | --- | --- |
+| {labels.keyword} | {operators.labels.keyword.positive}, {operators.labels.keyword.negative} | Words in the message text, embeds included |
+| {labels.author} | {operators.labels.author.positive}, {operators.labels.author.negative} | The users or bots that posted it |
+| {labels.mention} | {operators.labels.mention.positive}, {operators.labels.mention.negative} | Roles or users it mentions |
+| {labels.webhook} | {operators.labels.webhook.positive}, {operators.labels.webhook.negative} | The webhook that posted it, by ID |
+
+**{labels.keyword}** values ignore capital letters. A plain word such as `spam` matches that whole
+word only. Use `*` as a wildcard:
+
+<ul>
+  {Copy.filters.keyword.wildcards.map(({ pattern, hint }) => (
+    <li key={pattern}>
+      <code>{pattern}</code> matches a word that {hint} "spam"
+    </li>
+  ))}
+</ul>
+
+**{Copy.filters.matchModes.labels.all}** publishes a message only when every condition matches.
+**{Copy.filters.matchModes.labels.any}** publishes it when at least one does. Use a negative
+operator, such as "{operators.labels.keyword.negative}", to keep a kind of message out.
+
+## Example: publish only posts that contain a word
+
+Your team posts patch notes and chat in the same channel, and only the patch notes should go out.
+
+<div className="not-prose my-6">
+  <FilterRule conditions={[{ field: 'keyword', negate: false, values: ['patch', 'release*'] }]} />
+</div>
+
+`release*` also matches "released" and "releases". A message without either word is not published.
+
+## Example: publish only one webhook's posts in a shared channel
+
+Several bots and webhooks post in one channel, and followers should only get your changelog
+webhook. Copy the webhook's ID from its URL: it is the number after `/webhooks/`.
+
+<div className="not-prose my-6">
+  <FilterRule conditions={[{ field: 'webhook', negate: false, values: ['123456789012345678'] }]} />
+</div>
+
+To publish everything except one noisy bot instead, use **{labels.author}**
+{operators.labels.author.negative} and pick that bot.
+
+## Example: filter RSS and news feed posts by their embed text
+
+Feed bots usually post an embed with an empty message, so a filter that only read the message text
+would see nothing. {labels.keyword} conditions also read the embed's title, description, fields,
+author and footer, and the text of messages built from Discord's newer components.
+
+<div className="not-prose my-6">
+  <FilterRule
+    matchMode="all"
+    conditions={[
+      { field: 'keyword', negate: false, values: ['discord', 'bot*'] },
+      { field: 'keyword', negate: true, values: ['sponsored'] },
+    ]}
+  />
+</div>
+
+This publishes feed items about Discord or bots, unless they are marked as sponsored.
+
+## What happens to my filters if Premium ends?
+
+They are kept. A channel with a filter is paused on the Free plan instead of publishing everything,
+and resumes, filter included, when the server has Premium again. To publish every message in it on
+the Free plan, remove the filter and enable the channel again.
+
+Messages a filter holds back are never published, so they don't count toward Discord's limit of 10
+published messages per hour. For every command in one place, see [How It Works](/how-it-works).

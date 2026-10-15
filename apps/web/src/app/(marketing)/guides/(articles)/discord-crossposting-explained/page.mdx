@@ -1,0 +1,90 @@
+import { config } from '@ap/config';
+import { GuideInviteButton } from '@/components/guides/guide-invite-button';
+import { getGuide, guideMetadata } from '@/lib/guides';
+
+export const guide = getGuide('discord-crossposting-explained');
+export const metadata = guideMetadata(guide);
+
+# {guide.title}
+
+## What is an announcement channel?
+
+An announcement channel is a Discord text channel, marked with a megaphone icon, that other servers
+can **Follow**. A message posted there is only seen in your server at first. When someone presses
+**Publish** on it, Discord sends it to every server that follows the channel, where it appears as a
+regular message
+([Discord: Announcement Channel FAQ](https://support.discord.com/hc/en-us/articles/360032008192-Announcement-Channel-FAQ)).
+
+## What is crossposting?
+
+Crossposting is the same thing as publishing. **Publish** is the button's name in Discord, and
+*crosspost* is the name Discord's API gives the same action, so bots and developer tools say
+"crosspost" where the app says "Publish". A crossposted message and a published message are the same
+message.
+
+Once a message is published:
+
+- **Edits** you make to it show up in the following servers too.
+- **Deleting** it removes it there as well, leaving an "[Original Message Deleted]" note.
+- **@everyone and @here** mentions, and other mentions like them, are not passed on.
+
+Discord lets each channel publish 10 messages per hour. See
+[How to publish messages past Discord's limit](/guides/discord-publish-limit) for what happens
+past it.
+
+## How does another server follow an announcement channel?
+
+1. Open the announcement channel in the server you want updates from and press **Follow**.
+2. Pick your server and the channel the posts should go to. Only servers and channels where you have
+   the **Manage Webhooks** permission are listed.
+3. Press **Follow**.
+
+From then on, each published message arrives in the channel you picked, posted by a bot named after
+the server it came from. The channel you pick can't be an announcement channel itself. To stop,
+open **Server Settings → Integrations → Channels Followed** and delete that server's entry
+([Discord: Channel Following FAQ](https://support.discord.com/hc/en-us/articles/360028384531-Channel-Following-FAQ)).
+
+## Who can press Publish?
+
+Members with **Send Messages** in the channel can publish their own messages. Members with **Manage
+Messages** can publish anyone's. Discord's own advice is to give these only to trusted members.
+
+## Why do messages from bots and webhooks stay unpublished?
+
+Discord never publishes a message on its own. Every message, whoever posted it, waits until someone
+presses **Publish**. When a bot, a webhook, or an RSS or news feed posts the message, nobody is
+there to press it, so the following servers don't get it unless the bot that posted it also
+publishes it, or a moderator does it by hand.
+
+That is what Auto Publisher ([auto-publisher.gg](/)) is for. It presses **Publish** on every message
+posted in the announcement channels you enable, from members, bots, webhooks and feeds alike, and is free for up to
+{config.limits.freeChannelsPerGuild} channels per server.
+
+<GuideInviteButton className="my-4" />
+
+Setup takes three steps, covered in
+[How to auto-publish announcement channel messages](/guides/auto-publish-discord-announcements). To
+publish only some messages, see
+[How to auto-publish only some messages](/guides/filter-which-announcements-publish).
+
+## How do I create an announcement channel?
+
+Discord offers announcement channels only to servers with Community turned on.
+
+**Turn on Community** (once per server):
+
+1. Open **Server Settings** from the menu under your server's name.
+2. Select **Enable Community**, then **Get Started**.
+3. Go through the steps. Discord requires a verification level, the explicit media content filter,
+   a rules channel and a channel for Discord's community updates.
+4. Agree to the guidelines and press **Finish Setup**
+   ([Discord: Enabling Your Community Server](https://support.discord.com/hc/en-us/articles/360047132851-Enabling-Your-Community-Server)).
+
+**Create a new announcement channel:** press the **+** next to a channel category, choose
+**Announcement** as the channel type, name it and press **Create Channel**.
+
+**Or convert an existing text channel:** open **Edit Channel**, switch on **Announcement Channel**
+and press **Save Changes**.
+
+Post a message in it and the **Publish** option appears on it. For every command and permission
+Auto Publisher uses, see [How It Works](/how-it-works).

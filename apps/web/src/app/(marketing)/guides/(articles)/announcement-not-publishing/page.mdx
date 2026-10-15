@@ -1,0 +1,95 @@
+import { config } from '@ap/config';
+import { Copy } from '@ap/copy';
+import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
+import { GuideInviteButton } from '@/components/guides/guide-invite-button';
+import { links } from '@/lib/constants';
+import { getGuide, guideMetadata } from '@/lib/guides';
+
+export const guide = getGuide('announcement-not-publishing');
+export const metadata = guideMetadata(guide);
+
+# {guide.title}
+
+## Where do I start?
+
+Discord never publishes a message on its own: it reaches following servers only once someone, or a
+bot, presses **Publish**.
+
+**No bot publishing for you yet?** Auto Publisher ([auto-publisher.gg](/)) publishes every message
+posted in the channels you choose. Setup is covered in
+[How to auto-publish announcement channel messages](/guides/auto-publish-discord-announcements).
+
+<GuideInviteButton className="my-4" />
+
+**Already using Auto Publisher?** Run `/ap overview` in your server. It lists every enabled channel,
+says which ones are not publishing and names the permissions they are missing. The
+[dashboard](/dashboard) shows the same, with a **Fix** button on each broken channel. Then go
+through the checks below in order.
+
+## Is the channel enabled?
+
+Auto Publisher only publishes in channels you enable. Run `/ap enable` and pick the channel, or
+switch it on under **Channels** in the dashboard. A channel you never enabled is left alone.
+
+## Does the bot have its three permissions?
+
+The bot needs three permissions in the channel itself: {Copy.permissions.names.join(', ')}. Manage Messages is the one most often missing: Discord lets members publish their own
+messages with Send Messages, but publishing anyone else's needs Manage Messages
+([Discord: Announcement Channel FAQ](https://support.discord.com/hc/en-us/articles/360032008192-Announcement-Channel-FAQ)).
+A channel or category permission that denies one of them overrides the role's server-wide
+permissions, so check the channel's own Permissions tab:
+
+<div className="not-prose my-6">
+  <PermissionSteps />
+</div>
+
+## Is the channel paused?
+
+A paused channel keeps its setup but doesn't publish. `/ap overview` and the dashboard list paused
+channels and say why. There are two causes, both on the Free plan:
+
+- **Over the channel cap.** The Free plan publishes {config.limits.freeChannelsPerGuild} channels per
+  server. Turn another channel off and enable this one again, or get [Premium](/premium) for
+  unlimited channels.
+- **It has a filter.** Filters are a Premium feature, so a filtered channel is paused on the Free
+  plan rather than publishing everything. Get Premium, or remove the filter and enable the channel
+  again.
+
+## Did a filter skip it?
+
+On Premium, a channel with a filter only publishes messages that match its rule. Open the rule with
+`/ap filters` or the dashboard's **Filters** tab and check the message against each condition. See
+[How to auto-publish only some messages](/guides/filter-which-announcements-publish).
+
+## Has the channel hit Discord's hourly limit?
+
+Discord lets each channel publish 10 messages per hour. On the Free plan, messages past it are not
+published. On Premium, they are published once the limit resets. See
+[How to publish messages past Discord's limit](/guides/discord-publish-limit).
+
+## Is it a message that can't be published?
+
+Auto Publisher skips three kinds of message, because Discord doesn't allow publishing (crossposting)
+them or they are already out:
+
+- **System messages**, such as pin notices.
+- **Messages already published**, by a member or another bot.
+- **Messages that arrived from a channel your server follows.** They were published at their source
+  and can't be published again.
+
+## Was it posted before the channel was enabled?
+
+Auto Publisher publishes messages as they are posted. A message posted before the channel was
+enabled, before the permissions were fixed or while the bot was offline is not published later.
+Press **Publish** on it by hand.
+
+## Is it a link waiting for its preview?
+
+A message with a link that has no preview yet is held 5 seconds so followers get the preview. It is
+published after that.
+
+## Still not publishing?
+
+Ask in the <a href={links.discordSupportServer}>support server</a> with the channel and roughly when the
+message was posted. For how Publish and Follow work on Discord's side, see
+[Discord crossposting explained](/guides/discord-crossposting-explained).

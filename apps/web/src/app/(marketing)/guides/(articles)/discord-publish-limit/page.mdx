@@ -1,0 +1,67 @@
+import { GuideInviteButton } from '@/components/guides/guide-invite-button';
+import { getGuide, guideMetadata } from '@/lib/guides';
+
+export const guide = getGuide('discord-publish-limit');
+export const metadata = guideMetadata(guide);
+
+# {guide.title}
+
+## Can a Discord channel publish more than 10 messages an hour?
+
+Not at once. Discord lets each announcement channel publish 10 messages per hour, and pressing
+**Publish** past that shows an error instead of sending the message to the servers that follow the
+channel
+([Discord: Announcement Channel FAQ](https://support.discord.com/hc/en-us/articles/360032008192-Announcement-Channel-FAQ)).
+
+Bots get the same limit. A bot publishes through Discord's API, where publishing is called a
+crosspost, and no bot can raise it. What a bot can do is keep the messages past the limit and publish
+them once it resets, so a busy hour doesn't leave followers with gaps.
+
+## How do I publish messages past the limit?
+
+Auto Publisher ([auto-publisher.gg](/)) can hold the messages past the limit and publish them once
+it resets. It comes with Premium and takes two steps:
+
+1. **Add Auto Publisher** to your server and enable the channel, as described in
+   [How to auto-publish announcement channel messages](/guides/auto-publish-discord-announcements).
+
+   <GuideInviteButton className="my-4" />
+
+2. **Get [Premium](/premium)** for that server.
+
+That's all. From then on, a message posted past the limit waits instead of staying unpublished.
+When Discord's limit resets, Auto Publisher publishes the waiting messages one at a time, oldest
+first, so followers get them in the order you posted them. If more than 10 are waiting, the rest go
+out after the next reset.
+
+A message still waiting 24 hours after it was posted is not published, and nothing past the limit is
+guaranteed to go out, because Discord decides when the channel may publish again. If you delete a
+waiting message, it is not published later.
+
+## What happens without Premium?
+
+On the Free plan, the 11th message in an hour and every one after it stay in your server,
+unpublished. Without a bot, the same messages wait until someone presses **Publish** on each of them
+after the limit resets.
+
+## When does the limit reset?
+
+Discord doesn't publish a fixed reset time. When a channel reaches the limit, Discord tells the bot
+how long to wait before that channel can publish again, and Auto Publisher waits exactly that long.
+Other channels keep publishing in the meantime.
+
+The limit is counted per channel, not per server: two announcement channels can publish 10 messages
+each in the same hour. Only published messages count. A message posted but never published uses none
+of it.
+
+## How do I use less of the limit?
+
+- **Publish only what followers need.** [Premium](/premium) filters let a channel publish only the
+  messages you choose, so feed posts or chat never use up the limit. See
+  [How to auto-publish only some messages](/guides/filter-which-announcements-publish).
+- **Split the channel.** Each announcement channel has its own limit, so a busy feed can move to a
+  channel of its own. Following servers then have to follow the new channel as well.
+
+To check that nothing else is stopping a channel, see
+[Why isn't my Discord announcement being published?](/guides/announcement-not-publishing). For how
+Publish and Follow work, see [Discord crossposting explained](/guides/discord-crossposting-explained).
