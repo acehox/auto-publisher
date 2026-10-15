@@ -13,8 +13,6 @@ const quickLinks = [
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/premium', label: 'Premium' },
   { href: links.githubRepo, label: 'GitHub' },
-  // TODO: re-enable when the Status page is ready.
-  // { href: '/status', label: 'Status' },
 ];
 
 const supportLinks = [

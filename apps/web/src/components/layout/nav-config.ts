@@ -11,8 +11,6 @@ const routeLinks: NavLinkItem[] = [
   { href: '/how-it-works', label: 'How It Works', external: false },
   { href: '/premium', label: 'Premium', external: false },
   { href: '/guides', label: 'Guides', external: false },
-  // TODO: re-enable when the Status page is ready.
-  // { href: '/status', label: 'Status', external: false },
   { href: links.githubRepo, label: 'GitHub', external: true },
 ];
 
