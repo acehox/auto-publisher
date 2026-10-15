@@ -103,16 +103,6 @@ export const env = cleanEnv(process.env, {
   AUTH_SECRET: str({ default: '' }),
   DISCORD_CLIENT_ID: str({ default: '' }),
   DISCORD_CLIENT_SECRET: str({ default: '' }),
-  /**
-   * Application id of the bot users are invited to.
-   *
-   * Defaults to `DISCORD_CLIENT_ID`, which is the whole story for a self-host:
-   * one Discord application is the OAuth client and the bot. Set it only when
-   * the dashboard logs in with a different application than the bot — the
-   * public instance does, because its bot is the long-lived application the
-   * existing servers already have and re-inviting them is not an option.
-   */
-  DISCORD_BOT_ID: str({ default: '' }),
   WEB_APP_ORIGIN: str({ default: 'http://localhost:3100' }),
 
   // --- Public instance only: billing + statutory mail ----------------------

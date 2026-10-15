@@ -44,15 +44,13 @@ export function getSiteUrl(): URL {
 /**
  * Resolve deployment config on the server, once per render.
  *
- * `botId` falls back to `DISCORD_CLIENT_ID`, which is the whole story for a
- * self-host: one application logs the admin in and is the bot they invite. The
- * public instance sets `DISCORD_BOT_ID` separately because its bot is the
- * long-lived application the existing servers already have.
+ * `botId` is `DISCORD_CLIENT_ID`: one application logs the admin in and is the
+ * bot they invite.
  */
 export function getSiteConfig(): SiteConfig {
   return {
     isPublicInstance,
-    botId: env.DISCORD_BOT_ID || env.DISCORD_CLIENT_ID,
+    botId: env.DISCORD_CLIENT_ID,
     freeChannelLimit: config.limits.freeChannelsPerGuild,
     filtersPerChannel: config.limits.filtersPerChannel,
     legacySunsetDate: config.legacySunsetDate,
