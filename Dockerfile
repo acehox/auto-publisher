@@ -39,8 +39,11 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml /app/
 COPY --parents apps/*/package.json packages/*/package.json /app/
 
 # --trust-lockfile: skips pnpm 12's per-entry registry re-check (~935 lookups per build).
-# --no-optional: keeps root dev tools' platform binaries (Supabase CLI, biome, turbo) out;
-# `pnpm deploy` below still installs the runtime's optional prebuilds.
+# --prod: no container runs a devDependency (bun runs `src/`; type checks, lint and
+# db:generate run on the host), so the root dev tools stay out too. Not --no-optional: it
+# also dropped esbuild's platform package (drizzle-kit, via @ap/database devDependencies),
+# whose postinstall then fetched the binary outside pnpm's integrity check, and the dev
+# proxy's native msgpack.
 FROM ${BUN_IMAGE} AS deps
 ARG APP
 ARG INSTALL_TIMEOUT
@@ -49,7 +52,7 @@ ENV pnpm_config_pm_on_fail=error
 COPY --from=install-inputs / /
 WORKDIR /app
 RUN --mount=type=cache,id=pnpm-store-${APP},target=/pnpm-store,sharing=locked \
-    pnpm-capped install --frozen-lockfile --trust-lockfile --no-optional --store-dir /pnpm-store --filter "${APP}..."
+    pnpm-capped install --frozen-lockfile --trust-lockfile --prod --store-dir /pnpm-store --filter "${APP}..."
 
 FROM deps AS dev
 ARG APP
@@ -75,7 +78,7 @@ RUN bun run --if-present check:native
 USER bun
 CMD ["bun", "run", "."]
 
-# No --no-optional: Next's SWC binary and sharp's prebuild are optional packages.
+# Full install: `next build` needs devDependencies (typescript, tailwindcss).
 FROM ${NODE_IMAGE} AS web-build
 ARG INSTALL_TIMEOUT
 ENV pnpm_config_pm_on_fail=error
