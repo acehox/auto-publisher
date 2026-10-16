@@ -5,6 +5,15 @@ export const links = {
   githubAuthor: 'https://github.com/acehox',
 };
 
+/** Listings of the public bot (application 739823232651100180), each checked to resolve to it. */
+export const listingUrls = [
+  links.githubRepo,
+  'https://discord.com/discovery/applications/739823232651100180',
+  'https://top.gg/bot/739823232651100180',
+  'https://discord.bots.gg/bots/739823232651100180',
+  'https://discordbotlist.com/bots/auto-publisher',
+];
+
 export const values = {
   activeServers: 17000,
 };

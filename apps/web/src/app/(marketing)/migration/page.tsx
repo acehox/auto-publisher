@@ -177,9 +177,9 @@ export default function MigrationPage() {
             missed entirely.
           </p>
           <p>
-            We have rebuilt how publishing works from the ground up. It is faster, handles Discord
-            {'’'}s limits gracefully, and lets you choose exactly which channels publish, so the bot
-            only does the work you actually want, and does it reliably.
+            We have rebuilt how publishing works from the ground up. It handles Discord{'’'}s limits
+            gracefully and lets you choose exactly which channels publish, so the bot only does the
+            work you actually want, and does it reliably.
           </p>
           <p>
             Just as importantly, these changes give Auto Publisher room to grow. They keep the

@@ -24,14 +24,14 @@ const steps: Step[] = [
   {
     icon: Radio,
     title: 'We watch for messages',
-    description:
-      'The moment a message lands in a selected channel, Auto Publisher detects it instantly.',
+    description: 'The moment a message lands in a selected channel, Auto Publisher detects it.',
     color: 'cyan',
   },
   {
     icon: Send,
     title: 'Auto-published!',
-    description: "It's published to every server automatically — no manual publishes, ever again.",
+    description:
+      "It's published to every server that follows the channel — no manual publishes, ever again.",
     color: 'green',
   },
 ];

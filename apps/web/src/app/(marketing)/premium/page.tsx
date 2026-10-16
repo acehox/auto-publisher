@@ -1,6 +1,7 @@
 import { config, isPublicInstance, premiumTrialEnabled } from '@ap/config';
 import { Filter, RotateCwFadingClock } from 'lucide-react';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { FeaturePoint, FeatureSection } from '@/components/marketing/premium/feature-section';
 import { FiltersDemo } from '@/components/marketing/premium/filters-demo';
@@ -9,6 +10,7 @@ import { RolloverDemo } from '@/components/marketing/premium/rollover-demo';
 import { PricingPlans } from '@/components/marketing/pricing-plans';
 import { PlanComparisonTable } from '@/components/plan-comparison-table';
 import { values } from '@/lib/constants';
+import { guidePath } from '@/lib/guides';
 import { formatNumberFull } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -71,7 +73,17 @@ export default function PremiumPage() {
           color="purple"
           eyebrow="Message filters"
           title="Publish only what you choose"
-          body="Give each channel a rule. Only messages that match it are published."
+          body={
+            <>
+              Give each channel a rule. Only messages that match it are published.{' '}
+              <Link
+                href={guidePath('filter-which-announcements-publish')}
+                className="text-blue-400 underline-offset-4 hover:text-blue-300 hover:underline"
+              >
+                See how filters work
+              </Link>
+            </>
+          }
           visual={<FiltersDemo />}
           reverse
         >

@@ -32,10 +32,10 @@ const faqs: { question: string; answer: ReactNode }[] = [
       <>
         It automatically publishes messages posted in your{' '}
         <InlineLink href={ANNOUNCEMENT_CHANNELS_HELP}>announcement channels</InlineLink> — the same
-        as pressing the publish button yourself — so your announcements reach the servers that
-        follow your channel. It is especially handy for messages from other bots or webhooks that
-        you would otherwise have to publish by hand. Note: Auto Publisher never creates messages; it
-        only publishes ones already posted by you, another bot, or a webhook.
+        as pressing the Publish button yourself, so your announcements reach the servers that follow
+        your channel. It is especially handy for messages from other bots or webhooks that you would
+        otherwise have to publish by hand. Note: Auto Publisher never creates messages; it only
+        publishes ones already posted by you, another bot, or a webhook.
       </>
     ),
   },
@@ -96,7 +96,10 @@ export function FAQ({ id }: { id: string }) {
             <AccordionTrigger className="px-6 py-5 text-white hover:no-underline text-left [&>svg]:text-slate-400">
               {faq.question}
             </AccordionTrigger>
-            <AccordionContent className="px-6 pb-5 text-slate-400">{faq.answer}</AccordionContent>
+            {/* Radix renders a closed answer's text only once opened; crawlers need every answer. */}
+            <AccordionContent forceMount className="px-6 pb-5 text-slate-400">
+              {faq.answer}
+            </AccordionContent>
           </AccordionItem>
         ))}
       </Accordion>

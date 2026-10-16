@@ -50,7 +50,7 @@ export function FeatureSection({
   color: keyof typeof ICON_TILE;
   eyebrow: string;
   title: string;
-  body: string;
+  body: ReactNode;
   visual: ReactNode;
   reverse?: boolean;
   children: ReactNode;
