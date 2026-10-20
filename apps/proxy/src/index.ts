@@ -59,7 +59,12 @@ const main = async () => {
     logger.info({ event: 'proxy.shutdown' });
     server.close();
     metrics.stop();
-    await crosspost.shutdown();
+    try {
+      await crosspost.shutdown();
+    } catch (error) {
+      // A host shutdown stops Redis alongside us; the queue is durable, so only the clean close is lost.
+      logger.warn({ event: 'proxy.shutdown_failed', err: error });
+    }
     await disconnectAllRedis();
     process.exit(0);
   };

@@ -20,8 +20,11 @@ const LOCAL_DATABASE_HOSTS = /@(localhost|127\.0\.0\.1|\[::1\]|host\.docker\.int
  * eavesdropping and not an active man-in-the-middle. `'verify-full'` needs Supabase's CA
  * bundled and checked against a real connection, so it is deliberately not set blind.
  */
-const client = LOCAL_DATABASE_HOSTS.test(connectionString)
-  ? postgres(connectionString)
-  : postgres(connectionString, { ssl: 'require' });
+const client = postgres(connectionString, {
+  ssl: LOCAL_DATABASE_HOSTS.test(connectionString) ? false : 'require',
+  // The default prints every notice as multi-line non-JSON: migrations raise one per skipped
+  // `IF NOT EXISTS` on each start. Errors still throw.
+  onnotice: () => {},
+});
 
 export const db = drizzle(client, { schema });
