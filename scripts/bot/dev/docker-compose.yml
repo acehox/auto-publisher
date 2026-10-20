@@ -183,7 +183,7 @@ services:
 
   # Public HTTPS for Paddle sandbox webhooks; reaches only the 8081 listener.
   cloudflared:
-    image: cloudflare/cloudflared:2026.10.0
+    image: cloudflare/cloudflared:2026.10.2
     command: tunnel --no-autoupdate --metrics 127.0.0.1:20241 --config /etc/cloudflared/config.yml run
     restart: unless-stopped
     # Interpolated (`--env-file` in BOT_COMPOSE_FILES_DEV), not env_file.

@@ -152,7 +152,7 @@ services:
   # Sole public ingress; routes live in prod/cloudflared.yml.
   # See docs/public-instance/billing-paddle-setup.md "Webhook ingress".
   cloudflared:
-    image: cloudflare/cloudflared:2026.10.0
+    image: cloudflare/cloudflared:2026.10.2
     # The default metrics bind is 0.0.0.0, serving /config and pprof to the network.
     command: tunnel --no-autoupdate --metrics 127.0.0.1:20241 --management-diagnostics=false --config /etc/cloudflared/config.yml run
     restart: unless-stopped
