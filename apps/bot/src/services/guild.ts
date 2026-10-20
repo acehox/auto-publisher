@@ -42,22 +42,11 @@ const registerIfPendingJoin = async (guild: DiscordGuild) => {
   if (pendingJoins.delete(guild.id)) await register(guild);
 };
 
-/**
- * Delete a guild and all its associated channels
- * @param guildId The guild ID
- * @returns void
- */
+/** Soft-deletes the presence; the backend keeps the config for a re-invite. */
 const remove = async (guildId: Snowflake) => {
   pendingJoins.delete(guildId);
   try {
-    const response = await Data.API.Backend.deleteGuild(guildId);
-
-    if (!response.ok) {
-      logger.error(`Failed to delete guild ${guildId}: ${response.status} ${response.statusText}`);
-      return;
-    }
-
-    logger.info(`Successfully deleted guild ${guildId} and all associated channels`);
+    await Data.API.Backend.deleteGuild(guildId);
   } catch (error) {
     logger.error(error, `Error deleting guild ${guildId}`);
   }
