@@ -448,6 +448,23 @@ Readers are server admins, many non-native English speakers; every string must r
 - **Punctuation:** no em dashes (nor an en dash or semicolon in their place), no `!`, no negative contractions (`cannot`, `does not`). Numerals for every number. Sentence case; titles and buttons have no period, body lines are full sentences. Discord's UI labels exactly as Discord shows them (View Channel, Edit Channel). US spelling.
 - **Glossary, one word per concept:** people **post**; Discord **publishes**; Auto Publisher **auto-publishes**; the admin **enables / disables auto-publishing**. Channel states: **is auto-publishing** (label `Auto-publishing`), **cannot auto-publish** + reason, **paused** (Free plan stopped it, settings kept), **disabled**. One **filter** per channel, made of **conditions** (never "rule"). **Premium**, **Free plan**, **server** (never guild), **dashboard**, **legacy mode** / **migrate**.
 
+## Dependency versions
+
+- **The lockfile is what makes a build reproducible, not the range.** `pnpm-lock.yaml` is committed and every image installs `--frozen-lockfile`, so a plain `pnpm install` never moves a dependency — only `pnpm update` or an edited manifest does. A range states *what an intentional update may take*, nothing more. Pinning everything exactly would buy no reproducibility the lockfile does not already give, and cost a manual edit per patch.
+- **Caret is the default; exact pins are only for the cases where semver does not hold**, and the list is closed:
+
+| Exact | Why |
+| ----- | --- |
+| `next`, `@next/mdx` | Ship in lockstep — the MDX plugin is versioned with Next, and independent carets drift them apart. Move them in one commit |
+| `react`, `react-dom` | Must resolve to the same version as each other |
+| `typescript` (root + web, the same version in both) | Documented as not following semver, and this repo has already paid for it: TS 7 removed `baseUrl`, which is why own-package imports are Node subpath imports (see Import conventions). A floating minor fails `check-types` on a commit that changed nothing. Two different exact values would install two compilers |
+| `@biomejs/biome` | A minor's new lint rule fails `check` on code nobody touched |
+
+- **One floor per package across the workspace.** A stale `^1.2.0` in one manifest beside `^1.9.0` in another describes a version nothing has installed in months; it misleads the next reader without constraining anything.
+- **Security patches never arrive on their own** — that is the lockfile's trade, and it holds whatever the range says. `pnpm audit` is what catches them, and it only helps if something runs it: the three Next advisories behind 16.4.3 (two unauthenticated RCEs, one of them in the Image Optimization API this repo keeps live via `remotePatterns`) sat through many installs because nothing was asking. `pnpm outdated -r` shows what an update would move.
+- **A transitive advisory with no upstream fix goes in `pnpm-workspace.yaml` `overrides`** with the GHSA id, whether it is actually reachable, and the condition for dropping it — the two already there are the pattern. An override with no expiry condition becomes permanent by accident.
+- **pnpm 12 refuses packages younger than its release-age cooldown.** Taking a patch promptly needs `minimumReleaseAgeExclude` entries, or a `--frozen-lockfile` install rejects the version; drop them once it ages out. The cooldown is a supply-chain guard, so widen it per-package like this and never by lowering the policy.
+
 ## Import conventions
 
 - Shared packages: `@ap/*` (e.g., `@ap/database`, `@ap/logger`, `@ap/utils`, `@ap/redis`, `@ap/config`)
