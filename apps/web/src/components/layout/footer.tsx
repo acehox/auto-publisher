@@ -2,7 +2,7 @@ import { isPublicInstance } from '@ap/config';
 import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { links, values } from '@/lib/constants';
-import { legalDocuments } from '@/lib/legal/documents';
+import { englishLegalDocuments } from '@/lib/legal/documents';
 import { formatNumberFull } from '@/lib/utils';
 import { Logo } from './logo';
 import { publicOnlyHrefs } from './nav-config';
@@ -79,7 +79,7 @@ export function Footer() {
         <div className="pt-8 border-t border-slate-800 space-y-4 text-slate-500 text-xs">
           <nav aria-label="Legal">
             <ul className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 sm:gap-x-2">
-              {legalDocuments.map((document, index) => (
+              {englishLegalDocuments.map((document, index) => (
                 <li key={document.href} className="flex items-center gap-x-2">
                   {/* Separators only from sm up: below that the row wraps, and a wrapped
                       line would start with a stray divider. */}

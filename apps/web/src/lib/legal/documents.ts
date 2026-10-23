@@ -9,8 +9,8 @@ interface LegalDocument {
 
 /**
  * The five published legal documents, in the order a reader most likely needs them.
- * Single source for the legal route group's nav and the site footer, so a renamed route
- * cannot leave a dead footer link behind.
+ * Single source for the legal route group's nav, the site footer and the sitemap, so a
+ * renamed route cannot leave a dead footer link behind.
  */
 export const legalDocuments: readonly LegalDocument[] = [
   { href: '/terms', label: 'Terms of Service' },
@@ -19,6 +19,16 @@ export const legalDocuments: readonly LegalDocument[] = [
   { href: '/legal', label: 'Legal Notice' },
   { href: '/hr', label: 'Hrvatski', lang: 'hr' },
 ];
+
+/**
+ * The documents for site-wide chrome (footer, sitemap). The Croatian notice is left out:
+ * ZZP čl. 60 st. 9 owes it before the contract, which the `hrvatski` link beside the
+ * checkout acceptance delivers to every buyer, so a footer link only adds clutter. That
+ * holds while the subscription panel is the only way to start a checkout — a second
+ * purchase path needs its own link. Never gate that checkout link by country: the duty
+ * follows the consumer, not their IP (AUT-114).
+ */
+export const englishLegalDocuments = legalDocuments.filter(document => !document.lang);
 
 /**
  * Effective dates, kept here rather than inside each .mdx file so there is one place to
