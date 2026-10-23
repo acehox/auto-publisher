@@ -248,7 +248,7 @@ function AttentionCount() {
   return (
     <output
       className="inline-flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-red-400 px-1.5 font-medium text-[11px] text-slate-950"
-      aria-label={`${badgeCount} item${badgeCount !== 1 ? 's' : ''} need attention`}
+      aria-label={`${badgeCount} ${badgeCount === 1 ? 'item needs' : 'items need'} attention`}
     >
       {badgeCount}
     </output>

@@ -40,8 +40,8 @@ export async function chatInputDisable(
       return interaction.editReply(
         replyPayload(
           buildReply({
-            title: `${emojis.crossmark} Auto-publishing isn't enabled`,
-            body: `There is nothing to disable in <#${channel.id}> channel.`,
+            title: `${emojis.info} Not auto-publishing`,
+            body: `<#${channel.id}> is not enabled for auto-publishing.`,
           })
         )
       );
@@ -51,10 +51,11 @@ export async function chatInputDisable(
       const filters = channelStatus.filters;
       if (filters && filters.length > 0) {
         // Same sentence as the dashboard's disable confirm — the deletion is the
-        // same one, and "revoke View Channel instead" is the only way to pause
-        // without losing the rule. No auto-disable is threatened: none exists.
+        // same one, and "remove View Channel instead" is the only way to stop
+        // auto-publishing without losing the filter. No auto-disable is threatened:
+        // none exists.
         const warningContainer = buildReply({
-          title: `${emojis.warning} ${Copy.channels.disableDeletesFilters.title(filters.length)}`,
+          title: `${emojis.warning} ${Copy.channels.disableDeletesFilters.title(`<#${channel.id}>`)}`,
           body: Copy.channels.disableDeletesFilters.body(`<#${channel.id}>`, filters.length),
         });
 
@@ -65,7 +66,7 @@ export async function chatInputDisable(
 
         const cancelButton = new Button()
           .setCustomId('cancel_disable')
-          .setLabel('Cancel')
+          .setLabel(Copy.actions.cancel)
           .setStyle(ButtonStyle.Secondary);
 
         const buttonRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
@@ -97,8 +98,8 @@ export async function chatInputDisable(
             return confirmation.update(
               replyPayload(
                 buildReply({
-                  title: `${emojis.info} Action cancelled`,
-                  body: `Auto-publishing remains enabled in <#${channel.id}> channel.`,
+                  title: `${emojis.info} Filter kept`,
+                  body: `Auto-publishing is still enabled in <#${channel.id}>, with its filter.`,
                 })
               )
             );
@@ -109,7 +110,7 @@ export async function chatInputDisable(
               replyPayload(
                 buildReply({
                   title: `${emojis.crossmark} Confirmation timed out`,
-                  body: `No confirmation was received within 1 minute, so auto-publishing remains enabled in <#${channel.id}> channel.`,
+                  body: `Auto-publishing is still enabled in <#${channel.id}>, with its filter. You did not confirm within 1 minute.`,
                 })
               )
             );
@@ -130,7 +131,7 @@ export async function chatInputDisable(
       replyPayload(
         buildReply({
           title: `${emojis.crossmark} Failed to disable auto-publishing`,
-          body: `Something went wrong while disabling auto-publishing in <#${channel.id}>. Please try again later.`,
+          body: `Auto-publishing in <#${channel.id}> is unchanged. Try again in a few minutes.`,
         })
       )
     );

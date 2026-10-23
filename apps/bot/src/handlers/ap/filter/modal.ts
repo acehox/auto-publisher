@@ -12,7 +12,6 @@ import {
   TextInputStyle,
   UserSelectMenuBuilder,
 } from 'discord.js';
-import { emojis } from '#lib/constants/index.js';
 import { logger } from '#utils/logger.js';
 
 /** Custom id of the modal's single value input, whatever its component type. */
@@ -24,25 +23,50 @@ const OPERATOR_ID = 'operator';
 const OPERATOR_INCLUDE = 'include';
 const OPERATOR_EXCLUDE = 'exclude';
 
+/** The caps are never shown up front, only in the error on the attempt past them. */
 const VALUE_LABELS: Record<FilterType, string> = {
-  [FilterType.Keyword]: `Keywords (max ${MAX_VALUES[FilterType.Keyword]})`,
-  [FilterType.Author]: 'Users',
-  [FilterType.Mention]: 'Roles & users',
-  [FilterType.Webhook]: `Webhook IDs (max ${MAX_VALUES[FilterType.Webhook]})`,
+  [FilterType.Keyword]: 'Keywords',
+  [FilterType.Author]: 'Users or bots',
+  [FilterType.Mention]: 'Roles or users',
+  [FilterType.Webhook]: 'Webhook IDs',
 };
 
 const VALUE_NOUNS: Record<FilterType, string> = {
   [FilterType.Keyword]: 'keywords',
-  [FilterType.Mention]: 'mentions',
-  [FilterType.Author]: 'users',
+  [FilterType.Mention]: 'roles or users',
+  [FilterType.Author]: 'users or bots',
   [FilterType.Webhook]: 'webhook IDs',
 };
 
 const EMPTY_VALUE_ERRORS: Record<FilterType, string> = {
-  [FilterType.Keyword]: 'Enter at least one keyword.',
-  [FilterType.Mention]: 'Select at least one role or user.',
-  [FilterType.Author]: 'Select at least one user or bot.',
-  [FilterType.Webhook]: 'Enter at least one webhook ID.',
+  [FilterType.Keyword]: 'Enter at least 1 keyword.',
+  [FilterType.Mention]: 'Select at least 1 role or user.',
+  [FilterType.Author]: 'Select at least 1 user or bot.',
+  [FilterType.Webhook]: 'Enter at least 1 webhook ID.',
+};
+
+/**
+ * What each operator matches, per field. Describes the condition, not the publish
+ * outcome: "Don't publish messages that match" under "does not contain" read as a
+ * double negative.
+ */
+const OPERATOR_DESCRIPTIONS: Record<FilterType, { positive: string; negative: string }> = {
+  [FilterType.Keyword]: {
+    positive: 'Matches messages that contain any of these keywords',
+    negative: 'Matches messages that contain none of these keywords',
+  },
+  [FilterType.Author]: {
+    positive: 'Matches messages from any of these users or bots',
+    negative: 'Matches messages from anyone except these users or bots',
+  },
+  [FilterType.Mention]: {
+    positive: 'Matches messages that mention any of these roles or users',
+    negative: 'Matches messages that mention none of these roles or users',
+  },
+  [FilterType.Webhook]: {
+    positive: 'Matches messages from any of these webhooks',
+    negative: 'Matches messages from anything except these webhooks',
+  },
 };
 
 /** How stored values are laid out in, and read back from, the text inputs. */
@@ -103,7 +127,7 @@ export const buildFilterModal = (
 ): ModalBuilder =>
   new ModalBuilder()
     .setCustomId(customId)
-    .setTitle(options.existing ? 'Edit condition' : 'Add condition')
+    .setTitle(options.existing ? 'Edit condition' : Copy.filters.condition.add)
     .addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
         `**${Copy.filters.fields.labels[type]}**\n${Copy.filters.fields.descriptions[type]}`
@@ -117,26 +141,25 @@ export const buildFilterModal = (
 /** Operator select, mapped to the stored `negate` flag. */
 const buildOperatorLabel = (type: FilterType, currentNegate?: boolean): LabelBuilder => {
   const labels = Copy.filters.operators.labels[type];
+  const descriptions = OPERATOR_DESCRIPTIONS[type];
   const select = new StringSelectMenuBuilder()
     .setCustomId(OPERATOR_ID)
-    .setPlaceholder('Select how this condition matches')
+    .setPlaceholder('Choose how this condition matches')
     .setRequired(true)
     .addOptions(
       new StringSelectMenuOptionBuilder()
         .setLabel(labels.positive)
         .setValue(OPERATOR_INCLUDE)
-        .setDescription('Publish messages that match')
-        .setEmoji(emojis.checkmark)
+        .setDescription(descriptions.positive)
         .setDefault(currentNegate === false),
       new StringSelectMenuOptionBuilder()
         .setLabel(labels.negative)
         .setValue(OPERATOR_EXCLUDE)
-        .setDescription("Don't publish messages that match")
-        .setEmoji(emojis.crossmark)
+        .setDescription(descriptions.negative)
         .setDefault(currentNegate === true)
     );
 
-  return new LabelBuilder().setLabel('Condition').setStringSelectMenuComponent(select);
+  return new LabelBuilder().setLabel('How to match').setStringSelectMenuComponent(select);
 };
 
 /** Value field for a condition field type, prefilled from `existing` when editing. */
@@ -157,7 +180,7 @@ const buildValueLabel = (type: FilterType, options: FilterModalOptions): LabelBu
       if (existing) input.setValue(existing.values.join(VALUE_SEPARATOR));
 
       return label
-        .setDescription(`Comma-separated. ${Copy.filters.keyword.hint}`)
+        .setDescription(`Separate with commas. ${Copy.filters.keyword.hint}`)
         .setTextInputComponent(input);
     }
 
@@ -172,7 +195,7 @@ const buildValueLabel = (type: FilterType, options: FilterModalOptions): LabelBu
       if (existing) select.setDefaultUsers(existing.values);
 
       return label
-        .setDescription('The users or bots whose messages this condition matches.')
+        .setDescription('The users or bots to compare with the message author.')
         .setUserSelectMenuComponent(select);
     }
 
@@ -194,7 +217,7 @@ const buildValueLabel = (type: FilterType, options: FilterModalOptions): LabelBu
       }
 
       return label
-        .setDescription('The roles or users a message must mention to match.')
+        .setDescription('The roles or users to look for in the message mentions.')
         .setMentionableSelectMenuComponent(select);
     }
 
@@ -211,7 +234,7 @@ const buildValueLabel = (type: FilterType, options: FilterModalOptions): LabelBu
 
       return label
         .setDescription(
-          'Comma-separated. Copy from a webhook message or take it from the webhook URL.'
+          'Separate with commas. The ID is the number after /webhooks/ in the webhook URL.'
         )
         .setTextInputComponent(input);
     }
@@ -267,19 +290,25 @@ export const extractModalValues = (
 
     const max = MAX_VALUES[type];
     if (values.length > max) {
-      return { valid: false, error: `Maximum ${max} ${VALUE_NOUNS[type]} allowed.` };
+      return {
+        valid: false,
+        error: `A condition can have up to ${max} ${VALUE_NOUNS[type]}. Remove ${values.length - max} and try again.`,
+      };
     }
 
     if (type === FilterType.Webhook) {
       const invalid = values.find(value => !RegExPatterns.snowflake.test(value));
       if (invalid) {
-        return { valid: false, error: `Invalid webhook ID \`${invalid}\` — must be 17-20 digits.` };
+        return {
+          valid: false,
+          error: `\`${invalid}\` is not a webhook ID. ${Copy.filters.errors.webhookId}`,
+        };
       }
     }
 
     return { valid: true, values, negate };
   } catch (error) {
     logger.error(error, 'Failed to read filter modal values');
-    return { valid: false, error: 'Could not read your input. Please try again.' };
+    return { valid: false, error: 'Auto Publisher could not read the form. Try again.' };
   }
 };

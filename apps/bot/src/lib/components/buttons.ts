@@ -20,12 +20,12 @@ export const getPremium = new ButtonBuilder()
 export const botInvite = () =>
   new ButtonBuilder()
     .setEmoji(emojis.botBrand)
-    .setLabel('Invite the bot!')
+    .setLabel('Add to server')
     .setURL(links.botInvite)
     .setStyle(ButtonStyle.Link);
 
 export const supportServer = new ButtonBuilder()
-  .setLabel('Support server')
+  .setLabel('Join support server')
   .setURL(links.supportGuildInvite)
   .setStyle(ButtonStyle.Link);
 
@@ -42,13 +42,13 @@ export const dashboard = (guildId: Snowflake) =>
 // the rest of the legacy UX at sunset.
 export const migrateNow = (guildId: Snowflake) =>
   new ButtonBuilder()
-    .setLabel('Migrate now')
+    .setLabel(Copy.legacy.migrateNow)
     .setURL(`${links.dashboard}/${guildId}`)
     .setStyle(ButtonStyle.Link);
 
 // MIGRATION: the banner's secondary link. Deleted at sunset.
 export const learnWhatIsChanging = new ButtonBuilder()
-  .setLabel('Learn what is changing')
+  .setLabel(Copy.legacy.learnMore)
   .setURL(links.migration)
   .setStyle(ButtonStyle.Link);
 

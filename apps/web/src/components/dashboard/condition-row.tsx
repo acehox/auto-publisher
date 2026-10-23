@@ -209,7 +209,7 @@ export function ConditionRow({
               validate={value => filterValueError('keyword', value)}
             />
             <p className="text-[11px] leading-relaxed text-slate-500">
-              Whole words. Use * as a wildcard:{' '}
+              {Copy.filters.keyword.hintLead}{' '}
               {Copy.filters.keyword.wildcards.map((example, index) => (
                 <span key={example.pattern}>
                   {index > 0 && ', '}
@@ -243,7 +243,8 @@ export function ConditionRow({
               validate={value => filterValueError('author', value)}
             />
             <p className="text-[11px] leading-relaxed text-slate-500">
-              Enable Developer Mode in Discord, then right-click a user → Copy User ID.
+              To copy a user ID, enable Developer Mode in Discord. Then right-click the user and
+              select Copy User ID.
             </p>
           </>
         )}
@@ -260,10 +261,10 @@ export function ConditionRow({
                   {rolesStatus === 'loading'
                     ? 'Loading roles…'
                     : rolesStatus === 'error'
-                      ? "Roles didn't load"
+                      ? 'Roles did not load'
                       : roleIds.length > 0
                         ? `${roleIds.length} role${roleIds.length === 1 ? '' : 's'} selected`
-                        : 'Pick roles…'}
+                        : 'Choose roles…'}
                   {rolesStatus === 'loading' ? (
                     <Loader2 className="size-4 animate-spin opacity-60" />
                   ) : (
@@ -308,7 +309,7 @@ export function ConditionRow({
             {rolesStatus === 'error' && (
               <p className="flex flex-wrap items-center gap-1.5 text-[11px] text-amber-400">
                 <TriangleAlert className="size-3.5 shrink-0" />
-                Couldn't load this server's roles.
+                Could not load this server&apos;s roles.
                 <button
                   type="button"
                   onClick={onRetryRoles}
@@ -402,7 +403,7 @@ export function ConditionRow({
           <AlertDialogHeader>
             <AlertDialogTitle>{Copy.filters.condition.removeTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              {Copy.filters.condition.removeBody(type, negate, values.length)}
+              {Copy.filters.condition.removeBody(type, values.length)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

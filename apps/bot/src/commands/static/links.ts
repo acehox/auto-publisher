@@ -5,7 +5,7 @@ import { ActionRowBuilder, type ButtonBuilder, ContainerBuilder, MessageFlags } 
 import { Buttons } from '#lib/components/buttons.js';
 
 @ApplyOptions<Command.Options>({
-  description: 'Invite the bot, find helpful resources, and join our community',
+  description: 'Get links to invite Auto Publisher, find help and join the community',
 })
 export class LinksCommand extends Command {
   public override registerApplicationCommands(registry: Command.Registry) {
@@ -20,7 +20,7 @@ export class LinksCommand extends Command {
     const replyContainer = new ContainerBuilder().addSectionComponents(section =>
       section
         .addTextDisplayComponents(textDisplay =>
-          textDisplay.setContent('✨ **Add bot to your server** ✨')
+          textDisplay.setContent('✨ **Add Auto Publisher to your server** ✨')
         )
         .setButtonAccessory(Buttons.botInvite())
     );
@@ -32,7 +32,7 @@ export class LinksCommand extends Command {
       replyContainer.addSectionComponents(section =>
         section
           .addTextDisplayComponents(textDisplay =>
-            textDisplay.setContent('**Upgrade to Premium for more features!**')
+            textDisplay.setContent('**Premium adds filters, unlimited channels and more.**')
           )
           .setButtonAccessory(Buttons.getPremium)
       );

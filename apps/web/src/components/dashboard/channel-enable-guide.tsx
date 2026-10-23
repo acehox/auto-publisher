@@ -17,12 +17,11 @@ import { Button } from '@/components/ui/button';
 /**
  * The only path to turning a channel on: permissions are a prerequisite, not an
  * afterthought. Built on AlertDialog so an outside click cannot dismiss it —
- * "I granted the permissions" commits, the corner control or ESC leaves the
+ * "Enable auto-publishing" commits, the corner control or ESC leaves the
  * channel off.
  *
- * Also the second and last place the 10/hour limit appears (the other is the
- * collapsed "How publishing works" on Channels): here it is decision-relevant,
- * so it earns the space.
+ * Repeats the 10/hour limit from `HowPublishingWorks`: here it is
+ * decision-relevant, so it earns the space.
  */
 export function ChannelEnableGuideModal({
   channelName,
@@ -47,7 +46,7 @@ export function ChannelEnableGuideModal({
     >
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Before {channelName} can publish</AlertDialogTitle>
+          <AlertDialogTitle>Before {channelName} can auto-publish</AlertDialogTitle>
           <AlertDialogDescription>{Copy.permissions.intro}</AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -59,7 +58,7 @@ export function ChannelEnableGuideModal({
 
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
-          <Button onClick={onConfirm}>I granted the permissions</Button>
+          <Button onClick={onConfirm}>Enable auto-publishing</Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

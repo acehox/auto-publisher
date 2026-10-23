@@ -18,7 +18,7 @@ export function AccountMenu({ user }: { user: NavUser }) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
-        aria-label={displayNameOf(user)}
+        aria-label={`Account menu, ${displayNameOf(user)}`}
         className="group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 outline-none transition-colors hover:bg-slate-800/50"
       >
         <UserAvatar user={user} size={32} />

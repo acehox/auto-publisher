@@ -10,7 +10,7 @@ export function LoginButton({ fullWidth = false }: { fullWidth?: boolean }) {
   return (
     <form action={loginWithDiscord} className={fullWidth ? 'w-full' : undefined}>
       <Button type="submit" className={cn(fullWidth && 'w-full', loginButtonClass)}>
-        Login with Discord
+        Log in with Discord
       </Button>
     </form>
   );

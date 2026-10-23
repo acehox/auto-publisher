@@ -65,8 +65,10 @@ export async function chatInputFilters(
   // Get option values
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
 
-  const notEnabled = `${emojis.crossmark} Auto-publishing is not enabled in <#${channel.id}> channel.\n\n-# Use </ap enable:${interaction.commandId}> to enable auto-publishing in this channel.`;
-  const unreadable = `${emojis.crossmark} Failed to load the filters for <#${channel.id}>. Please try again in a moment.`;
+  const notEnabled = `${emojis.crossmark} <#${channel.id}> is not auto-publishing.\n\n-# To set its filter, first enable auto-publishing with </ap enable:${interaction.commandId}>.`;
+  const unreadable = `${emojis.crossmark} Failed to load the filter for <#${channel.id}>. Try again in a few minutes.`;
+  const noLongerEnabled = `<#${channel.id}> is no longer auto-publishing.`;
+  const conditionGone = 'That condition is no longer in the filter.';
 
   const unavailableNotice = (reason: PanelUnavailable): string =>
     reason === 'disabled' ? notEnabled : unreadable;
@@ -193,10 +195,7 @@ export async function chatInputFilters(
 
     const filter = state.filters.find(entry => entry.id === filterId);
     if (!filter) {
-      await showView(
-        source,
-        listView(state, `${emojis.crossmark} That condition no longer exists.`)
-      );
+      await showView(source, listView(state, `${emojis.crossmark} ${conditionGone}`));
       return;
     }
 
@@ -252,10 +251,10 @@ export async function chatInputFilters(
     const notice = response.ok
       ? `${emojis.checkmark} Condition ${verb}.`
       : `${emojis.crossmark} ${await describeFailure(response, {
-          notFound: filterId
-            ? 'That condition no longer exists.'
-            : 'Auto-publishing is no longer enabled in this channel.',
-          fallback: `Failed to ${filterId ? 'update' : 'add'} the condition. Please try again later.`,
+          notFound: filterId ? conditionGone : noLongerEnabled,
+          fallback: filterId
+            ? 'Could not save the condition. Try again in a few minutes.'
+            : 'Could not add the condition. Try again in a few minutes.',
         })}`;
 
     const added = response.ok && !filterId;
@@ -284,7 +283,7 @@ export async function chatInputFilters(
         if (!pendingType) {
           await sendNotice(
             component,
-            `${emojis.crossmark} Choose a condition type first, then add it.`
+            `${emojis.crossmark} Choose a condition type first. Then select **${Copy.filters.condition.add}**.`
           );
           return;
         }
@@ -330,10 +329,14 @@ export async function chatInputFilters(
 
         const response = await Data.API.Backend.setFilterMode(channel.id, mode);
         const notice = response.ok
-          ? `${emojis.checkmark} Match mode set to **${Copy.filters.matchModes.labels[mode]}**.`
+          ? `${emojis.checkmark} ${
+              mode === FilterMatchMode.All
+                ? `<#${channel.id}> now auto-publishes a message when all conditions match.`
+                : `<#${channel.id}> now auto-publishes a message when any condition matches.`
+            }`
           : `${emojis.crossmark} ${await describeFailure(response, {
-              notFound: 'Auto-publishing is no longer enabled in this channel.',
-              fallback: 'Failed to update the match mode. Please try again later.',
+              notFound: noLongerEnabled,
+              fallback: 'Could not change how the conditions combine. Try again in a few minutes.',
             })}`;
 
         // The panel's own rule sentence and toggle already state the mode, so the
@@ -351,10 +354,7 @@ export async function chatInputFilters(
 
         const filter = state.filters.find(entry => entry.id === param);
         if (!filter) {
-          await showView(
-            component,
-            listView(state, `${emojis.crossmark} That condition no longer exists.`)
-          );
+          await showView(component, listView(state, `${emojis.crossmark} ${conditionGone}`));
           return;
         }
 
@@ -363,7 +363,7 @@ export async function chatInputFilters(
             component,
             listView(
               state,
-              `${emojis.crossmark} That condition's values are too long to edit from Discord — edit it on the dashboard.`
+              `${emojis.crossmark} That condition's values are too long to edit in Discord. Edit it on the dashboard.`
             )
           );
           return;
@@ -387,8 +387,8 @@ export async function chatInputFilters(
         const notice = response.ok
           ? `${emojis.checkmark} Condition removed.`
           : `${emojis.crossmark} ${await describeFailure(response, {
-              notFound: 'That condition no longer exists.',
-              fallback: 'Failed to remove the condition. Please try again later.',
+              notFound: conditionGone,
+              fallback: 'Failed to remove the condition. Try again in a few minutes.',
             })}`;
 
         await showList(component, notice);
@@ -430,7 +430,7 @@ export async function chatInputFilters(
         logger.error(error, 'Filter panel action failed');
 
         const failure = buildNoticeView(
-          `${emojis.crossmark} Something went wrong. Please try again.`
+          `${emojis.crossmark} Failed to complete that action. Run </ap filters:${interaction.commandId}> to try again.`
         );
 
         // A modal ack spends `component` on a response that owns no message, so
@@ -455,7 +455,7 @@ export async function chatInputFilters(
         .editReply(
           panelPayload(
             buildNoticeView(
-              `${emojis.info} Panel expired — run </ap filters:${interaction.commandId}> again.`
+              `${emojis.info} This filter editor closed after 10 minutes of inactivity. Run </ap filters:${interaction.commandId}> to open it again.`
             )
           )
         )
@@ -468,7 +468,7 @@ export async function chatInputFilters(
       .editReply(
         panelPayload(
           buildNoticeView(
-            `${emojis.crossmark} Failed to open the filters panel. Please try again later.`
+            `${emojis.crossmark} Could not open the filter editor. Try again in a few minutes.`
           )
         )
       )
@@ -495,6 +495,9 @@ const sendNotice = async (source: MessageComponentInteraction, content: string):
   await source.reply(payload);
 };
 
+/** Prefix `validateRequest` (`@ap/express`) puts before the joined zod messages. */
+const VALIDATION_PREFIX = 'Invalid input:';
+
 /** Map a per-filter endpoint failure to user-facing copy. */
 const describeFailure = async (
   response: Response,
@@ -511,9 +514,17 @@ const describeFailure = async (
     if (body?.code === 'FILTER_LIMIT') {
       return Copy.filters.condition.limit(config.limits.filtersPerChannel);
     }
-    // Backend zod failures already read as prose; anything else is not actionable.
-    if (body?.message?.startsWith('Invalid input:')) return body.message;
-    return 'Invalid request. Please try again.';
+    // Backend zod failures carry user-facing messages (`@ap/validations`) behind a
+    // developer prefix; anything else is not actionable from Discord.
+    if (body?.message?.startsWith(VALIDATION_PREFIX)) {
+      // `validateRequest` joins issues with ", ", and ours already end in a period.
+      const issues = body.message
+        .slice(VALIDATION_PREFIX.length)
+        .trim()
+        .split(/(?<=\.), /);
+      return [...new Set(issues)].join(' ');
+    }
+    return 'Auto Publisher could not save this change. Edit the filter on the dashboard instead.';
   }
 
   return messages.fallback;

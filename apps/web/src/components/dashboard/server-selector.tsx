@@ -89,7 +89,7 @@ export function ServerSelector() {
       {error ? (
         <GuildErrorCard
           title="Could not load your servers"
-          description="A temporary problem reaching Discord. Try again in a moment."
+          description="Discord did not respond. Try again in a moment."
         />
       ) : guilds.length === 0 ? (
         <EmptyState
@@ -101,8 +101,8 @@ export function ServerSelector() {
             </Button>
           }
         >
-          You need the Manage Server permission in a Discord server to set it up here. Ask an owner
-          to grant it, then reload.
+          To set up Auto Publisher in a server, you need the Manage Server permission there. Ask the
+          server owner to grant it, then reload.
         </EmptyState>
       ) : (
         <div className="space-y-2">
@@ -159,7 +159,11 @@ export function ServerSelector() {
                 </span>
 
                 {guild.hasSubscription && isPublicInstance && (
-                  <Zap className="size-4 shrink-0 text-yellow-500" />
+                  <Zap
+                    role="img"
+                    aria-label="Premium"
+                    className="size-4 shrink-0 text-yellow-500"
+                  />
                 )}
                 {legacy && (
                   <span className="shrink-0 rounded border border-amber-500/45 bg-amber-500/10 px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider text-amber-400">

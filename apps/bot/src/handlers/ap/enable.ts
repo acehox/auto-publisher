@@ -22,12 +22,12 @@ import { buildReply, replyPayload } from '#utils/reply.js';
 const failureContainer = (channelId: Snowflake) =>
   buildReply({
     title: `${emojis.crossmark} Failed to enable auto-publishing`,
-    body: `Something went wrong while enabling auto-publishing in <#${channelId}>. Please try again later.`,
+    body: `Auto-publishing in <#${channelId}> is not enabled. Try again in a few minutes.`,
   });
 
 /**
  * A choice rather than a flat refusal: the Filters panel that would let an admin
- * clear the rule by hand is itself Premium-gated, so an error alone strands them
+ * clear the filter by hand is itself Premium-gated, so an error alone strands them
  * with a channel they cannot turn on. Mirrors the dashboard dialog.
  *
  * Returns true only on a succeeded retry — the caller owns the success copy;
@@ -39,7 +39,6 @@ async function offerFilterChoice(
   filterCount: number,
   retry: () => Promise<Response>
 ): Promise<boolean> {
-  const rule = filterCount === 1 ? 'filter' : 'filters';
   const prompt = buildReply({
     title: `${emojis.warning} ${Copy.channels.filtersPremium.title}`,
     body: [
@@ -51,11 +50,11 @@ async function offerFilterChoice(
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new Button()
       .setCustomId('confirm_clear_filters')
-      .setLabel(Copy.channels.filtersPremium.clearAction(filterCount))
+      .setLabel(Copy.channels.filtersPremium.clearAction)
       .setStyle(ButtonStyle.Danger),
     new Button()
       .setCustomId('cancel_clear_filters')
-      .setLabel(Copy.channels.filtersPremium.cancel)
+      .setLabel(Copy.actions.cancel)
       .setStyle(ButtonStyle.Secondary),
     Buttons.getPremium
   );
@@ -78,7 +77,7 @@ async function offerFilterChoice(
       replyPayload(
         buildReply({
           title: `${emojis.crossmark} Confirmation timed out`,
-          body: `No confirmation was received within 1 minute, so <#${channelId}> stays off and keeps its ${rule}.`,
+          body: `<#${channelId}> is still paused and keeps its filter. You did not choose an option within 1 minute.`,
         })
       )
     );
@@ -89,8 +88,8 @@ async function offerFilterChoice(
     await choice.update(
       replyPayload(
         buildReply({
-          title: `${emojis.info} Nothing changed`,
-          body: `<#${channelId}> stays off and keeps its ${rule}, ready to run again the moment this server is on Premium.`,
+          title: `${emojis.info} Filter kept`,
+          body: `<#${channelId}> is still paused and keeps its filter. If this server upgrades to Premium, the channel auto-publishes again.`,
         })
       )
     );
@@ -141,7 +140,7 @@ export async function chatInputEnable(
     // three is missing — but the remedy below it is the shared permission steps, so
     // an admin reads the same instructions on either surface.
     const errorContainer = buildReply({
-      title: `${emojis.warning} <#${channel.id}> can't publish yet`,
+      title: `${emojis.warning} <#${channel.id}> cannot auto-publish`,
       body: [Copy.permissions.intro, permissionsList],
     })
       .addSeparatorComponents(separator => separator)
@@ -182,7 +181,7 @@ export async function chatInputEnable(
         return interaction.editReply(
           replyPayload(
             buildReply({
-              title: `${emojis.info} Already enabled`,
+              title: `${emojis.info} Already auto-publishing`,
               body: Copy.channels.outcome.alreadyEnabledDetail(`<#${channel.id}>`),
             })
           )
@@ -192,7 +191,7 @@ export async function chatInputEnable(
       if (response.status === 400) {
         // Every 400 from this route carries a `code`; the specific ones must be
         // branched on BEFORE the limit copy, or a demoted channel — or one
-        // holding a Premium-only rule — renders as "you hit your channel limit".
+        // holding a Premium-only filter — renders as "you hit your channel limit".
         const body = await response
           .clone()
           .json()
@@ -218,7 +217,7 @@ export async function chatInputEnable(
             replyPayload(
               buildReply({
                 title: `${emojis.crossmark} Not an announcement channel`,
-                body: `<#${channel.id}> isn't an announcement channel. Change its type in Discord's channel settings, then try again.`,
+                body: `<#${channel.id}> is not an announcement channel. Open its channel settings and turn on Announcement Channel and try again.`,
               })
             )
           );

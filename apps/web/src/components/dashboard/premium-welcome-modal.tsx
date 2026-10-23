@@ -194,16 +194,17 @@ export function PremiumWelcomeModal({ guildName, trialing, onClose }: PremiumWel
 
         <DialogTitle asChild>
           <motion.h2 {...rise(0.38)} className="text-2xl font-semibold text-white">
-            You&apos;re now{' '}
+            Welcome to{' '}
             <span className="bg-linear-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
               Premium
             </span>
-            !
           </motion.h2>
         </DialogTitle>
         <DialogDescription asChild>
           <motion.p {...rise(0.46)} className="mt-2 text-sm text-slate-300">
-            {trialing ? `${PREMIUM_TRIAL_DAYS}-day free trial active on ` : 'Premium is active on '}
+            {trialing
+              ? `Your ${PREMIUM_TRIAL_DAYS}-day free trial is active on `
+              : 'Premium is active on '}
             <span className="font-medium text-white">{guildName}</span>.
           </motion.p>
         </DialogDescription>

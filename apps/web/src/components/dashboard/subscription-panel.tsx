@@ -1,5 +1,6 @@
 'use client';
 
+import { Copy } from '@ap/copy';
 import { AlertTriangle, Check, Clock, ExternalLink, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -40,7 +41,7 @@ const statusBadges: Record<string, { label: string; className: string }> = {
   active: { label: 'Active', className: 'border-green-500/40 bg-green-500/10 text-green-400' },
   trialing: { label: 'Trial', className: 'border-blue-500/40 bg-blue-500/10 text-blue-300' },
   past_due: { label: 'Past due', className: 'border-red-500/40 bg-red-500/10 text-red-400' },
-  canceled: { label: 'Cancelled', className: 'border-slate-700 bg-slate-800/60 text-slate-400' },
+  canceled: { label: 'Canceled', className: 'border-slate-700 bg-slate-800/60 text-slate-400' },
   paused: { label: 'Paused', className: 'border-slate-700 bg-slate-800/60 text-slate-400' },
 };
 
@@ -149,8 +150,8 @@ function BillingCard({
 
       {pastDue && (
         <NoticeStrip tone="red">
-          Your last payment failed. Publishing continues for now — update your payment method to
-          keep Premium.
+          Your last payment failed. Premium stays active for now. To keep Premium, update your
+          payment method.
         </NoticeStrip>
       )}
 
@@ -174,7 +175,8 @@ function BillingCard({
           )}
           {cancelScheduled && (
             <p className="mt-1 pl-6.5 text-xs text-slate-400">
-              Channels keep publishing until then, and settings are kept after.
+              Premium stays active until then. After that, your channel settings and filters are
+              kept.
             </p>
           )}
         </div>
@@ -185,7 +187,7 @@ function BillingCard({
           // Paddle deep links are fetched, so they can fail to load. One quiet
           // sentence where the buttons would be, never a dead button.
           <p className="text-xs text-amber-400">
-            Billing controls didn&apos;t load. Try again in a moment.
+            Billing controls did not load. Try again in a moment.
           </p>
         ) : detail?.portalUrl ? (
           <div className="flex flex-wrap items-center gap-3">
@@ -323,8 +325,8 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
       <div className="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-3">
         <p className="text-xs text-slate-300">
           {migrated
-            ? `${enabled} of ${limit} channels used`
-            : `Legacy mode — ${data.channels.length} channels publishing`}
+            ? `${enabled} of ${limit} channels enabled`
+            : `Legacy mode: ${data.channels.length} ${data.channels.length === 1 ? 'channel' : 'channels'} auto-publishing`}
         </p>
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-slate-800">
           <div
@@ -338,15 +340,11 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
         {/* MIGRATION: a legacy guild has no allowlist, so nothing can be paused
             over the cap — the echo would name a state it cannot be in. */}
         {migrated && paused > 0 && (
-          <p className="mt-2 text-[11px] text-yellow-400">
-            {paused} channel{paused !== 1 ? 's are' : ' is'} paused over the limit
-          </p>
+          <p className="mt-2 text-[11px] text-yellow-400">{Copy.channels.paused.count(paused)}</p>
         )}
       </div>
 
-      {error && (
-        <NoticeStrip tone="red">Couldn&apos;t start checkout. Please try again.</NoticeStrip>
-      )}
+      {error && <NoticeStrip tone="red">Could not start checkout. Try again.</NoticeStrip>}
 
       <PremiumCard>
         <div className="flex flex-wrap items-center gap-3">
@@ -404,14 +402,14 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
         {!migrated && (
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-500/35 bg-amber-500/5 px-3.5 py-3">
             <p className="min-w-42 flex-1 text-xs leading-snug text-slate-200">
-              One step first: choose which channels publish. Legacy mode ends {sunsetLabel}.
+              To upgrade, migrate this server first. Legacy mode ends on {sunsetLabel}.
             </p>
             <Button
               size="sm"
               onClick={() => setMigrateOpen(true)}
               className="bg-amber-500 text-slate-950 hover:bg-amber-400"
             >
-              Set up channels
+              {Copy.legacy.migrateNow}
             </Button>
           </div>
         )}
@@ -472,7 +470,7 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
           {termsError && (
             <p className="flex items-center justify-center gap-1.5 text-center text-xs text-red-400">
               <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
-              Please agree to the terms before continuing.
+              To continue, please accept the terms above.
             </p>
           )}
           <Button
@@ -486,11 +484,11 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
           </Button>
           {!migrated && (
             <p className="text-center text-[11px] text-red-300">
-              Premium plan is only available for migrated servers.
+              Premium is available only after you migrate this server.
             </p>
           )}
           <p className="text-center text-[11px] text-slate-500">
-            Secure payment via Paddle — card or another method available in your country.
+            Secure payment via Paddle. Card or another method available in your country.
           </p>
         </div>
       </PremiumCard>

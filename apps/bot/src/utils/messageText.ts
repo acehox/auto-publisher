@@ -17,7 +17,7 @@ import {
  *   text lives in Text Display components instead.
  *
  * Reading only `content` therefore made a content condition silently unable to match
- * those messages, which is worse for a negated condition ("doesn't contain X" would
+ * those messages, which is worse for a negated condition ("does not contain X" would
  * pass everything) than for a positive one.
  *
  * All of these fields are gated behind the Message Content intent, which the bot

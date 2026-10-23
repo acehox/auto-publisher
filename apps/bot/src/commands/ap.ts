@@ -10,7 +10,7 @@ import {
 } from '../handlers/ap/index.js';
 
 @ApplyOptions<Subcommand.Options>({
-  description: 'Set up auto-publishing for announcement channels',
+  description: 'Manage auto-publishing in announcement channels',
   requiredUserPermissions: [PermissionFlagsBits.ManageChannels],
   runIn: ['GUILD_ANY'],
   preconditions: ['GuildOnly'],
@@ -36,7 +36,7 @@ export class APCommand extends Subcommand {
             .addChannelOption(option =>
               option
                 .setName('channel')
-                .setDescription('Announcement channel to auto-publish')
+                .setDescription('Announcement channel to enable auto-publishing in')
                 .setRequired(true)
                 .addChannelTypes([ChannelType.GuildAnnouncement])
             )
@@ -48,7 +48,7 @@ export class APCommand extends Subcommand {
             .addChannelOption(option =>
               option
                 .setName('channel')
-                .setDescription('Announcement channel to stop auto-publishing')
+                .setDescription('Announcement channel to disable auto-publishing in')
                 .setRequired(true)
                 .addChannelTypes([ChannelType.GuildAnnouncement])
             )
@@ -68,7 +68,7 @@ export class APCommand extends Subcommand {
           .addChannelOption(option =>
             option //
               .setName('channel')
-              .setDescription('Announcement channel to set filters for')
+              .setDescription('Announcement channel whose filter you want to change')
               .setRequired(true)
               .addChannelTypes([ChannelType.GuildAnnouncement])
           )

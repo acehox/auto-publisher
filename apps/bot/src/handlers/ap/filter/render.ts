@@ -88,19 +88,25 @@ const formatValue = (
 /** `first (+N more)` — the list view only has room for a taste of the values. */
 const valuePreview = (filter: Filter, roleIds: ReadonlySet<Snowflake>): string => {
   const [first, ...rest] = filter.values;
-  if (first === undefined) return '—';
+  if (first === undefined) return '*no values*';
   const head = formatValue(filter, first, roleIds, PREVIEW_VALUE_LIMIT);
   return rest.length > 0 ? `${head} (+${rest.length} more)` : head;
 };
 
-const conditionLabel = (filter: Filter): string =>
-  `**${Copy.filters.fields.labels[filter.type]}** ${Copy.filters.operators.label(filter.type, filter.negate)}`;
-
-const conditionEmoji = (filter: Filter): string =>
-  filter.negate ? emojis.crossmark : emojis.checkmark;
+/**
+ * The condition read as a sentence. A mention condition's subject is the message,
+ * since "Mention mentions" stutters; the type select still names the field.
+ * No ✅/❌ marker: the operator already says whether it is negated, and a ❌ read
+ * as an error.
+ */
+const conditionLabel = (filter: Filter): string => {
+  const subject =
+    filter.type === FilterType.Mention ? 'Message' : Copy.filters.fields.labels[filter.type];
+  return `**${subject}** ${Copy.filters.operators.label(filter.type, filter.negate)}`;
+};
 
 const conditionLine = (filter: Filter, position: number, roleIds: ReadonlySet<Snowflake>): string =>
-  `${position}. ${conditionEmoji(filter)} ${conditionLabel(filter)} ${valuePreview(filter, roleIds)}`;
+  `${position}. ${conditionLabel(filter)} ${valuePreview(filter, roleIds)}`;
 
 /** The dashboard's rule sentence, with the match mode inlined where its control sits. */
 const leadLine = (state: PanelState): string => {
@@ -125,7 +131,7 @@ const modeButton = (mode: FilterMatchMode, current: FilterMatchMode): ButtonBuil
 export interface ListViewOptions {
   /** Page of conditions (0-based); clamped to the current condition count. */
   page?: number;
-  /** Transient result line, e.g. `✓ Condition added.` */
+  /** Transient result line, such as `✅ Condition added.` */
   notice?: string;
   /** Type picked but not yet added — kept selected so a dismissed form can be reopened. */
   selectedType?: FilterType | null;
@@ -146,7 +152,7 @@ export const buildListView = (
   const pageFilters = filters.slice(start, start + CONDITIONS_PER_PAGE);
 
   const container = new ContainerBuilder().addTextDisplayComponents(textDisplay =>
-    textDisplay.setContent(`### ${emojis.filter} Filters for <#${state.channelId}>`)
+    textDisplay.setContent(`### ${emojis.filter} Filter for <#${state.channelId}>`)
   );
 
   // The notice shares the rule sentence's block: two lines of prose are not worth
@@ -184,12 +190,12 @@ export const buildListView = (
 
   container
     .addSeparatorComponents(separator => separator)
-    .addTextDisplayComponents(textDisplay => textDisplay.setContent('Add a new condition:'))
+    .addTextDisplayComponents(textDisplay => textDisplay.setContent('Add a condition:'))
     .addActionRowComponents(
       new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId(PanelIds.Type)
-          .setPlaceholder('Choose a condition type…')
+          .setPlaceholder('Choose a condition type')
           .addOptions(
             Copy.filters.fields.order.map(type => ({
               label: Copy.filters.fields.labels[type],
@@ -231,7 +237,7 @@ export const buildListView = (
   if (pages > 1) {
     container.addTextDisplayComponents(textDisplay =>
       textDisplay.setContent(
-        `-# Showing ${start + 1}–${start + pageFilters.length} of ${filters.length} conditions.`
+        `-# Showing conditions ${start + 1} to ${start + pageFilters.length} of ${filters.length}.`
       )
     );
   }
@@ -269,9 +275,7 @@ export const buildFocusView = (
         `### ${emojis.filter} Condition ${position} of ${state.filters.length} · <#${state.channelId}>`
       )
     )
-    .addTextDisplayComponents(textDisplay =>
-      textDisplay.setContent(`${conditionEmoji(filter)} ${conditionLabel(filter)}`)
-    )
+    .addTextDisplayComponents(textDisplay => textDisplay.setContent(conditionLabel(filter)))
     .addTextDisplayComponents(textDisplay => textDisplay.setContent(`\n${values}`))
     .addSeparatorComponents(separator => separator);
 
@@ -281,7 +285,7 @@ export const buildFocusView = (
     return container
       .addTextDisplayComponents(textDisplay =>
         textDisplay.setContent(
-          `${emojis.warning} **${Copy.filters.condition.removeTitle}**\n${Copy.filters.condition.removeBody(filter.type, filter.negate, filter.values.length)}`
+          `${emojis.warning} **${Copy.filters.condition.removeTitle}**\n${Copy.filters.condition.removeBody(filter.type, filter.values.length)}`
         )
       )
       .addActionRowComponents(

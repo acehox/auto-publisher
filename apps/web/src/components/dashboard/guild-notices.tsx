@@ -299,7 +299,9 @@ function PausedStrip({
       onDismiss={onDismiss}
       actions={
         <>
-          <NoticeAction href={`/dashboard/${guildId}/subscription`}>See Premium</NoticeAction>
+          <NoticeAction href={`/dashboard/${guildId}/subscription`}>
+            {Copy.premium.seePlans}
+          </NoticeAction>
           <NoticeAction href={`/dashboard/${guildId}/channels`} muted>
             Manage channels
           </NoticeAction>
@@ -348,9 +350,9 @@ function PremiumEndingStrip({
           </>
         }
       >
-        {servingCount} channels are publishing. When Premium ends on{' '}
-        <span className="font-medium text-white">{formatDate(endsAt)}</span> only {freeChannelLimit}{' '}
-        keep publishing. Pick which ones now.
+        {servingCount} channels are auto-publishing. Premium ends on{' '}
+        <span className="font-medium text-white">{formatDate(endsAt)}</span>. After that, only{' '}
+        {freeChannelLimit} channels can auto-publish. Choose them now.
       </NoticeStrip>
       {explainOpen && (
         <PremiumEndingModal guildId={guildId} onClose={() => setExplainOpen(false)} />
@@ -374,11 +376,12 @@ function PremiumEndingModal({ guildId, onClose }: { guildId: string; onClose: ()
         <DialogHeader>
           <DialogTitle>What happens when Premium ends</DialogTitle>
           <DialogDescription>
-            The Free plan publishes {freeChannelLimit} channels. If you don&apos;t choose, some
-            channels will be automatically paused. <br />
-            Channels with filters are paused first, then the most recently added ones beyond{' '}
-            {freeChannelLimit}. Paused channels keep their setup and filters, and start publishing
-            again the moment you free up a slot or resubscribe.
+            The Free plan&apos;s limit is {freeChannelLimit} channels. If you do not choose, Auto
+            Publisher pauses channels for you. <br />
+            It pauses channels with filters first. Then it keeps the {freeChannelLimit} channels you
+            enabled earliest and pauses the rest. Paused channels keep their settings and filters.
+            To resume a paused channel, upgrade to Premium again, or disable another channel and
+            enable the paused one.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

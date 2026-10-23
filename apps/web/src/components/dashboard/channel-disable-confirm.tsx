@@ -37,7 +37,7 @@ export function ChannelDisableFiltersModal({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {Copy.channels.disableDeletesFilters.title(filterCount)}
+            {Copy.channels.disableDeletesFilters.title(channelName)}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {Copy.channels.disableDeletesFilters.body(channelName, filterCount)}

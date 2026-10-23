@@ -14,7 +14,7 @@ import {
 
 /**
  * A choice rather than a flat error: the Filters tab that would let an admin
- * clear the rule by hand is itself Premium-locked, so refusing alone strands
+ * clear the filter by hand is itself Premium-locked, so refusing alone strands
  * them. Mirrors the bot's `/ap enable` prompt; both must state the same
  * consequence.
  *
@@ -33,7 +33,7 @@ export function ChannelFiltersPremiumModal({
   /** The channel that was refused; null for a hidden one, which has no name. */
   channelName: string | null;
   filterCount: number;
-  /** Re-runs the enable with the admin's consent to drop the rule. */
+  /** Re-runs the enable with the admin's consent to drop the filter. */
   onClear: () => void;
   onClose: () => void;
 }) {
@@ -59,13 +59,13 @@ export function ChannelFiltersPremiumModal({
             {Copy.channels.filtersPremium.clearOffer(filterCount)}
           </p>
           <Button variant="outline" size="sm" className="mt-3" onClick={onClear}>
-            {Copy.channels.filtersPremium.clearAction(filterCount)}
+            {Copy.channels.filtersPremium.clearAction}
           </Button>
         </div>
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
-            {Copy.channels.filtersPremium.cancel}
+            {Copy.actions.cancel}
           </Button>
           <Button asChild>
             <Link href={`/dashboard/${guildId}/subscription`}>Upgrade to Premium</Link>

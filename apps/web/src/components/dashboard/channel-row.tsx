@@ -59,7 +59,7 @@ export function ChannelRow({
 }
 
 const STATUS = {
-  publishing: { label: 'Publishing', icon: CircleCheck, className: 'text-green-500/90' },
+  publishing: { label: 'Auto-publishing', icon: CircleCheck, className: 'text-green-500/90' },
   paused: { label: 'Paused', icon: CirclePause, className: 'text-yellow-400/90' },
 } as const;
 
@@ -78,8 +78,8 @@ export function ChannelStatusLabel({ kind, icon }: { kind: keyof typeof STATUS; 
 }
 
 /**
- * Filter count as a compact chip — icon plus number, because the word "filters"
- * only repeats what the icon says. Channels only, and always a link: Overview
+ * Condition count as a compact chip — icon plus number, because the word
+ * "conditions" only repeats what the icon says. Channels only, and always a link: Overview
  * never carries a control, so it keeps its own read-only pill.
  */
 export function ChannelFilterPill({
@@ -95,7 +95,7 @@ export function ChannelFilterPill({
   return (
     <Link
       href={href}
-      aria-label={`Edit ${count} filter${count !== 1 ? 's' : ''} for ${channelLabel(name)}`}
+      aria-label={`Edit the filter for ${channelLabel(name)}, ${count} condition${count !== 1 ? 's' : ''}`}
       className={cn(CHIP_CLASS, 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80')}
     >
       <Filter aria-hidden className="size-3 text-slate-400" />

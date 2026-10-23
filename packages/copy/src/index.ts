@@ -8,6 +8,8 @@
 // markup, and no zod or discord.js — this is bundled into the browser, which is
 // why `@ap/validations` and `@ap/utils` are mirrored here rather than imported.
 //
+// Wording rules: the "Copy voice" section of `.claude/CLAUDE.md`.
+//
 // Naming: the path names the thing (`Copy.channels.paused`), the leaf names its
 // role in the layout (`title`, `body`, `lead`, `detail`, `hint`, `confirm`).
 
@@ -27,26 +29,24 @@ const publishing = {
   overLimit: {
     body: (entitled: boolean): string =>
       entitled
-        ? 'Discord limits each channel to 10 published messages per hour. Messages beyond that limit are published automatically once it resets, in the order they were posted, for up to 24 hours.'
+        ? 'Discord limits each channel to 10 published messages per hour. Messages beyond that limit are published automatically after the limit resets, in the order they were posted, for up to 24 hours.'
         : "Discord limits each channel to 10 published messages per hour. Messages beyond that limit can't be published. Premium publishes them automatically once the limit resets, in the order they were posted, for up to 24 hours.",
 
     short: (entitled: boolean): string =>
       entitled
-        ? "Messages beyond Discord's hourly limit are published once it resets, for up to 24 hours."
-        : "Messages beyond Discord's hourly limit aren't published.",
+        ? "Messages beyond Discord's hourly limit are published after the limit resets, for up to 24 hours."
+        : "Messages beyond Discord's hourly limit are not published.",
   },
 } as const;
 
 /* Channel permissions ------------------------------------------------------ */
 
 /**
- * Split at the subject because the dashboard emphasises it and the bot does not.
- * Carries its own leading space so a caller can concatenate directly.
+ * Split at the subject so the dashboard can emphasise it. Carries its own
+ * leading space so a caller can concatenate directly.
  */
 const missingPermissionsTail = (count: number): string =>
-  count === 1
-    ? " is missing Discord permissions and isn't publishing."
-    : " are missing Discord permissions and aren't publishing.";
+  ` cannot auto-publish because ${plural(count, 'it is', 'they are')} missing Discord permissions.`;
 
 /**
  * Always all three permissions, never a computed missing-subset: with ViewChannel
@@ -63,23 +63,24 @@ const permissions = {
   steps: [
     'Open your Discord server',
     'Select the channel → Edit Channel',
-    'Open Permissions tab',
-    'Add Auto Publisher role and grant all three permissions:',
-    'Save. Publishing starts on the next message',
+    'Open the Permissions tab',
+    'Add the Auto Publisher role and allow all 3 permissions:',
+    'Save Changes. Auto-publishing starts with the next message',
   ] as readonly string[],
 
   /** Index into `steps` of the step the names hang off. Keep the two in step. */
   stepWithNames: 3,
 
-  intro: 'The bot needs three channel permissions in Discord before it can post here.',
+  intro: 'Auto Publisher needs 3 permissions in this channel to auto-publish messages:',
 
   missingTail: missingPermissionsTail,
 
+  /** The bot's body under `channels.health.notPublishing`, so it gives the cause only. */
   missingSummary: (count: number): string =>
-    `${countOf(count, 'channel')}${missingPermissionsTail(count)}`,
+    `${countOf(count, 'channel')} ${plural(count, 'is', 'are')} missing Discord permissions.`,
 } as const;
 
-/* Filter rule vocabulary --------------------------------------------------- */
+/* Filter vocabulary -------------------------------------------------------- */
 
 /**
  * Structurally identical to `FilterType` in `@ap/validations`, redeclared here
@@ -104,21 +105,27 @@ const fieldLabels: Record<FilterField, string> = {
 
 /** Replaced an allow/block split — a negated condition is "block this". */
 const operatorLabels: Record<FilterField, { positive: string; negative: string }> = {
-  keyword: { positive: 'contains', negative: "doesn't contain" },
+  keyword: { positive: 'contains', negative: 'does not contain' },
   author: { positive: 'is', negative: 'is not' },
-  mention: { positive: 'mentions', negative: "doesn't mention" },
+  mention: { positive: 'mentions', negative: 'does not mention' },
   webhook: { positive: 'is', negative: 'is not' },
 };
 
 const operatorLabel = (field: FilterField, negate: boolean): string =>
   negate ? operatorLabels[field].negative : operatorLabels[field].positive;
 
-/** The web renders the patterns as chips, the bot the whole `hint` line. */
+/**
+ * The web renders the patterns as chips, the bot the whole `hint` line. A guide
+ * renders each `hint` inside "a word that {hint} spam", so it stays a verb phrase.
+ */
 const wildcards: readonly { pattern: string; hint: string }[] = [
   { pattern: 'spam*', hint: 'starts with' },
   { pattern: '*spam', hint: 'ends with' },
   { pattern: '*spam*', hint: 'contains' },
 ];
+
+/** Split from the patterns: the web renders them as chips after it. */
+const keywordHintLead = 'Keywords match whole words only. Use * as a wildcard:';
 
 const filters = {
   fields: {
@@ -128,7 +135,7 @@ const filters = {
       keyword: 'Match words in the message',
       author: 'Match the message author',
       mention: 'Match mentioned roles or users',
-      webhook: 'Match the posting webhook',
+      webhook: 'Match the webhook that posted the message',
     } as Record<FilterField, string>,
     order: ['keyword', 'author', 'mention', 'webhook'] as readonly FilterField[],
   },
@@ -145,47 +152,48 @@ const filters = {
 
   keyword: {
     wildcards,
-    hint: `Whole words. Use * as a wildcard: ${wildcards.map(w => w.pattern).join(', ')}.`,
+    hintLead: keywordHintLead,
+    hint: `${keywordHintLead} ${wildcards.map(w => w.pattern).join(', ')}.`,
   },
 
   /** `lead` and `tail` bracket each app's own match-mode control. */
   rule: {
-    lead: 'Messages will be published when',
+    lead: 'This channel auto-publishes a message when',
     tail: 'of these conditions match:',
-    single: 'Messages will be published when this condition matches:',
-    empty: 'No conditions, add one to start filtering.',
+    single: 'This channel auto-publishes a message when this condition matches:',
+    empty:
+      'This channel auto-publishes every message. Add a condition to choose which messages it auto-publishes.',
   },
 
   condition: {
     add: 'Add condition',
 
     /** Never displayed up front — only on the attempt past the cap. */
-    limit: (limit: number): string => `Up to ${limit} conditions per channel.`,
+    limit: (limit: number): string =>
+      `A filter can have up to ${limit} conditions. Remove a condition to add a new one.`,
 
     removeTitle: 'Remove this condition?',
 
-    removeBody: (field: FilterField, negate: boolean, valueCount: number): string =>
-      `${fieldLabels[field]} ${operatorLabel(field, negate)} ${countOf(
-        valueCount,
-        'value'
-      )}. Removing it widens what the channel publishes.`,
+    /** No "cannot be undone": on the web the removal is only saved with the form. */
+    removeBody: (field: FilterField, valueCount: number): string =>
+      `This removes the ${fieldLabels[field]} condition and its ${countOf(valueCount, 'value')} from the filter.`,
   },
 
   errors: {
-    keywordTooLong: 'Keyword is too long (max 200 chars)',
-    keywordEmpty: 'Keyword cannot be empty or only wildcards',
-    webhookId: 'Enter a valid webhook ID (17-20 digits)',
-    userId: 'Enter a valid user ID (17-20 digits)',
+    keywordTooLong: 'Keyword is too long. Use 200 characters or fewer.',
+    keywordEmpty: 'Keyword has no text besides the * wildcard. Enter a word to match.',
+    webhookId: 'Webhook ID must be 17 to 20 digits.',
+    userId: 'User ID must be 17 to 20 digits.',
   },
 
   /**
    * The Filters tab locked for a free guild — not `channels.filtersPremium`,
-   * which is a channel refused for holding a rule.
+   * which is a channel refused for holding a filter.
    */
   locked: {
     eyebrow: 'Premium feature',
     pitch:
-      'Filters let a channel publish only the messages you choose — by keyword, author, mention or webhook.',
+      "A filter lets a channel auto-publish only the messages you choose. It can check a message's content, author, mentions or webhook.",
   },
 } as const;
 
@@ -200,7 +208,7 @@ const premium = {
 
 /** Split from its call to action: the bot sends the admin to `/ap enable`. */
 const noAnnouncementLead =
-  'In Discord, open a channel’s settings and turn on “Announcement channel”';
+  'In Discord, open a text channel’s settings and turn on Announcement Channel';
 
 /**
  * A `subject` arrives already prefixed — `channelLabel` on the web, a `<#id>`
@@ -209,17 +217,17 @@ const noAnnouncementLead =
 const channels = {
   health: {
     allGood: (count: number, noun = 'channel'): string =>
-      `All good — publishing in ${countOf(count, noun)}`,
-    notPublishing: (count: number): string => `${countOf(count, 'channel')} not publishing`,
+      `${countOf(count, noun)} ${plural(count, 'is', 'are')} auto-publishing`,
+    notPublishing: (count: number): string => `${countOf(count, 'channel')} cannot auto-publish`,
   },
 
   empty: {
-    getStarted: 'Ready to get started',
+    getStarted: 'No channels are auto-publishing',
     getStartedBody:
-      'Pick the announcement channels that should publish automatically. You can change this any time.',
+      'Choose the announcement channels that should auto-publish. You can change your choice at any time.',
     noAnnouncement: 'No announcement channels in this server',
     noAnnouncementLead,
-    noAnnouncementBody: `${noAnnouncementLead}, then come back here.`,
+    noAnnouncementBody: `${noAnnouncementLead}. Then return here.`,
   },
 
   /**
@@ -228,77 +236,69 @@ const channels = {
    */
   outcome: {
     enabled: 'Auto-publishing enabled',
-    enabledDetail: (subject: string): string => `${subject} starts publishing on the next message.`,
+    enabledDetail: (subject: string): string =>
+      `${subject} is auto-publishing, starting with the next message.`,
     disabled: 'Auto-publishing disabled',
-    disabledDetail: (subject: string): string => `${subject} no longer publishes.`,
-    alreadyEnabled: 'That channel was already enabled elsewhere.',
-    alreadyEnabledDetail: (subject: string): string =>
-      `${subject} was enabled elsewhere — nothing changed.`,
+    disabledDetail: (subject: string): string => `${subject} is no longer auto-publishing.`,
+    alreadyEnabledDetail: (subject: string): string => `${subject} is already auto-publishing.`,
   },
 
   limit: {
-    title: (limit: number): string => `The Free plan publishes ${limit} channels`,
+    title: (limit: number): string => `Free plan limit of ${limit} channels reached`,
     body: (subject: string): string =>
-      `${subject} stays off until you turn another channel off, or upgrade. Premium publishes every channel and adds filters. It also publishes messages beyond Discord's hourly limit once the limit resets, for up to 24 hours.`,
+      `${subject} is not auto-publishing. To enable it, disable auto-publishing in another channel or upgrade to Premium. Premium has no channel limit and adds filters. It also publishes messages beyond Discord's hourly limit after the limit resets, for up to 24 hours.`,
   },
 
   /** Retained but not serving. */
   paused: {
     count: (count: number): string =>
-      `${countOf(count, 'channel')} ${plural(count, 'is', 'are')} set up but paused.`,
+      `${countOf(count, 'channel')} ${plural(count, 'is', 'are')} paused.`,
 
     /** Separate from `capReason`: quoting the cap to a guild under it is wrong. */
     filtersReason: (count: number): string =>
-      `${plural(count, 'Its', 'Their')} filters only run on Premium.`,
+      `${plural(count, 'Its filter runs', 'Their filters run')} only on Premium.`,
 
-    capReason: (limit: number): string => `The Free plan publishes ${limit}.`,
+    capReason: (limit: number): string => `The Free plan's limit is ${limit} channels.`,
 
-    rowFilters: (count: number): string => `${countOf(count, 'filter')} saved for Premium`,
+    rowFilters: (count: number): string =>
+      `Filter with ${countOf(count, 'condition')} saved for Premium`,
   },
 
   /**
    * Offers a way out rather than refusing flat: the Filters surface that would
-   * let an admin clear the rule by hand is itself Premium-locked.
+   * let an admin clear the filter by hand is itself Premium-locked.
    */
   filtersPremium: {
-    title: 'Filters only run on Premium',
+    title: 'Filters run only on Premium',
     body: (subject: string, count: number): string =>
-      `${subject} has ${countOf(count, 'filter')} saved from Premium. The Free plan can't run ${plural(
-        count,
-        'it',
-        'them'
-      )}, so this channel stays off until you upgrade.`,
+      `${subject} has a filter with ${countOf(count, 'condition')}. It stays paused until you upgrade to Premium.`,
     clearOffer: (count: number): string =>
-      `Staying on Free? Remove the ${plural(
+      `If you stay on the Free plan, you can delete the filter and its ${countOf(
         count,
-        'filter',
-        'filters'
-      )} and this channel publishes every message. This action can't be undone.`,
-    clearAction: (count: number): string =>
-      `Remove ${plural(count, 'filter', 'filters')} and enable`,
-    cancel: 'Cancel',
+        'condition'
+      )}. The channel then auto-publishes every message. This cannot be undone.`,
+    clearAction: 'Delete filter and enable',
   },
 
-  /** Turning a channel off deletes its row, and the rule goes with it. */
+  /** Turning a channel off deletes its row, and the filter goes with it. */
   disableDeletesFilters: {
-    title: (count: number): string => `This channel has ${countOf(count, 'filter')}`,
+    title: (subject: string): string => `Disable auto-publishing in ${subject}?`,
     body: (subject: string, count: number): string =>
-      `Disabling publishing for ${subject} also removes its ${plural(
+      `This also deletes the filter in ${subject} and its ${countOf(
         count,
-        'filter',
-        'filters'
-      )}. To pause publishing without losing them, revoke the bot's View Channel permission in Discord instead.`,
-    confirm: 'Confirm',
+        'condition'
+      )}. This cannot be undone. To stop auto-publishing but keep the filter, remove Auto Publisher's View Channel permission in Discord instead.`,
+    confirm: 'Disable and delete filter',
   },
 } as const;
 
 /* Legacy mode (MIGRATION: delete with the rest of the legacy UX at sunset) --- */
 
 /** Split at the date: the dashboard colours it, the bot renders `<t:…:D>`. */
-const legacyBodyLead = 'You must migrate to keep publishing without interruption, by';
+const legacyBodyLead = 'To keep auto-publishing, you must migrate this server by';
 
 const legacy = {
-  title: 'This server runs in legacy mode',
+  title: 'This server is in legacy mode',
   bodyLead: legacyBodyLead,
   body: (sunset: string): string => `${legacyBodyLead} ${sunset}.`,
   migrateNow: 'Migrate now',
@@ -310,15 +310,20 @@ const legacy = {
 /** Discord's command picker shows these and the web lists them; Discord caps each at 100 chars. */
 const commands = {
   ap: {
-    enable: 'Auto-publish new messages in an announcement channel',
-    disable: 'Stop auto-publishing in an announcement channel',
-    overview: 'Show the publishing status of every channel in this server',
+    enable: 'Enable auto-publishing in an announcement channel',
+    disable: 'Disable auto-publishing in an announcement channel',
+    overview: 'Show the auto-publishing status of every channel in this server',
     filters: 'Choose which messages a channel auto-publishes',
   },
   help: 'See the available commands and where to get help',
 } as const;
 
+const actions = {
+  cancel: 'Cancel',
+} as const;
+
 export const Copy = {
+  actions,
   publishing,
   permissions,
   filters,

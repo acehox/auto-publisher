@@ -32,12 +32,12 @@ export function BotAbsentCard({ guildId }: { guildId: string }) {
         <div className="flex items-center gap-2.5">
           <span className="size-2 shrink-0 rounded-full bg-amber-400" />
           <h2 className="text-base font-semibold text-white">
-            Auto Publisher isn&apos;t in this server
+            Auto Publisher is not in this server
           </h2>
         </div>
         <p className="text-xs leading-relaxed text-slate-400">
-          Nothing is publishing until the bot is added back. Discord does not let a bot add itself,
-          so this has to come from your side. Your channel and filter setup is kept for 30 days.
+          No channels are auto-publishing. Auto Publisher cannot rejoin a server by itself, so you
+          must invite it again. Your channel settings and filters are kept for 30 days.
         </p>
         <div className="flex flex-wrap items-center gap-3.5">
           {inviteUrl && (

@@ -171,10 +171,10 @@ export function WithdrawalPanel({
 
               <div className="space-y-1.5 text-xs leading-relaxed">
                 {/* čl. 84 — full refund, nothing deducted. */}
-                <p className="text-slate-300">You are refunded in full. Nothing is deducted.</p>
+                <p className="text-slate-300">You get a full refund. Nothing is deducted.</p>
                 <p className="text-red-300">
-                  This cannot be undone. Premium ends immediately, and channels that use filters or
-                  are over the Free limit pause — their setup is kept.
+                  This cannot be undone. Premium ends immediately. Channels that use filters or are
+                  over the Free plan&apos;s limit are paused. Their settings are kept.
                 </p>
               </div>
 
@@ -200,9 +200,9 @@ export function WithdrawalPanel({
 function errorMessage(code: string | undefined): string {
   if (code === 'WITHDRAWAL_WINDOW_CLOSED') return 'The 14-day withdrawal period has ended.';
   if (code === 'ALREADY_WITHDRAWN') {
-    return 'This contract has already been withdrawn from. Check your email for the confirmation.';
+    return 'You have already withdrawn from this contract. Check your email for the confirmation.';
   }
-  return 'Could not record your withdrawal. Please try again, or email support.';
+  return 'Could not record your withdrawal. Try again, or email support.';
 }
 
 /**
@@ -218,14 +218,14 @@ function WithdrawalReceipt({ result }: { result: WithdrawalResult }) {
       key: 'Confirmation',
       value: result.acknowledged
         ? `Sent to ${result.notificationAddress}`
-        : `Not sent to ${result.notificationAddress} yet — we are retrying. Your withdrawal stands.`,
+        : `Not sent to ${result.notificationAddress} yet. We are retrying. Your withdrawal is still in effect.`,
       tone: result.acknowledged ? undefined : 'text-amber-300',
     },
     { key: 'Refund', value: refundSentence(result.refundStatus) },
     {
       key: 'Channels',
       value:
-        'The bot stays in this server on the Free plan. Channels over the free limit and channels using filters are paused, kept exactly as configured, and resume if you subscribe again.',
+        "Auto Publisher stays in this server on the Free plan. Channels over the Free plan's limit and channels with filters are paused. Their settings are kept exactly as they are. They auto-publish again if you subscribe again.",
     },
   ];
 
@@ -264,7 +264,7 @@ function refundSentence(status: string | null): string {
     return 'No payment was taken during your free trial, so there is nothing to refund.';
   }
   if (status === 'approved') return `Refunded in full.${paidBy}`;
-  if (status === 'pending_approval') return `Raised and being processed.${paidBy}`;
+  if (status === 'pending_approval') return `Requested and being processed.${paidBy}`;
   if (status === null) return `We are arranging your refund.${paidBy}`;
-  return `Raised.${paidBy}`;
+  return `Requested.${paidBy}`;
 }

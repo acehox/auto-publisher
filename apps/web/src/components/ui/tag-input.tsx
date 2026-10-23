@@ -68,7 +68,7 @@ export function TagInput({
     for (const part of parts) {
       const candidate = transform ? transform(part) : part;
       if (maxItems !== undefined && next.length >= maxItems) {
-        localError = `Maximum ${maxItems} values`;
+        localError = `A condition can have up to ${maxItems} values.`;
         break;
       }
       if (next.includes(candidate)) continue;
@@ -213,7 +213,7 @@ export function TagInput({
       </div>
       {(error ?? firstInvalid) && (
         <p className="mt-1 text-xs text-red-400">
-          {error ?? `${firstInvalid}. Highlighted values aren't saved.`}
+          {error ?? `${firstInvalid} Highlighted values are not saved.`}
         </p>
       )}
     </div>

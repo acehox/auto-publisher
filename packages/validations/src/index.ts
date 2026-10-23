@@ -1,3 +1,4 @@
+import { Copy } from '@ap/copy';
 import { z } from 'zod';
 
 // Regular expression patterns
@@ -67,7 +68,16 @@ export const CreateFilterSchema = z
   .object({
     type: FilterTypeSchema,
     negate: z.boolean().default(false),
-    values: z.array(z.string().min(1).max(200)).min(1, 'At least one value is required'),
+    // Rendered verbatim by the bot's filter panel (`describeFailure`), so these
+    // messages follow the copy voice.
+    values: z
+      .array(
+        z
+          .string()
+          .min(1, 'A value is empty. Remove it or enter text.')
+          .max(200, 'A value is too long. Use 200 characters or fewer.')
+      )
+      .min(1, 'Enter at least 1 value.'),
   })
   .refine(
     filter => {
@@ -75,11 +85,11 @@ export const CreateFilterSchema = z
       return max !== undefined && filter.values.length <= max;
     },
     {
-      message: 'Maximum amount of values exceeded for filter type',
+      message: 'This condition has too many values. Remove some and try again.',
     }
   )
   .refine(filter => filter.type !== FilterType.Keyword || !filter.values.some(isNoOpKeyword), {
-    message: 'A keyword cannot be empty or only wildcards',
+    message: Copy.filters.errors.keywordEmpty,
   });
 
 /**

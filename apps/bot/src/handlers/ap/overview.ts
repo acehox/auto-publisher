@@ -200,7 +200,7 @@ const renderGetStartedHeader = (state: OverviewState): OverviewHeader =>
   state.announcementChannelCount === 0
     ? {
         title: `${emojis.botBrand} ${Copy.channels.empty.noAnnouncement}`,
-        body: `${Copy.channels.empty.noAnnouncementLead}, then enable it with </ap enable:${state.apCommandId}>.`,
+        body: `${Copy.channels.empty.noAnnouncementLead}. Then use </ap enable:${state.apCommandId}> to enable auto-publishing in it.`,
       }
     : {
         title: `${emojis.botBrand} ${Copy.channels.empty.getStarted}`,
@@ -215,7 +215,7 @@ const renderEnableHint = (state: OverviewState): string | null =>
 
 /**
  * Mirrors the dashboard Overview's header precedence and copy: the outage owns
- * the headline when there is one, otherwise "All good" + the count.
+ * the headline when there is one, otherwise the auto-publishing count.
  */
 const renderHealthHeader = (state: OverviewState): OverviewHeader => {
   const blockedCount = state.channels.filter(c => !c.canPublish).length;
@@ -246,9 +246,7 @@ const renderChannelList = (state: OverviewState): string => {
 
   const hidden = state.channels.length - rows.length;
   if (hidden > 0) {
-    rows.push(
-      `-# …and **${hidden}** more channel${hidden !== 1 ? 's' : ''}. See them all on the dashboard.`
-    );
+    rows.push(`-# The dashboard lists **${hidden}** more channel${hidden !== 1 ? 's' : ''}.`);
   }
 
   return rows.join('\n');
@@ -257,15 +255,18 @@ const renderChannelList = (state: OverviewState): string => {
 /**
  * The dashboard Fix dialog's permission steps, inlined once because
  * Components V2 has no room for a button per row. No auto-disable exists;
- * setup is retained, so the last step's "publishing starts on the next message"
- * is the whole remedy.
+ * setup is retained, so the last step's "auto-publishing starts with the next
+ * message" is the whole remedy.
  */
 const renderFixBlock = (state: OverviewState): string[] | null => {
   const blockedCount = state.channels.filter(c => !c.canPublish).length;
   if (blockedCount === 0) return null;
 
-  const flagged = `${emojis.crossmark}-flagged channel${blockedCount !== 1 ? 's' : ''}`;
-  return [`Grant these permissions in the ${flagged} above:`, renderPermissionSteps()];
+  const lead =
+    blockedCount === 1
+      ? 'To fix the channel that cannot auto-publish, follow these steps:'
+      : 'To fix the channels that cannot auto-publish, follow these steps in each one:';
+  return [lead, renderPermissionSteps()];
 };
 
 /**
@@ -274,8 +275,8 @@ const renderFixBlock = (state: OverviewState): string[] | null => {
  * channels, matching the Overview's paused rows.
  *
  * Stated by CAUSE, like the dashboard's `PausedStrip`: a channel paused for
- * carrying a Premium-only rule is not over the cap, and quoting the cap to a
- * guild under it was simply wrong. Every paused channel holding a rule is the
+ * carrying a Premium-only filter is not over the cap, and quoting the cap to a
+ * guild under it was simply wrong. Every paused channel holding a filter is the
  * only case the filters sentence applies to — a mixed set falls back to the cap
  * reason, which is then the reason at least one of them is paused.
  */
@@ -287,7 +288,11 @@ const renderPausedBlock = (state: OverviewState): string[] | null => {
     .slice(0, MAX_LISTED_PAUSED)
     .map(({ channelId }) => `<#${channelId}> — Paused`);
   const hidden = total - rows.length;
-  if (hidden > 0) rows.push(`-# …and **${hidden}** more.`);
+  if (hidden > 0) {
+    rows.push(
+      `-# The dashboard lists **${hidden}** more paused channel${hidden !== 1 ? 's' : ''}.`
+    );
+  }
 
   const forFiltersOnly = state.pausedChannels.every(entry => entry.filterCount > 0);
   const reason = forFiltersOnly
@@ -324,7 +329,7 @@ const buildEmptyContainer = (state: OverviewState): ContainerBuilder => {
   return addDashboardSection(
     container,
     state.guildId,
-    'Prefer a web UI? Manage this server there.'
+    'Prefer a visual interface? Manage your channels on the dashboard.'
   );
 };
 
@@ -349,8 +354,8 @@ const buildLegacyContainer = (state: OverviewState): ContainerBuilder => {
     total === null
       ? null
       : total === 0
-        ? Copy.channels.empty.noAnnouncement
-        : `Publishing in **${state.legacyPublishingCount}** of **${total}** announcement channel${total !== 1 ? 's' : ''}.`;
+        ? `${Copy.channels.empty.noAnnouncement}.`
+        : `Auto-publishing in **${state.legacyPublishingCount}** of **${total}** announcement channel${total !== 1 ? 's' : ''}.`;
 
   const container = buildReply({
     title: `${emojis.warning} ${Copy.legacy.title}`,
@@ -377,7 +382,7 @@ const buildLegacyContainer = (state: OverviewState): ContainerBuilder => {
   return addDashboardSection(
     container,
     state.guildId,
-    'Migrate from the dashboard — your channels keep publishing.'
+    'Migrate on the dashboard and choose which channels keep auto-publishing.'
   );
 };
 
@@ -414,14 +419,14 @@ const buildOverviewContainer = (state: OverviewState): ContainerBuilder => {
   return addDashboardSection(
     container,
     state.guildId,
-    'Manage channels, filters and billing from the dashboard.'
+    'You can also manage these channels on the dashboard.'
   );
 };
 
 const buildErrorContainer = (): ContainerBuilder =>
   buildReply({
     title: `${emojis.crossmark} Failed to load this server's channels`,
-    body: 'Something went wrong while retrieving auto-publishing channels. Please try again later.',
+    body: 'Try again in a few minutes.',
   });
 
 export async function chatInputOverview(

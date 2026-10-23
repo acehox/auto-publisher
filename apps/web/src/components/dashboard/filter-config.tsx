@@ -128,14 +128,14 @@ export function FilterManager({ guildId, channels }: FilterManagerProps) {
     return (
       <EmptyState
         icon={FilterIcon}
-        title="No channels enabled yet"
+        title="No channels enabled"
         action={
           <Button asChild size="sm">
             <Link href={`/dashboard/${guildId}/channels`}>Go to Channels</Link>
           </Button>
         }
       >
-        Filters apply per channel. Enable a channel first, then set its rule here.
+        Each channel has its own filter. Enable a channel first, then set its filter here.
       </EmptyState>
     );
   }
@@ -228,10 +228,10 @@ function ChannelRuleEditor({
       // Only now are the flagged values discarded — the user chose to save past them.
       setConditions(cleaned);
       setBaseline({ matchMode, conditions: savable });
-      toast.success('Filter saved!', {
+      toast.success('Filter saved', {
         description:
           invalidCount > 0
-            ? `${invalidCount} invalid ${invalidCount === 1 ? 'value was' : 'values were'} removed.`
+            ? `The filter leaves out ${invalidCount} ${invalidCount === 1 ? 'value' : 'values'} with errors.`
             : undefined,
       });
       router.refresh();
@@ -243,10 +243,10 @@ function ChannelRuleEditor({
       return;
     }
     if (result.code === 'PREMIUM_INACTIVE') {
-      toast.error('Premium is not active for this server.');
+      toast.error('This server is not on Premium. Filters run only on Premium.');
       return;
     }
-    toast.error("Couldn't save the rule. Nothing was changed.");
+    toast.error('Could not save the filter. Try again.');
   };
 
   const addCondition = () => {

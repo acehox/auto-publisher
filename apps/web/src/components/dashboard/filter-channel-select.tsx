@@ -13,7 +13,7 @@ import { channelLabel } from '@/lib/utils';
 
 /** The status line, identical in the trigger and in the list. */
 export function conditionSummary(count: number): string {
-  return count === 0 ? 'Publishes all' : `${count} condition${count === 1 ? '' : 's'}`;
+  return count === 0 ? 'All messages' : `${count} condition${count === 1 ? '' : 's'}`;
 }
 
 interface FilterChannelSelectProps {

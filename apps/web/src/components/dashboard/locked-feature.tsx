@@ -18,8 +18,8 @@ export function LockedFeature({ guildId }: { guildId: string; trialAvailable: bo
       </p>
       <p className="text-sm leading-relaxed text-slate-200">{Copy.filters.locked.pitch}</p>
       <ul className="space-y-2 text-xs text-slate-400">
-        <li>Keep routine posts out of followers&apos; feeds</li>
-        <li>One rule per channel, all or any conditions</li>
+        <li>Servers that follow your channel see only the messages you choose.</li>
+        <li>Each channel has 1 filter. It can require all of its conditions or any of them.</li>
       </ul>
       <div className="flex flex-wrap items-center gap-3.5 pt-1">
         <Button asChild size="sm">

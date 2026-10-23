@@ -59,7 +59,7 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
       const result = await migrateGuild(guildId, [...selected]);
       if (result.ok) {
         onClose();
-        toast.success('Channel setup saved.');
+        toast.success('Server migrated successfully.');
         router.refresh();
         return;
       }
@@ -82,10 +82,10 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
         onInteractOutside={event => event.preventDefault()}
       >
         <DialogHeader>
-          <DialogTitle>Choose the channels that publish</DialogTitle>
+          <DialogTitle>Migrate this server</DialogTitle>
           <DialogDescription>
-            One-time setup. Pick the channels that keep publishing — after this, each one is yours
-            to turn on and off. Legacy mode ends {sunsetLabel}.
+            Choose the channels that should auto-publish. After this, you enable or disable each
+            channel separately. Legacy mode ends on {sunsetLabel}.
           </DialogDescription>
         </DialogHeader>
 
@@ -127,11 +127,11 @@ export function LegacyMigrateModal({ guildId, channels, limit, onClose }: Legacy
           </ScrollArea>
         ) : (
           <p className="py-4 text-center text-xs text-slate-500">
-            No announcement channels found. You can still migrate now and enable channels later.
+            This server has no announcement channels. You can migrate now and enable channels later.
           </p>
         )}
 
-        {error && <p className="text-xs text-red-400">Migration failed. Please try again.</p>}
+        {error && <p className="text-xs text-red-400">Failed to migrate this server. Try again.</p>}
 
         <DialogFooter className="sm:items-center sm:justify-between">
           {channels.length > 0 && (

@@ -111,12 +111,14 @@ export function ChannelFixDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {hidden && <EyeOff aria-hidden className="size-4 shrink-0 text-slate-400" />}
-            {hidden ? 'This channel is hidden' : `${channelLabel(channel.name)} stopped publishing`}
+            {hidden
+              ? 'This channel is hidden'
+              : `${channelLabel(channel.name)} cannot auto-publish`}
           </DialogTitle>
           <DialogDescription>
             {hidden
-              ? 'Discord no longer shows this channel to Auto Publisher. Either View Channel was removed, or the channel was deleted.'
-              : 'A permission was removed in Discord.'}
+              ? 'Discord does not show this channel to Auto Publisher. Auto Publisher is missing the View Channel permission, or the channel no longer exists.'
+              : 'Auto Publisher is missing Discord permissions in this channel.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -152,7 +154,7 @@ export function ChannelFixDialog({
                 onRemove();
               }}
             >
-              Remove channel
+              Disable
             </Button>
           )}
           <DialogClose asChild>

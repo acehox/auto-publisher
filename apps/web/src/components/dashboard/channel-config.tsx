@@ -66,7 +66,7 @@ export function ChannelConfig({
     clearFilters: boolean;
   } | null>(null);
   const [filtersBlocked, setFiltersBlocked] = useState<GuildChannel | null>(null);
-  // Disabling deletes the row, rule included — the warning `/ap disable` has
+  // Disabling deletes the row, filter included — the warning `/ap disable` has
   // always shown.
   const [disableChannelWithFilters, setDisableChannelWithFilters] = useState<GuildChannel | null>(
     null
@@ -89,21 +89,21 @@ export function ChannelConfig({
         const channel = channels.find(c => c.channelId === channelId);
         // Wording shared with the bot's `/ap enable` and `/ap disable` replies —
         // a toast has no title/body split, so the channel name rides the sentence.
-        const subject = channel ? channelLabel(channel.name) : 'this channel';
+        const label = channel ? channelLabel(channel.name) : null;
+        const subject = label ?? 'This channel';
+        const inSubject = label ?? 'this channel';
         if (result.ok) {
           if (enabled) {
-            toast.success(`${Copy.channels.outcome.disabled} in ${subject}.`);
+            toast.success(Copy.channels.outcome.disabledDetail(subject));
           } else if (channel?.canPublish === false) {
             // Enabled, but the bot still can't publish here — point at the Fix
-            // control on its row rather than claim a false "all good".
-            toast.warning(
-              `${Copy.channels.outcome.enabled} in ${subject}, but it isn't publishing yet.`,
-              {
-                description: 'Grant the missing permissions in Discord to fix it.',
-              }
-            );
+            // control on its row rather than claim it is auto-publishing.
+            toast.warning(`${subject} is enabled but cannot auto-publish.`, {
+              description:
+                'Auto Publisher is missing Discord permissions in this channel. Select Fix next to the channel to see the steps.',
+            });
           } else {
-            toast.success(`${Copy.channels.outcome.enabled} in ${subject}.`);
+            toast.success(Copy.channels.outcome.enabledDetail(subject));
           }
           router.refresh();
           return;
@@ -113,7 +113,7 @@ export function ChannelConfig({
         // Disable never hits the channel cap, so a non-auth failure there is
         // transient — a refresh re-syncs the toggle to server truth.
         if (enabled) {
-          toast.error("Couldn't update the channel. Nothing was changed.");
+          toast.error(`Could not disable auto-publishing in ${inSubject}. Try again.`);
           router.refresh();
           return;
         }
@@ -121,14 +121,14 @@ export function ChannelConfig({
         // this list was open. Carries no `code`, so without this branch it falls
         // into the cap fallback and renders as "channel limit reached".
         if (result.status === 409) {
-          toast.info(Copy.channels.outcome.alreadyEnabled);
+          toast.info(Copy.channels.outcome.alreadyEnabledDetail(subject));
           router.refresh();
           return;
         }
         // Demoted since this list rendered — a stale list, not a cap hit. Must
         // precede the cap branch, which treats any code as a limit reason.
         if (result.code === 'NOT_ANNOUNCEMENT_CHANNEL') {
-          toast.error('That is no longer an announcement channel.');
+          toast.error(`${subject} is no longer an announcement channel.`);
           router.refresh();
           return;
         }
@@ -136,7 +136,7 @@ export function ChannelConfig({
         // any 400 as a limit hit.
         if (result.code === 'FILTERS_PREMIUM') {
           if (channel) setFiltersBlocked(channel);
-          else toast.error('That channel keeps filters that only run on Premium.');
+          else toast.error(`${subject} has a filter. ${Copy.channels.filtersPremium.title}.`);
           return;
         }
         // Cap hit. Scoped to 400 — every other status is handled above, and a
@@ -144,11 +144,11 @@ export function ChannelConfig({
         if (result.status === 400) {
           setLimitHit({
             reason: (result.code as ChannelLimitReason | undefined) ?? 'LIMIT_FREE',
-            label: channel ? channelLabel(channel.name) : null,
+            label,
           });
           return;
         }
-        toast.error("Couldn't enable the channel. Nothing was changed.");
+        toast.error(`Could not enable auto-publishing in ${inSubject}. Try again.`);
       } finally {
         setPendingChannelId(null);
       }
@@ -186,7 +186,7 @@ export function ChannelConfig({
       )}
       <Switch
         checked={on}
-        aria-label={`${on ? 'Disable' : 'Enable'} ${channelLabel(channel.name)}`}
+        aria-label={`${on ? 'Disable' : 'Enable'} auto-publishing in ${channelLabel(channel.name)}`}
         disabled={isPending && pendingChannelId === channel.channelId}
         onCheckedChange={() => {
           if (!on) return requestEnable(channel);
@@ -198,11 +198,12 @@ export function ChannelConfig({
   );
 
   // Stated by cause: `hasSavedSetup` is merely "paused", so keying the filter
-  // copy off it told a channel paused purely for the cap that it held a rule.
+  // copy off it told a channel paused purely for the cap that it held a filter.
+  // Always leads with "Paused" — the label the same row carries on Overview.
   const pausedSub = (channel: GuildChannel): string | undefined => {
     if (!channel.hasSavedSetup) return undefined;
     const n = channel.filters.length;
-    if (n > 0) return Copy.channels.paused.rowFilters(n);
+    if (n > 0) return `Paused. ${Copy.channels.paused.rowFilters(n)}.`;
     return channelLimit === 0
       ? 'Paused'
       : `Paused. ${Copy.channels.paused.capReason(channelLimit)}`;
@@ -216,21 +217,24 @@ export function ChannelConfig({
       {!migrated && (
         <NoticeStrip
           tone="amber"
-          actions={<NoticeAction onClick={() => setMigrateOpen(true)}>Migrate now</NoticeAction>}
+          actions={
+            <NoticeAction onClick={() => setMigrateOpen(true)}>
+              {Copy.legacy.migrateNow}
+            </NoticeAction>
+          }
         >
           {Copy.legacy.body(sunsetLabel)}
         </NoticeStrip>
       )}
 
       {channels.length === 0 ? (
-        <EmptyState icon={Megaphone} title="No announcement channels here yet">
-          In Discord, open a channel&apos;s settings and turn on &ldquo;Announcement channel&rdquo;.
-          It appears here right away.
+        <EmptyState icon={Megaphone} title={Copy.channels.empty.noAnnouncement}>
+          {Copy.channels.empty.noAnnouncementBody}
         </EmptyState>
       ) : !migrated ? (
         // MIGRATION: a read-only picture until they migrate. One note on the
         // heading rather than a repeated "legacy" tag on every row.
-        <ChannelGroup label="Channels" count={channels.length} meta="Migration needed">
+        <ChannelGroup label="Channels" count={channels.length} meta="Legacy mode">
           {channels.map(channel => (
             <ChannelRow
               key={channel.channelId}
