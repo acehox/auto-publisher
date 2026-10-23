@@ -1,7 +1,7 @@
 import { isPublicInstance } from '@ap/config';
 import type { MetadataRoute } from 'next';
 import { guidePath, guides } from '@/lib/guides';
-import { legalDocuments } from '@/lib/legal/documents';
+import { englishLegalDocuments } from '@/lib/legal/documents';
 import { getSiteUrl } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
@@ -12,9 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   if (!isPublicInstance) return [];
 
   const siteUrl = getSiteUrl();
-  const legalPaths = legalDocuments
-    .filter(document => document.lang !== 'hr')
-    .map(document => document.href);
+  const legalPaths = englishLegalDocuments.map(document => document.href);
   const pages = [...marketingPaths, ...legalPaths].map(path => ({
     url: new URL(path, siteUrl).href,
   }));
