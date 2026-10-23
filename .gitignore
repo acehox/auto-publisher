@@ -63,3 +63,6 @@ next-env.d.ts
 
 # Docs
 docs/plans/internal/
+
+# AI
+.mcp.json
