@@ -6,6 +6,21 @@ allowBuilds:
   msgpackr-extract: true
   sharp: true
   unrs-resolver: true
+# pnpm 12 refuses packages younger than its release-age cooldown. Taking a
+# security patch promptly means opting these out explicitly; without the list a
+# --frozen-lockfile install rejects them. Drop entries once the version ages out.
+minimumReleaseAgeExclude:
+  - "@next/env@16.4.3"
+  - "@next/mdx@16.4.3"
+  - "@next/swc-darwin-arm64@16.4.3"
+  - "@next/swc-darwin-x64@16.4.3"
+  - "@next/swc-linux-arm64-gnu@16.4.3"
+  - "@next/swc-linux-arm64-musl@16.4.3"
+  - "@next/swc-linux-x64-gnu@16.4.3"
+  - "@next/swc-linux-x64-musl@16.4.3"
+  - "@next/swc-win32-arm64-msvc@16.4.3"
+  - "@next/swc-win32-x64-msvc@16.4.3"
+  - next@16.4.3
 overrides:
   # GHSA-rj75-hqrm-r3gf. Drop when @tailwindcss/typography depends on postcss-selector-parser 7.x.
   "@tailwindcss/typography>postcss-selector-parser": "7.1.6"
