@@ -255,7 +255,7 @@ const renderChannelList = (state: OverviewState): string => {
 };
 
 /**
- * The same five steps the dashboard's Fix dialog shows, inlined once because
+ * The dashboard Fix dialog's permission steps, inlined once because
  * Components V2 has no room for a button per row. No auto-disable exists;
  * setup is retained, so the last step's "publishing starts on the next message"
  * is the whole remedy.

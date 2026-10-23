@@ -138,7 +138,7 @@ export async function chatInputEnable(
       .join('\n');
 
     // The ✅/❌ breakdown is additive — the dashboard cannot show which of the
-    // three is missing — but the remedy below it is the shared five steps, so
+    // three is missing — but the remedy below it is the shared permission steps, so
     // an admin reads the same instructions on either surface.
     const errorContainer = buildReply({
       title: `${emojis.warning} <#${channel.id}> can't publish yet`,

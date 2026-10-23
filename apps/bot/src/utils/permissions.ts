@@ -42,20 +42,19 @@ export const checkChannelPermissions = (
 };
 
 /**
- * The dashboard's permission steps as a Discord-markdown numbered list — the
- * same five sentences the Fix dialog and the enable guide show, so an admin
- * following either one reads the same instructions.
+ * The dashboard's permission steps as a Discord-markdown numbered list, minus
+ * the first ("Open your Discord server"): the reader is already in it.
  *
- * The permission names are indented under their own step rather than listed
- * separately: all three are always required (see `@ap/copy`'s note on why a
- * computed missing-subset is wrong).
+ * The permission names ride inline on their step: Discord markdown has no
+ * nested list under a numbered item, so indented bullets rendered as extra
+ * numbered steps. All three are always required (see `@ap/copy`'s note on why
+ * a computed missing-subset is wrong).
  */
-export const renderPermissionSteps = (): string =>
-  Copy.permissions.steps
-    .flatMap((step, index) => {
-      const line = `${index + 1}. ${step}`;
-      return index === Copy.permissions.stepWithNames
-        ? [line, PUBLISH_PERMISSION_FLAGS.map(({ name }) => ` - \`${name}\``).join('\n')]
-        : [line];
-    })
+export const renderPermissionSteps = (): string => {
+  const names = PUBLISH_PERMISSION_FLAGS.map(({ name }) => `\`${name}\``).join(', ');
+  return Copy.permissions.steps
+    .map((step, index) => (index === Copy.permissions.stepWithNames ? `${step} ${names}` : step))
+    .slice(1)
+    .map((step, index) => `${index + 1}. ${step}`)
     .join('\n');
+};
