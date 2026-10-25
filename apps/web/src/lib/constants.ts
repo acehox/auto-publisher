@@ -1,16 +1,27 @@
+/** Application id of the public bot, which the listings below are for. */
+export const PUBLIC_BOT_ID = '739823232651100180';
+
+/** Tailwind blue-500, the site's `--primary`; also the edge of Discord's link preview. */
+export const BRAND_COLOR = '#3b82f6';
+
+/** The hero's opening sentence, also the Discord link preview's description. */
+export const PRODUCT_SUMMARY =
+  'Auto Publisher publishes messages in your announcement channels automatically, whether they came from your team, a bot or a webhook.';
+
 export const links = {
   discordSupportServer: 'https://discord.gg/xcEeJkdQX8',
   supportEmail: 'support@auto-publisher.gg',
   githubRepo: 'https://github.com/acehox/auto-publisher',
   githubAuthor: 'https://github.com/acehox',
+  topggVote: `https://top.gg/bot/${PUBLIC_BOT_ID}/vote`,
 };
 
-/** Listings of the public bot (application 739823232651100180), each checked to resolve to it. */
+/** Listings of the public bot, each checked to resolve to it. */
 export const listingUrls = [
   links.githubRepo,
-  'https://discord.com/discovery/applications/739823232651100180',
-  'https://top.gg/bot/739823232651100180',
-  'https://discord.bots.gg/bots/739823232651100180',
+  `https://discord.com/discovery/applications/${PUBLIC_BOT_ID}`,
+  `https://top.gg/bot/${PUBLIC_BOT_ID}`,
+  `https://discord.bots.gg/bots/${PUBLIC_BOT_ID}`,
   'https://discordbotlist.com/bots/auto-publisher',
 ];
 
