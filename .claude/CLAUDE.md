@@ -75,6 +75,16 @@ supabase stop            # Stop local Supabase
 supabase status          # Show local Supabase status and connection info
 ```
 
+### Orca worktrees
+
+`orca.yaml` setup (`scripts/orca/setup.sh`) symlinks `.env.local`, `.mcp.json` and `.claude/settings.local.json` from the main checkout, sets `core.hooksPath` to `scripts/git-hooks`, then runs `pnpm install --frozen-lockfile`. Symlinks, not copies, so a secret rotated once reaches every worktree. `.firecrawl` is a shared directory.
+
+- **Branch names are free locally; only `<type>/<name>` reaches GitHub.** Orca names branches (`acehox/…` or an auto-renamed slug), and its prefix is one fixed word whose auto-rename turns `/` into `-`, so it cannot produce a Conventional Commits type. The `pre-push` hook refuses any other branch name except `main` and `develop` and prints the `git branch -m` to run. Rename before the first push: Orca never renames a pushed branch.
+
+- **Verify a change with `pnpm run check-types && pnpm run check`.** There is no test suite. Both are safe to run in any number of worktrees at once.
+- **The dev stack is one per machine.** It runs one Discord bot token (two copies both publish every message), one tunnel token (Cloudflare splits traffic between connectors), one Supabase and fixed loopback ports, and `dev:web` is pinned to 3100 because that is the OAuth redirect. Every checkout shares the Compose project `auto-publisher-dev`, so `dev:start` from a worktree replaces whatever stack is running with this worktree's code. Per-worktree stacks would need a second Discord application and tunnel, rejected as machinery.
+- **Archive (`scripts/orca/archive.sh`) stops the stack only if this worktree started it**, read from `docker compose ls` `ConfigFiles`, and keeps Redis and Supabase data. It never runs `dev:stop`: that deletes the Redis volume and stops Supabase for every checkout.
+
 ## Architecture overview
 
 ### One topology, two deployment modes
