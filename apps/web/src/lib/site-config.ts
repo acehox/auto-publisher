@@ -41,6 +41,10 @@ export function getSiteUrl(): URL {
   return new URL(env.WEB_APP_ORIGIN);
 }
 
+export function getLogoUrl(): string {
+  return new URL('/auto-publisher.png', getSiteUrl()).href;
+}
+
 /**
  * Resolve deployment config on the server, once per render.
  *
