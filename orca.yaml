@@ -1,0 +1,11 @@
+# Orca workspace defaults. Reasoning lives in .claude/CLAUDE.md, "Orca worktrees".
+scripts:
+  setup: bash scripts/orca/setup.sh
+  archive: bash scripts/orca/archive.sh
+
+# An agent's first `check-types` fails against a half-installed node_modules.
+setupAgentStartupPolicy: wait-for-setup
+
+worktree:
+  sharedDirectories:
+    - .firecrawl
