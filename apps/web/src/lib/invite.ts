@@ -12,7 +12,7 @@ export const BOT_INVITE_SCOPE = 'bot+applications.commands';
  * the dropdown — reserve it for invites tied to a specific guild.
  */
 export function getBotInviteUrl(
-  config: SiteConfig,
+  config: Pick<SiteConfig, 'botId'>,
   guildId?: string,
   options?: { lockGuildSelect?: boolean }
 ): string | null {

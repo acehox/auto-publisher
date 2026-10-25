@@ -3,7 +3,7 @@
 import { ArrowRight, MessageCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { links } from '@/lib/constants';
+import { links, PRODUCT_SUMMARY } from '@/lib/constants';
 import { Button } from '../ui/button';
 import { HeroDemo } from './hero-demo';
 import { InviteBotButton } from './invite-bot-button';
@@ -49,9 +49,7 @@ export function Hero() {
             transition={{ duration: 0.2, delay: 0.4 }}
             className="mb-10 max-w-2xl text-lg text-slate-300 sm:text-xl lg:mx-0 mx-auto"
           >
-            Auto Publisher publishes messages in your announcement channels automatically, whether
-            they came from your team, a bot or a webhook. Publish everything, or only what matches
-            your filters.
+            {PRODUCT_SUMMARY} Publish everything, or only what matches your filters.
           </motion.p>
 
           {/* CTAs */}

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { SiteConfigProvider } from '@/components/site-config-context';
 import { ToastProvider } from '@/components/ui/toast';
+import { BRAND_COLOR } from '@/lib/constants';
 import { getSiteConfig, getSiteUrl } from '@/lib/site-config';
 import './globals.css';
 
@@ -31,10 +32,9 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image' },
 };
 
-// Colours the edge of Discord's link preview and the mobile browser bar; Tailwind blue-500, the
-// site's `--primary`.
+// Colours the edge of Discord's link preview and the mobile browser bar.
 export const viewport: Viewport = {
-  themeColor: '#3b82f6',
+  themeColor: BRAND_COLOR,
 };
 
 export default function RootLayout({
