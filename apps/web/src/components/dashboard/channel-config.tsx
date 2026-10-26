@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { ChannelDisableFiltersModal } from '@/components/dashboard/channel-disable-confirm';
 import { ChannelEnableGuideModal } from '@/components/dashboard/channel-enable-guide';
 import { ChannelFiltersPremiumModal } from '@/components/dashboard/channel-filters-premium';
-import { ChannelFixButton } from '@/components/dashboard/channel-fix';
+import { ChannelFixButton, channelIsConverted } from '@/components/dashboard/channel-fix';
 import { ChannelGroup } from '@/components/dashboard/channel-group';
 import { ChannelLimitModal } from '@/components/dashboard/channel-limit-upsell';
 import {
@@ -203,10 +203,11 @@ export function ChannelConfig({
   const pausedSub = (channel: GuildChannel): string | undefined => {
     if (!channel.hasSavedSetup) return undefined;
     const n = channel.filters.length;
-    if (n > 0) return `Paused. ${Copy.channels.paused.rowFilters(n)}.`;
+    const { paused } = Copy.channels.status;
+    if (n > 0) return `${paused}. ${Copy.channels.paused.rowFilters(n)}.`;
     return channelLimit === 0
-      ? 'Paused'
-      : `Paused. ${Copy.channels.paused.capReason(channelLimit)}`;
+      ? paused
+      : `${paused}. ${Copy.channels.paused.capReason(channelLimit)}`;
   };
 
   return (
@@ -290,15 +291,20 @@ export function ChannelConfig({
 
           {disabled.length > 0 && (
             <ChannelGroup label="Disabled" count={disabled.length}>
-              {disabled.map(channel => (
-                <ChannelRow
-                  key={channel.channelId}
-                  name={channel.name}
-                  muted
-                  sub={pausedSub(channel)}
-                  actions={toggleFor(channel, false)}
-                />
-              ))}
+              {disabled.map(channel => {
+                // The backend refuses to enable it until it is an announcement
+                // channel again, so a switch would only fail.
+                const converted = channelIsConverted(channel);
+                return (
+                  <ChannelRow
+                    key={channel.channelId}
+                    name={channel.name}
+                    muted
+                    sub={converted ? Copy.channels.status.notAnnouncement : pausedSub(channel)}
+                    actions={converted ? undefined : toggleFor(channel, false)}
+                  />
+                );
+              })}
             </ChannelGroup>
           )}
         </div>

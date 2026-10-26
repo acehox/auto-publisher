@@ -91,17 +91,13 @@ const deleteGuild = async (guildId: Snowflake) => {
 // Register guild on join/re-invite: upsert guild row, activate presence, prune
 // config for channels deleted while the bot was away, rebuild derived cache,
 // and apply the guild's plan to its channels
-const registerNewGuild = async (
-  guildId: Snowflake,
-  announcementChannelIds: Snowflake[],
-  joinedAt: Date
-) => {
+const registerNewGuild = async (guildId: Snowflake, channelIds: Snowflake[], joinedAt: Date) => {
   return requestWithRetry(`/guild/${guildId}/new`, {
     method: RequestMethod.Post,
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ announcementChannelIds, joinedAt: joinedAt.toISOString() }),
+    body: JSON.stringify({ channelIds, joinedAt: joinedAt.toISOString() }),
   });
 };
 

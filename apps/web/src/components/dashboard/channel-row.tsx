@@ -1,3 +1,4 @@
+import { Copy } from '@ap/copy';
 import { CircleCheck, CirclePause, EyeOff, Filter } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
@@ -59,8 +60,16 @@ export function ChannelRow({
 }
 
 const STATUS = {
-  publishing: { label: 'Auto-publishing', icon: CircleCheck, className: 'text-green-500/90' },
-  paused: { label: 'Paused', icon: CirclePause, className: 'text-yellow-400/90' },
+  publishing: {
+    label: Copy.channels.status.publishing,
+    icon: CircleCheck,
+    className: 'text-green-500/90',
+  },
+  paused: {
+    label: Copy.channels.status.paused,
+    icon: CirclePause,
+    className: 'text-yellow-400/90',
+  },
 } as const;
 
 /**

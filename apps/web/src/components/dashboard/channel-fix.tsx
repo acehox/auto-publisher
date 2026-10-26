@@ -1,8 +1,10 @@
 'use client';
 
+import { ANNOUNCEMENT_CHANNEL_TYPE } from '@ap/api-types';
+import { Copy } from '@ap/copy';
 import { CircleX, ExternalLink, EyeOff } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
-import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
+import { AnnouncementSteps, PermissionSteps } from '@/components/dashboard/channel-fix-steps';
 import { CHIP_CLASS } from '@/components/dashboard/chip';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,6 +35,14 @@ export function channelIsBroken(channel: GuildChannel): boolean {
  */
 export function channelIsHidden(channel: GuildChannel): boolean {
   return channel.name === null;
+}
+
+/**
+ * A registered channel converted to a text channel. Shares the broken bucket;
+ * unlike a hidden one, its cause is known.
+ */
+export function channelIsConverted(channel: GuildChannel): boolean {
+  return channel.name !== null && channel.type !== ANNOUNCEMENT_CHANNEL_TYPE;
 }
 
 /**
@@ -84,7 +94,8 @@ export function ChannelFixButton({
  *
  * A hidden channel gets the same steps plus the two things its row can't carry:
  * the channel id and a deep link. The link is unconditional — an admin who also
- * can't see the channel lands on nothing, not worth gating for.
+ * can't see the channel lands on nothing, not worth gating for. A converted
+ * channel gets the steps back to Announcement instead.
  */
 export function ChannelFixDialog({
   guildId,
@@ -103,6 +114,7 @@ export function ChannelFixDialog({
   if (!channelIsBroken(channel)) return null;
 
   const hidden = channelIsHidden(channel);
+  const converted = channelIsConverted(channel);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -113,12 +125,16 @@ export function ChannelFixDialog({
             {hidden && <EyeOff aria-hidden className="size-4 shrink-0 text-slate-400" />}
             {hidden
               ? 'This channel is hidden'
-              : `${channelLabel(channel.name)} cannot auto-publish`}
+              : converted
+                ? `${channelLabel(channel.name)} is not an announcement channel`
+                : `${channelLabel(channel.name)} cannot auto-publish`}
           </DialogTitle>
           <DialogDescription>
             {hidden
               ? 'Discord does not show this channel to Auto Publisher. Auto Publisher is missing the View Channel permission, or the channel no longer exists.'
-              : 'Auto Publisher is missing Discord permissions in this channel.'}
+              : converted
+                ? Copy.channels.notAnnouncement.reason
+                : 'Auto Publisher is missing Discord permissions in this channel.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -142,10 +158,10 @@ export function ChannelFixDialog({
           </div>
         )}
 
-        <PermissionSteps />
+        {converted ? <AnnouncementSteps /> : <PermissionSteps />}
 
         <DialogFooter className="sm:justify-end">
-          {hidden && onRemove && (
+          {(hidden || converted) && onRemove && (
             <Button
               variant="ghost"
               className="text-red-300 hover:bg-red-500/10 hover:text-red-200"

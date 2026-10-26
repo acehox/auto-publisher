@@ -174,11 +174,11 @@ const purge = async (guildId: Snowflake, cutoff: Date): Promise<boolean> => {
 
 /**
  * Delete channel config (DB rows + Redis entries) for channels no longer in
- * the guild's live announcement-channel list — channels deleted while the bot
+ * the guild's live channel list — channels deleted while the bot
  * was kicked or down never fire channelDelete, and stale rows count against
  * the free-plan channel limit with no dashboard toggle to free them.
  * @param guildId ID of the guild
- * @param liveChannelIds the guild's current announcement channel IDs
+ * @param liveChannelIds every current channel ID of the guild, any type
  */
 const pruneStaleChannels = async (
   guildId: Snowflake,
@@ -271,7 +271,7 @@ const recordJoinDates = async (
  * invited to, and Premium is a per-guild subscription that changes what it
  * publishes, not whether it is there.
  * @param guildId ID of the guild
- * @param announcementChannelIds live announcement channels from the GUILD_CREATE payload
+ * @param channelIds live channels of any type from the GUILD_CREATE payload
  * @param joinedAt Discord's `joined_at` from the same payload
  */
 // MIGRATION: at sunset every guild is allowlist-model — drop the `migratedAt`
@@ -279,7 +279,7 @@ const recordJoinDates = async (
 // re-invited guild always rebuilds its channel cache + serving).
 const registerNewGuild = async (
   guildId: Snowflake,
-  announcementChannelIds?: Snowflake[],
+  channelIds?: Snowflake[],
   joinedAt?: Date
 ): Promise<void> => {
   try {
@@ -291,8 +291,8 @@ const registerNewGuild = async (
     // dashboard reads re-fetch live.
     Discord.evictGuildChannels(guildId);
 
-    if (announcementChannelIds) {
-      await pruneStaleChannels(guildId, announcementChannelIds);
+    if (channelIds) {
+      await pruneStaleChannels(guildId, channelIds);
     }
 
     // Rebuild derived cache only for migrated guilds — a restored legacy guild
