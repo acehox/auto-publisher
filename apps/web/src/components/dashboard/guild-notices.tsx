@@ -5,7 +5,7 @@ import { CircleX, Loader2, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useState, useTransition } from 'react';
-import { ChannelFixDialog } from '@/components/dashboard/channel-fix';
+import { ChannelFixDialog, channelIsConverted } from '@/components/dashboard/channel-fix';
 import { useGuild } from '@/components/dashboard/guild-context';
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { NoticeAction, NoticeStrip } from '@/components/dashboard/notice-strip';
@@ -137,13 +137,21 @@ export function GuildNotices() {
 /**
  * The one filled strip. A channel the bot cannot publish in is the only failure
  * the admin has to act on in Discord rather than here, so it names the channel
- * and opens the permission steps directly. With one channel broken "Fix now"
+ * and opens its Fix dialog directly. With one channel broken "Fix now"
  * triggers that channel's dialog; past one the channels tab is the only place
  * that can show them all, so it links there instead.
  */
 function MisconfiguredStrip({ guildId, channels }: { guildId: string; channels: GuildChannel[] }) {
   const broken = channels.filter(c => c.enabled && c.canPublish === false);
   const only = broken.length === 1 ? broken[0] : undefined;
+  // One cause only when every broken channel shares it; a mixed set names none.
+  const converted = broken.filter(channelIsConverted).length;
+  const tail =
+    converted === broken.length
+      ? Copy.channels.notAnnouncement.tail(broken.length)
+      : converted === 0
+        ? Copy.permissions.missingTail(broken.length)
+        : Copy.channels.health.notPublishingTail;
 
   return (
     <NoticeStrip
@@ -172,7 +180,7 @@ function MisconfiguredStrip({ guildId, channels }: { guildId: string; channels: 
       <span className="font-medium text-white">
         {only ? channelLabel(only.name) : `${broken.length} channels`}
       </span>
-      {Copy.permissions.missingTail(broken.length)}
+      {tail}
     </NoticeStrip>
   );
 }
