@@ -41,6 +41,9 @@ export interface ChannelFilterRule {
   createdAt: string;
 }
 
+/** `ChannelType.GuildAnnouncement`, mirrored so the web needs no discord-api-types. */
+export const ANNOUNCEMENT_CHANNEL_TYPE = 5;
+
 /** Guild channel with filters (enriched with Discord channel info) */
 export interface GuildChannel {
   channelId: string;
@@ -51,6 +54,7 @@ export interface GuildChannel {
    * forces every render site to handle it.
    */
   name: string | null;
+  /** Anything but `ANNOUNCEMENT_CHANNEL_TYPE` = a registered channel converted to a text channel. */
   type: number;
   enabled: boolean;
   filters: ChannelFilterRule[];

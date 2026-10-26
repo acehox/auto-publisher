@@ -24,12 +24,12 @@ const register = async (guild: DiscordGuild) => {
     return;
   }
 
+  // Every type, not just announcement: the prune would otherwise delete the row
+  // of a registered channel converted to a text channel.
+  const channelIds = guild.channels.cache.filter(c => !c.isThread()).map(c => c.id);
+  await Data.API.Backend.registerNewGuild(guild.id, channelIds, guild.joinedAt);
+
   const announcementChannels = getAnnouncementChannels(guild);
-  await Data.API.Backend.registerNewGuild(
-    guild.id,
-    announcementChannels.map(c => c.id),
-    guild.joinedAt
-  );
 
   // `full` drops publish-state fields stale from a prior stint.
   await Permissions.syncChannels(guild, announcementChannels, {

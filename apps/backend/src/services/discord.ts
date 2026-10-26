@@ -68,14 +68,8 @@ const cachedGet = async <T>(route: `/${string}`): Promise<T> => {
   }
 };
 
-/**
- * The one definition of "announcement channel of this guild" — read by both the
- * dashboard's candidate list and the registration guards in `Channels.add` /
- * `Guilds.migrate`, so a channel can never be registrable but unlistable.
- *
- * Sorted because Discord's REST list is unordered.
- */
-const getAnnouncementChannels = async (guildId: Snowflake): Promise<APIChannel[]> => {
+/** Non-category channels in sidebar order; REST's list is unordered. */
+const getGuildChannels = async (guildId: Snowflake): Promise<APIChannel[]> => {
   const channels = await cachedGet<APIChannel[]>(Routes.guildChannels(guildId));
 
   const categoryPositions = new Map<string, number>();
@@ -84,7 +78,7 @@ const getAnnouncementChannels = async (guildId: Snowflake): Promise<APIChannel[]
   }
 
   return sortBySidebarOrder(
-    channels.filter(c => c.type === ChannelType.GuildAnnouncement),
+    channels.filter(c => c.type !== ChannelType.GuildCategory),
     c => ({
       id: c.id,
       position: 'position' in c ? (c.position ?? 0) : 0,
@@ -93,6 +87,15 @@ const getAnnouncementChannels = async (guildId: Snowflake): Promise<APIChannel[]
     categoryPositions
   );
 };
+
+/**
+ * The one definition of "announcement channel of this guild", read by the
+ * registration guards in `Channels.add` / `Guilds.migrate`. The dashboard lists
+ * the same `getGuildChannels` read by the same type, so a channel can never be
+ * registrable but unlistable.
+ */
+const getAnnouncementChannels = async (guildId: Snowflake): Promise<APIChannel[]> =>
+  (await getGuildChannels(guildId)).filter(c => c.type === ChannelType.GuildAnnouncement);
 
 /**
  * Evict a guild's cached channel list. Two callers:
@@ -200,6 +203,7 @@ const getUsername = async (userId: string): Promise<string | null> => {
 export const Discord = {
   rest,
   cachedGet,
+  getGuildChannels,
   getAnnouncementChannels,
   evictGuildChannels,
   evictGuildRoles,
