@@ -11,6 +11,7 @@ import {
   type GuildMember,
   MessageFlags,
   type NewsChannel,
+  type NonThreadGuildBasedChannel,
   type Snowflake,
 } from 'discord.js';
 import { Buttons } from '#lib/components/buttons.js';
@@ -19,7 +20,11 @@ import type { PausedChannel } from '#services/channel.js';
 import { Services } from '#services/index.js';
 import { logger } from '#utils/logger.js';
 import { formatNotes } from '#utils/notes.js';
-import { checkChannelPermissions, renderPermissionSteps } from '#utils/permissions.js';
+import {
+  checkChannelPermissions,
+  renderDiscordSteps,
+  renderPermissionSteps,
+} from '#utils/permissions.js';
 import { buildReply, replyPayload } from '#utils/reply.js';
 
 /**
@@ -38,6 +43,8 @@ interface OverviewChannel {
   channelId: Snowflake;
   /** Bot has View + Send + Manage here. False also covers unresolvable channels. */
   canPublish: boolean;
+  /** Converted to a text channel since it was registered. */
+  converted: boolean;
 }
 
 /** Everything one render needs, resolved before any copy is built. */
@@ -63,19 +70,20 @@ interface OverviewState {
   apCommandId: Snowflake;
 }
 
-const resolveAnnouncementChannel = (
+/** Any type: a registered channel may have been converted to a text channel since. */
+const resolveRegisteredChannel = (
   guild: Guild,
   channelId: Snowflake
-): NewsChannel | undefined => {
+): NonThreadGuildBasedChannel | undefined => {
   const resolved = guild.channels.cache.get(channelId);
-  return resolved?.type === ChannelType.GuildAnnouncement ? resolved : undefined;
+  return resolved && !resolved.isThread() ? resolved : undefined;
 };
 
 /**
  * Every announcement channel in the guild, from the bot's own cache. Bots
  * receive the full channel list in GUILD_CREATE and `makeCache` never trims
  * `GuildChannelManager`, so this is complete without a REST call — the same
- * cache {@link resolveAnnouncementChannel} already trusts.
+ * cache {@link resolveRegisteredChannel} already trusts.
  */
 const announcementChannelsIn = (guild: Guild | null): NewsChannel[] =>
   guild
@@ -103,7 +111,7 @@ const orderChannelIds = (channelIds: Snowflake[], guild: Guild | null): Snowflak
     channelId => {
       // Unresolvable channels have no position — sink them past their group,
       // still tiebroken by id, so the order stays deterministic.
-      const resolved = resolveAnnouncementChannel(guild, channelId);
+      const resolved = resolveRegisteredChannel(guild, channelId);
       return {
         id: channelId,
         position: resolved?.rawPosition ?? Number.MAX_SAFE_INTEGER,
@@ -132,8 +140,9 @@ const orderPausedChannels = (paused: PausedChannel[], guild: Guild | null): Paus
  * `canPublish` is a cache-only permission check, so it matches the dashboard's
  * own okay/not-okay state. A channel counts as broken when the bot lacks any
  * publish permission or the channel can't be resolved at all (deleted, or no
- * ViewChannel so it never entered the cache). Without a resolvable bot member
- * every channel is reported publishing rather than mislabelling all of them.
+ * ViewChannel so it never entered the cache), or it was converted to a text
+ * channel. Without a resolvable bot member every announcement channel is reported
+ * publishing rather than mislabelling all of them.
  */
 const buildOverviewChannels = (
   channelIds: Snowflake[],
@@ -142,12 +151,15 @@ const buildOverviewChannels = (
 ): OverviewChannel[] =>
   orderChannelIds(channelIds, guild)
     .map(channelId => {
-      const resolved = guild ? resolveAnnouncementChannel(guild, channelId) : undefined;
-      const canPublish =
-        !guild || !botMember
+      const registered = guild ? resolveRegisteredChannel(guild, channelId) : undefined;
+      const converted = !!registered && registered.type !== ChannelType.GuildAnnouncement;
+      const resolved = registered?.type === ChannelType.GuildAnnouncement ? registered : undefined;
+      const canPublish = converted
+        ? false
+        : !guild || !botMember
           ? true
           : !!resolved && checkChannelPermissions(botMember, resolved).hasAll;
-      return { channelId, canPublish };
+      return { channelId, canPublish, converted };
     })
     .sort((a, b) => Number(a.canPublish) - Number(b.canPublish));
 
@@ -213,18 +225,31 @@ const renderEnableHint = (state: OverviewState): string | null =>
     ? null
     : `-# ${emojis.greenCircle} Use </ap enable:${state.apCommandId}> to enable auto-publishing in a channel.`;
 
+/** Channels that cannot publish, split by the fix each one needs. */
+const countBlocked = (state: OverviewState): { permissions: number; converted: number } => {
+  const blocked = state.channels.filter(c => !c.canPublish);
+  const converted = blocked.filter(c => c.converted).length;
+  return { permissions: blocked.length - converted, converted };
+};
+
 /**
  * Mirrors the dashboard Overview's header precedence and copy: the outage owns
  * the headline when there is one, otherwise the auto-publishing count.
  */
 const renderHealthHeader = (state: OverviewState): OverviewHeader => {
-  const blockedCount = state.channels.filter(c => !c.canPublish).length;
+  const { permissions, converted } = countBlocked(state);
+  const blockedCount = permissions + converted;
   const count = state.channels.length;
 
   return blockedCount > 0
     ? {
         title: `${emojis.crossmark} ${Copy.channels.health.notPublishing(blockedCount)}`,
-        body: Copy.permissions.missingSummary(blockedCount),
+        body: [
+          permissions > 0 && Copy.permissions.missingSummary(permissions),
+          converted > 0 && Copy.channels.notAnnouncement.summary(converted),
+        ]
+          .filter(Boolean)
+          .join(' '),
       }
     : { title: `${emojis.checkmark} ${Copy.channels.health.allGood(count)}`, body: null };
 };
@@ -238,10 +263,10 @@ const renderHealthHeader = (state: OverviewState): OverviewHeader => {
 const renderChannelList = (state: OverviewState): string => {
   const rows = state.channels
     .slice(0, MAX_LISTED_CHANNELS)
-    .map(({ channelId, canPublish }) =>
+    .map(({ channelId, canPublish, converted }) =>
       canPublish
-        ? `${emojis.checkmark} <#${channelId}> — Publishing`
-        : `${emojis.crossmark} <#${channelId}> — Not publishing`
+        ? `${emojis.checkmark} <#${channelId}> — ${Copy.channels.status.publishing}`
+        : `${emojis.crossmark} <#${channelId}> — ${converted ? Copy.channels.status.notAnnouncement : Copy.channels.status.missingPermissions}`
     );
 
   const hidden = state.channels.length - rows.length;
@@ -253,20 +278,32 @@ const renderChannelList = (state: OverviewState): string => {
 };
 
 /**
- * The dashboard Fix dialog's permission steps, inlined once because
- * Components V2 has no room for a button per row. No auto-disable exists;
- * setup is retained, so the last step's "auto-publishing starts with the next
- * message" is the whole remedy.
+ * The dashboard Fix dialog's remedies, inlined once because Components V2 has
+ * no room for a button per row. Setup is retained, so either remedy restores
+ * auto-publishing with the next message.
  */
 const renderFixBlock = (state: OverviewState): string[] | null => {
-  const blockedCount = state.channels.filter(c => !c.canPublish).length;
-  if (blockedCount === 0) return null;
+  const { permissions, converted } = countBlocked(state);
+  if (permissions + converted === 0) return null;
 
-  const lead =
-    blockedCount === 1
-      ? 'To fix the channel that cannot auto-publish, follow these steps:'
-      : 'To fix the channels that cannot auto-publish, follow these steps in each one:';
-  return [lead, renderPermissionSteps()];
+  const block: string[] = [];
+  if (permissions > 0) {
+    block.push(
+      permissions === 1
+        ? 'To fix the channel that is missing permissions, follow these steps:'
+        : 'To fix the channels that are missing permissions, follow these steps in each one:',
+      renderPermissionSteps()
+    );
+  }
+  if (converted > 0) {
+    block.push(
+      converted === 1
+        ? 'To fix the channel that is not an announcement channel, follow these steps:'
+        : 'To fix the channels that are not announcement channels, follow these steps in each one:',
+      renderDiscordSteps(Copy.channels.notAnnouncement.steps)
+    );
+  }
+  return block;
 };
 
 /**
@@ -286,7 +323,7 @@ const renderPausedBlock = (state: OverviewState): string[] | null => {
 
   const rows = state.pausedChannels
     .slice(0, MAX_LISTED_PAUSED)
-    .map(({ channelId }) => `<#${channelId}> — Paused`);
+    .map(({ channelId }) => `<#${channelId}> — ${Copy.channels.status.paused}`);
   const hidden = total - rows.length;
   if (hidden > 0) {
     rows.push(

@@ -1,5 +1,5 @@
 import type { Snowflake } from 'discord-api-types/globals';
-import { ChannelType } from 'discord-api-types/v10';
+import { type APIChannel, ChannelType } from 'discord-api-types/v10';
 import { Discord } from '../discord.js';
 import { Guilds } from '../guilds.js';
 import { PublishState } from '../publishState.js';
@@ -14,25 +14,32 @@ import { PublishState } from '../publishState.js';
  * Postgres. Publishing is unaffected either way (no MESSAGE_CREATE arrives for an
  * unviewable channel).
  *
+ * A registered channel converted to a text channel is listed with its real
+ * `type`, which is how clients tell it from a hidden one. Its row keeps its
+ * free-plan slot: freeing it would let convert → enable another → convert back
+ * exceed the cap.
+ *
  * `Channels.add` / `Guilds.migrate` stay REST-only: a channel Discord won't tell
  * us about is one nobody should be able to newly register. Tradeoff: a hidden
  * channel nobody enabled is undiscoverable.
  */
 export const getChannelsForDashboard = async (guildId: Snowflake) => {
-  const [records, announcementChannels] = await Promise.all([
+  const [records, guildChannels] = await Promise.all([
     Guilds.getChannelRecords(guildId),
-    Discord.getAnnouncementChannels(guildId),
+    Discord.getGuildChannels(guildId),
   ]);
-
-  // REST channels only — a row-only channel is unviewable, so there is nothing to
-  // look up and nothing to write back.
-  const publishMap = await PublishState.getMap(guildId, announcementChannels);
 
   const recordMap = new Map(records.map(ch => [ch.channelId, ch]));
 
+  const isAnnouncement = (c: APIChannel) => c.type === ChannelType.GuildAnnouncement;
+  const restChannels = guildChannels.filter(c => isAnnouncement(c) || recordMap.has(c.id));
+
+  // Other types can't publish: nothing to look up or write back.
+  const publishMap = await PublishState.getMap(guildId, restChannels.filter(isAnnouncement));
+
   // Serving = a row exists AND is not paused. A paused row is a
   // disabled channel with retained config → surfaced via hasSavedSetup.
-  const listed = announcementChannels.map(c => {
+  const listed = restChannels.map(c => {
     const record = recordMap.get(c.id);
     const publish = publishMap[c.id];
     return {
@@ -47,7 +54,7 @@ export const getChannelsForDashboard = async (guildId: Snowflake) => {
     };
   });
 
-  const listedIds = new Set(announcementChannels.map(c => c.id));
+  const listedIds = new Set(restChannels.map(c => c.id));
 
   // Appended, not ordered: a hidden channel carries no position to honour.
   const hidden = records

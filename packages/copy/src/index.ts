@@ -53,6 +53,10 @@ const missingPermissionsTail = (count: number): string =>
  * absent, Discord's permission math collapses the missing set to ViewChannel
  * alone, so the admin would grant one permission and still not publish.
  */
+/** Every Discord-side fix opens and closes the same way. */
+const openChannelSettingsSteps = ['Open your Discord server', 'Select the channel → Edit Channel'];
+const saveChangesStep = 'Save Changes. Auto-publishing starts with the next message';
+
 const permissions = {
   /**
    * Mirrors `PUBLISH_PERMISSION_FLAGS` (`@ap/utils`), which stays the authority —
@@ -61,11 +65,10 @@ const permissions = {
   names: ['View Channel', 'Send Messages', 'Manage Messages'] as readonly string[],
 
   steps: [
-    'Open your Discord server',
-    'Select the channel → Edit Channel',
+    ...openChannelSettingsSteps,
     'Open the Permissions tab',
     'Add the Auto Publisher role and allow all 3 permissions:',
-    'Save Changes. Auto-publishing starts with the next message',
+    saveChangesStep,
   ] as readonly string[],
 
   /** Index into `steps` of the step the names hang off. Keep the two in step. */
@@ -215,10 +218,20 @@ const noAnnouncementLead =
  * mention in the bot. Nothing here adds a `#` or any other markup.
  */
 const channels = {
+  /** Row labels. The two causes are bot-only: a dashboard row's Fix dialog names its cause. */
+  status: {
+    publishing: 'Auto-publishing',
+    paused: 'Paused',
+    missingPermissions: 'Missing permissions',
+    notAnnouncement: 'Not an announcement channel',
+  },
+
   health: {
     allGood: (count: number, noun = 'channel'): string =>
       `${countOf(count, noun)} ${plural(count, 'is', 'are')} auto-publishing`,
     notPublishing: (count: number): string => `${countOf(count, 'channel')} cannot auto-publish`,
+    /** Strip tail for broken channels with mixed causes. Same split as `permissions.missingTail`. */
+    notPublishingTail: ' cannot auto-publish.',
   },
 
   empty: {
@@ -247,6 +260,22 @@ const channels = {
     title: (limit: number): string => `Free plan limit of ${limit} channels reached`,
     body: (subject: string): string =>
       `${subject} is not auto-publishing. To enable it, disable auto-publishing in another channel or upgrade to Premium. Premium has no channel limit and adds filters. It also publishes messages beyond Discord's hourly limit after the limit resets, for up to 24 hours.`,
+  },
+
+  /** A registered channel converted to a text channel. Converting it back is the whole fix. */
+  notAnnouncement: {
+    reason: 'Only announcement channels can auto-publish. Its settings are kept.',
+    steps: [
+      ...openChannelSettingsSteps,
+      'Turn on Announcement Channel',
+      saveChangesStep,
+    ] as readonly string[],
+    /** Same split as `permissions.missingTail`. */
+    tail: (count: number): string =>
+      ` cannot auto-publish because ${plural(count, 'it is not an announcement channel', 'they are not announcement channels')}.`,
+    /** Same role as `permissions.missingSummary`. */
+    summary: (count: number): string =>
+      `${countOf(count, 'channel')} ${plural(count, 'is not an announcement channel', 'are not announcement channels')}.`,
   },
 
   /** Retained but not serving. */

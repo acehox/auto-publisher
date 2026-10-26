@@ -1,7 +1,7 @@
 'use client';
 
 import { Copy } from '@ap/copy';
-import { PermissionSteps } from '@/components/dashboard/channel-permission-steps';
+import { PermissionSteps } from '@/components/dashboard/channel-fix-steps';
 import { useRolloverEntitled } from '@/components/dashboard/over-limit-note';
 import {
   AlertDialog,

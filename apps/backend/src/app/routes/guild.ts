@@ -73,12 +73,12 @@ export const Guild: Router = (() => {
    */
   router.post('/new', validateRequest(GuildRegisterReqSchema), async (req, res) => {
     const { guildId } = req.params;
-    const { announcementChannelIds, joinedAt } = req.body;
+    const { channelIds, joinedAt } = req.body;
 
     try {
       await Services.Guilds.registerNewGuild(
         guildId,
-        announcementChannelIds,
+        channelIds,
         joinedAt ? new Date(joinedAt) : undefined
       );
       res.status(StatusCodes.OK).json({
