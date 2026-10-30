@@ -69,3 +69,5 @@ docs/plans/internal/
 
 # AI
 .mcp.json
+# The commit production runs (scripts/bot/prod/deploy.sh)
+.deployed-sha

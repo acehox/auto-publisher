@@ -47,6 +47,14 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # The ready file appears once every cluster has logged in. Startup takes minutes at
+    # production shard counts; the generous start_period saves measuring it.
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/bot-ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5m
 
   backend:
     build:

@@ -41,11 +41,14 @@ characters. A password generator is the easiest way to get one.
 From the project folder:
 
 ```
-docker compose up -d --build
+docker compose up -d
 ```
 
-The first run builds the images and takes a few minutes. Database migrations run
-automatically.
+This downloads the prebuilt images of the newest release and starts them. Database
+migrations run automatically.
+
+The prebuilt images are for x86 only. On an ARM machine, such as a Raspberry Pi, build them
+yourself with `docker compose up -d --build` (see [Building from source](#building-from-source)).
 
 ## 4. Add the bot to your server
 
@@ -54,6 +57,37 @@ Open the dashboard at <http://localhost:3100> (or your custom domain/IP) and sig
 ## 5. Choose which channels publish
 
 Use the dashboard, or run `/ap enable #your-channel` in Discord to enable publishing in desired announcement channels. `/ap overview` shows what is publishing and what is missing permissions, and `/ap filters #channel` sets per-channel rules.
+
+## Updating
+
+Read the **Self-hosters** section of the
+[release notes](https://github.com/acehox/auto-publisher/releases) first. It lists anything
+you must change before you update. Then, from the project folder:
+
+```
+git pull
+docker compose pull
+docker compose up -d
+```
+
+`git pull` matters: a release can change `docker-compose.yml`.
+
+### Staying on one version
+
+By default you run `latest`, the newest release. To control updates, set
+`AUTO_PUBLISHER_VERSION` in `.env`:
+
+- `AUTO_PUBLISHER_VERSION=7` takes every release of version 7 and never a version 8, which
+  can need manual steps.
+- `AUTO_PUBLISHER_VERSION=7.1.0` stays on that exact release.
+
+Check out the matching release of this repository (`git checkout 7.1.0`) so the compose file
+matches the images.
+
+### Building from source
+
+`docker compose up -d --build` builds the images from your copy of the code instead of
+downloading them. It takes a few minutes and needs about 2 GB of free memory.
 
 ## Things worth knowing
 

@@ -43,6 +43,8 @@ export type CrosspostQueueStats = {
 export type CrosspostQueueModule = {
   router: Router;
   internalRouter: Router;
+  /** Stops taking jobs and waits for active ones; enqueues still land. */
+  closeWorker(): Promise<void>;
   shutdown(): Promise<void>;
   stats(): Promise<CrosspostQueueStats>;
 };
@@ -389,6 +391,7 @@ export const createCrosspostQueue = (deps: {
   return {
     router,
     internalRouter,
+    closeWorker: () => worker.close(),
     shutdown: async () => {
       await worker.close();
       await queue.close();
