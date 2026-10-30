@@ -14,6 +14,10 @@ const manager = new ClusterManager({
 
 manager.start();
 
+// Without a handler, PID 1 ignores SIGTERM and `docker stop` waits out its grace period.
+process.on('SIGTERM', () => manager.shutdown());
+process.on('SIGINT', () => manager.shutdown());
+
 process.on('uncaughtException', err => logger.error({ event: 'bot.uncaught_exception', err }));
 process.on('unhandledRejection', reason =>
   logger.error({ event: 'bot.unhandled_rejection', err: reason })
