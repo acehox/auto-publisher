@@ -12,15 +12,14 @@ is_docker_running
 check_env_exists ".env"
 check_env_var_set ".env" "TUNNEL_TOKEN"
 
-echo "📦 Building production images..."
+if ! use_deployed_images; then
+    echo "⚠️  No deploy recorded. Deploy a commit of main: bash scripts/bot/prod/deploy.sh <sha>"
+    exit 1
+fi
 
-# One image at a time: five installs and `next build` side by side exceed this host's memory.
-for SERVICE in $(docker compose $BOT_COMPOSE_FILES_PROD config --services); do
-    docker compose $BOT_COMPOSE_FILES_PROD build "$SERVICE"
-done
-
-echo "🚀 Starting production services..."
-docker compose $BOT_COMPOSE_FILES_PROD up -d
+# The host never builds: a build needs ~2 GiB and the host has ~1.2 GiB free with prod up.
+echo "🚀 Starting the last deployed images ($IMAGE_TAG)..."
+docker compose $BOT_COMPOSE_FILES_PROD up -d --no-build --pull missing
 
 echo "✅ Production environment started!"
 echo ""

@@ -1,5 +1,8 @@
 name: auto-publisher-prod
 
+# App images come prebuilt from GHCR. `IMAGE_TAG` (`sha-<short>`) is set by
+# deploy.sh and the prod:* scripts from the last deploy, never in `.env`.
+#
 # Services loading ../../.env blank `TUNNEL_TOKEN` (`environment` beats
 # `env_file`): whoever reads the token can run a connector and take live traffic.
 
@@ -43,6 +46,7 @@ services:
     logging: *prod-logging
 
   proxy:
+    image: ghcr.io/acehox/auto-publisher-proxy:${IMAGE_TAG:?}
     env_file:
       - ../../.env
     environment:
@@ -53,6 +57,7 @@ services:
     deploy: *proxy-resources
 
   backend:
+    image: ghcr.io/acehox/auto-publisher-backend:${IMAGE_TAG:?}
     env_file:
       - ../../.env
     environment:
@@ -73,6 +78,7 @@ services:
           cpus: '0.25'
 
   bot:
+    image: ghcr.io/acehox/auto-publisher-bot:${IMAGE_TAG:?}
     env_file:
       - ../../.env
     environment:
@@ -85,6 +91,7 @@ services:
   # Subscriber role in the support server. Prod only: it needs BOT_SUPPORT_GUILD_ID
   # and the subscription list, neither of which dev or a self-host has.
   helper:
+    image: ghcr.io/acehox/auto-publisher-helper:${IMAGE_TAG:?}
     build:
       context: ../..
       dockerfile: Dockerfile
@@ -110,6 +117,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # The ready file appears after the support guild's member list is loaded.
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/helper-ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 2m
     logging: *prod-logging
     deploy:
       resources:
@@ -121,6 +135,7 @@ services:
           cpus: '0.1'
 
   web:
+    image: ghcr.io/acehox/auto-publisher-web:${IMAGE_TAG:?}
     build:
       context: ../..
       dockerfile: Dockerfile
