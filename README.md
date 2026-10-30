@@ -2,6 +2,9 @@
 
 # Auto Publisher
 
+[![Release](https://github.com/acehox/auto-publisher/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/acehox/auto-publisher/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/acehox/auto-publisher)](https://github.com/acehox/auto-publisher/releases/latest)
+
 Auto Publisher ([auto-publisher.gg](https://auto-publisher.gg)) is a Discord bot that automatically publishes the messages posted in your [announcement channels](https://support.discord.com/hc/en-us/articles/360032008192-Announcement-Channel-FAQ), so they reach every server that follows those channels. It is for Discord server admins who run announcement channels, especially ones where other bots, webhooks or RSS and news feeds post messages that would otherwise have to be published by hand.
 
 Publish everything, or only what matches your filters.
@@ -45,5 +48,7 @@ Step-by-step [guides](https://auto-publisher.gg/guides) cover setup, filters and
 The source code is on GitHub ([github.com/acehox/auto-publisher](https://github.com/acehox/auto-publisher)) under the [PolyForm Perimeter License 1.0.1](LICENSE), which is source-available, not open source. You may run your own copy with Docker for servers you run, but not host it for other people, whether by publishing an invite link or by adding it to servers you don't run.
 
 A self-hosted copy gets every feature for free. No support is given for it. The code is public for transparency and to help other developers build the same thing into their own bots; the hosted bot is the right choice for almost everyone.
+
+Prebuilt x86 images are on the [GitHub Container Registry](https://github.com/acehox?tab=packages&repo_name=auto-publisher) (`ghcr.io/acehox/auto-publisher-bot`, `-proxy`, `-backend`, `-web`), tagged with each release version and `latest`.
 
 Guide: **[Self-hosting](docs/self-hosting.md)**
