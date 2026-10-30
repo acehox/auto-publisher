@@ -25,7 +25,8 @@ jobs:
         with:
           packages: auto-publisher-bot,auto-publisher-proxy,auto-publisher-backend,auto-publisher-web,auto-publisher-helper
           keep-n-tagged: 20
-          exclude-tags: '^(\d+(\.\d+){0,2}|latest|main)$'
+          # The action rejects nested quantifiers (safe-regex2), so versions are `[0-9.]+`.
+          exclude-tags: '^([0-9.]+|latest|main)$'
           use-regex: true
           delete-untagged: true
           dry-run: ${{ inputs.dry-run || false }}
