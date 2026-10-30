@@ -68,7 +68,7 @@ npm run prod:logs        # View production logs (JSON piped through `npx pino-pr
 npm run prod:ps          # List production containers
 ```
 
-Run on the netcup host, which has npm but no pnpm or bun. The host never builds: a build needs ~2 GiB and the host has ~1.2 GiB free with prod up, so a build beside the bot OOM-kills it. The prod overlay's `image:` is `${IMAGE_TAG:?}`, which the prod scripts set from `.deployed-sha`.
+Run on the netcup host, which has npm but no pnpm or bun, as `deploy` (`sudo -iu deploy`): it owns the checkout at `/home/bots/bots/auto-publisher`, so the auth log separates a manual run (sudo by `bots`) from an automatic one (the key over SSH). The host never builds: a build needs ~2 GiB and the host has ~1.2 GiB free with prod up, so a build beside the bot OOM-kills it. The prod overlay's `image:` is `${IMAGE_TAG:?}`, which the prod scripts set from `.deployed-sha`.
 
 **Migrations are additive only; a removal ships one deploy later.** Drizzle skips migrations it has applied, so an older backend starts on a newer schema, which is what makes rollback safe. Add a column or table in one deploy; drop or rename it only after a deploy in which no code reads it. **Never rewrite an applied migration**: a changed `0000` either re-runs (its `CREATE TABLE`s fail and the backend crash-loops) or is silently skipped. A one-way change (a destructive migration, a Redis minor bump) cannot be rolled back; `/release` flags it, and it is watched live.
 
