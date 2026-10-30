@@ -9,6 +9,7 @@ source "$SCRIPT_DIR/../../utils/common.sh"
 echo "🛑 Stopping production environment (preserving Redis data)..."
 
 is_docker_running
+use_deployed_images_if_any
 
 # Stop production services
 docker compose $BOT_COMPOSE_FILES_PROD down
