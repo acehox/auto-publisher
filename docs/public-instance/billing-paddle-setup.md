@@ -179,7 +179,7 @@ Paddle does not follow redirects, so the URL must be exactly the one above. The 
 
 **Creating the tunnel** (once, on any machine with `cloudflared`): `cloudflared tunnel login`, `cloudflared tunnel create <name>`, `cloudflared tunnel route dns --overwrite-dns <name> auto-publisher.gg`, then `cloudflared tunnel token <name>` → `TUNNEL_TOKEN` in `.env`. It must not be created in the dashboard: a dashboard-managed tunnel takes its routes from the dashboard, not the file.
 
-**Cutover from the web-only stack**: one token on two connectors splits traffic randomly between them, so stop the old one first — `docker compose -f scripts/web-only/docker-compose.yml down` in the web-only checkout and `npm run prod:stop` here, then `npm run prod:start`, which builds the images. Nothing may run during the build: with prod up this host has ~1.2 GiB free and a build needs ~2 GiB, so the OOM killer takes the bot. Rollback is the reverse.
+**Cutover from the web-only stack**: one token on two connectors splits traffic randomly between them, so stop the old one first — `docker compose -f scripts/web-only/docker-compose.yml down` in the web-only checkout and `npm run prod:stop` here, then deploy a commit of `main` (`bash scripts/bot/prod/deploy.sh <sha>` on the host). Rollback is the reverse.
 
 **Verify**: from outside Paddle's IPs, `curl -i -X POST https://auto-publisher.gg/webhooks/paddle` → 403 from Cloudflare; `curl -i https://auto-publisher.gg/internal/info` → the website's 404. Then send a simulator event whose type the handler ignores and confirm a 200 in the destination's logs.
 

@@ -1,9 +1,14 @@
+import { rmSync } from 'node:fs';
 import { assertRequiredEnv, config } from '@ap/config';
 import { SapphireClient } from '@sapphire/framework';
 import { GatewayIntentBits as IntentBits, Options } from 'discord.js';
+import { READY_FILE } from '#lib/constants.js';
 import { logger } from '#utils/logger.js';
 
 assertRequiredEnv({ helper: true });
+
+// `restart: unless-stopped` keeps the filesystem, so a stale file would pass the healthcheck.
+rmSync(READY_FILE, { force: true });
 
 const client = new SapphireClient({
   intents: [IntentBits.Guilds, IntentBits.GuildMembers],
@@ -36,6 +41,14 @@ process.on('uncaughtException', err => logger.error({ event: 'helper.uncaught_ex
 process.on('unhandledRejection', reason =>
   logger.error({ event: 'helper.unhandled_rejection', err: reason })
 );
+
+// Without a handler, PID 1 ignores SIGTERM and `docker stop` waits out its grace period.
+const shutdown = () => {
+  logger.info({ event: 'helper.shutdown' });
+  void client.destroy().finally(() => process.exit(0));
+};
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 
 client.login(config.helper.discordToken).catch(err => {
   logger.fatal({ event: 'helper.login_failed', err }, 'Login failed; exiting');

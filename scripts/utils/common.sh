@@ -59,3 +59,24 @@ print_resource_usage() {
         echo "No containers running for this project"
     fi
 }
+
+# The commit production runs, written by scripts/bot/prod/deploy.sh. Relative to
+# the repo root, where every prod script runs.
+DEPLOYED_SHA_FILE=".deployed-sha"
+
+deployed_sha() {
+    [ -s "$DEPLOYED_SHA_FILE" ] && cat "$DEPLOYED_SHA_FILE"
+}
+
+# Points the prod compose files at the deployed images. Returns 1 before the first deploy.
+use_deployed_images() {
+    local sha
+    sha="$(deployed_sha)" || return 1
+    export IMAGE_TAG="sha-${sha:0:7}"
+}
+
+# For commands that never start an image (down, ps, logs): before the first deploy
+# any tag lets compose read the files.
+use_deployed_images_if_any() {
+    use_deployed_images || export IMAGE_TAG=none
+}
