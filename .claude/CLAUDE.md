@@ -44,16 +44,33 @@ pnpm run dev:cache          # Access Redis cache container
 Outbound mail is caught locally by the `mailpit` service — inbox and REST API at
 http://localhost:8025, SMTP on `127.0.0.1:1025`.
 
-### Production
+### Release and deploy
+
+**`/release`** (`.claude/skills/release/`, maintainer-only) on `develop`: `scripts/release/prepare.sh` checks and gathers, Claude proposes the version (minimum from commit types, raise only) and notes, the maintainer approves, then `scripts/release/publish.sh` pushes an annotated tag `X.Y.Z` (no `v`) and `develop:main` in one `--atomic` push. The GitHub Release is the changelog; it stays a draft until the deploy passes. No `CHANGELOG.md`, no release commit, no `version` in any `package.json`.
+
+**Every push to `main` deploys** (`.github/workflows/release.yml`; docs-only pushes skip it, the `paths-ignore` that `prepare.sh` mirrors): `ci.yml` checks → one amd64 image per app built on GitHub (`type=gha` layer cache) → GHCR → job in Environment `production` SSHes to netcup. The merge to `main` is the approval. `ci.yml` also runs on PRs and `develop`. `workflow_dispatch` with a sha builds nothing and redeploys that commit's images, which is also the manual rollback.
+
+**Images** are public: `ghcr.io/acehox/auto-publisher-{bot,proxy,backend,web,helper}`, amd64 only (netcup is amd64; an ARM self-hoster builds with `--build`). Tags: `sha-<7>` (what prod deploys) and `main` on every build; a version-tagged commit adds `X.Y.Z`, `X.Y`, `X` and `latest`, so **`latest` = newest release**, which self-host runs by default. `cleanup.yml` keeps 20 `sha-` images per package weekly and never deletes a version tag; that is also how far back a rollback can go.
+
+**`scripts/bot/prod/deploy.sh <sha>`** is the deploy key's forced command (`command="bash …/deploy.sh",restrict` for user `deploy`), so the key can deploy a commit of `origin/main` and nothing else. It checks out the sha (compose files must match the images), `pull`s while prod runs, then one `up -d --wait` and a `curl` of the site. Downtime per deploy is the bot's reconnect, 1–3 min at production shard counts. Kept deliberately plain (Coolify and a hand-ordered swap were both rejected: Coolify needs 2 GB RAM the host lacks and does no ordering or rollback for Compose either):
+
+- **Order comes from `depends_on: service_healthy`**, not the script: bot, web and helper start only once the new backend is healthy, so a failing migration stops the deploy before anything that publishes is replaced. The proxy can restart while the old bot runs; the bot retries a refused push, and the bot's own restart drops more anyway.
+- **Failure redeploys the previous sha** (`.deployed-sha`, gitignored, also read by the `prod:*` scripts), posts to `DISCORD_ALERT_WEBHOOK_URL`, and exits non-zero so the job fails. The first deploy on a host has nothing to roll back to.
+- **`sha-` tags are never moved**, so the script deploys by tag. Old images go by `image prune -a` filtered to our `org.opencontainers.image.source` label; a rollback pulls again.
+- **A dropped SSH session can interrupt a deploy** (accepted: rare, and re-running the job repairs it). Concurrent deploys are prevented by the job's `concurrency` group, not a lock.
+- **The checked-out `deploy.sh` runs**, so a change to it applies from the deploy after the one that ships it. Its body is one `main` function so bash has parsed it before `git checkout` rewrites the file.
+- **Healthy = `--wait` passes.** The bot and helper have no HTTP server, so each writes a ready file (`/tmp/bot-ready` once every cluster is ready, removed on a cluster death; `/tmp/helper-ready` after the member sync) that its compose healthcheck tests; `start_period` 5 min for the bot so nobody measures shard startup. Each deletes the file at boot, since `restart: unless-stopped` keeps the container's filesystem.
 
 ```bash
-npm run prod:start       # Start production containers
+npm run prod:start       # Start the last deployed images (never builds)
 npm run prod:stop        # Stop production containers
 npm run prod:logs        # View production logs (JSON piped through `npx pino-pretty`)
 npm run prod:ps          # List production containers
 ```
 
-Run on the netcup host, which has npm but no pnpm or bun. Deploy is `npm run prod:stop` then `npm run prod:start`, never a build beside the running bot: the host has ~1.2 GiB free with prod up and a build needs ~2 GiB, so the build OOM-kills the bot. `prod:start` also builds the images one at a time, since five installs plus `next build` at once is the build's memory peak; that was not slower (cold, Mac, one run each: 109 s one at a time, 144 s in parallel).
+Run on the netcup host, which has npm but no pnpm or bun. The host never builds: a build needs ~2 GiB and the host has ~1.2 GiB free with prod up, so a build beside the bot OOM-kills it. The prod overlay's `image:` is `${IMAGE_TAG:?}`, which the prod scripts set from `.deployed-sha`.
+
+**Migrations are additive only; a removal ships one deploy later.** Drizzle skips migrations it has applied, so an older backend starts on a newer schema, which is what makes rollback safe. Add a column or table in one deploy; drop or rename it only after a deploy in which no code reads it. **Never rewrite an applied migration**: a changed `0000` either re-runs (its `CREATE TABLE`s fail and the backend crash-loops) or is silently skipped. A one-way change (a destructive migration, a Redis minor bump) cannot be rolled back; `/release` flags it, and it is watched live.
 
 ### Build & Code Quality
 
@@ -138,7 +155,7 @@ Self-host skips: the Paddle webhook route, the subscription/checkout/withdrawal 
 - Discord bot app for receiving events and running commands
 - Uses Sapphire Framework (https://sapphirejs.dev/docs/General/Welcome) built on discord.js
 - Uses discord-hybrid-sharding for horizontal scaling across multiple shards & clusters; `ClusterManager` does manual exponential-backoff respawn (5s/30s/60s/5min/10min) to avoid burning the invalid-request budget.
-- Entry: `ClusterManager` spawns sharded workers via `lib/shard.ts`.
+- Entry: `ClusterManager` spawns sharded workers via `lib/shard.ts`, writes `/tmp/bot-ready` for the compose healthcheck once every cluster is ready, and kills its clusters on SIGTERM.
 - Listens for `messageCreate` in announcement channels. **Hot path is fully synchronous + cache-only**:
   1. `isCrosspostable` bit-flag check (system, IsCrosspost, Crossposted)
   2. `canCrosspostInChannel` — sync `permissionsFor(members.me)` (never `.fetch()`)
@@ -442,7 +459,9 @@ old client default was `sandbox` whenever the variable was absent. `usePaddle` n
 - **`env_file` is declared per overlay, never in the base.** Compose _appends_ `env_file` across `-f` layers, so a base-level entry made every prod service load the dev env file first and silently inherit anything prod did not re-declare (verified: prod rendered `SMTP_HOST: ap-mailpit` and `PADDLE_ENVIRONMENT: sandbox`). Dev uses `.env.local`, prod uses `.env`.
 - Services: `bot`, `proxy`, `backend`, `redis` (plus `web` and `helper` in prod, `cloudflared` in prod and dev), plus `mailpit` in the dev overlay only — prod uses a real provider and self-host has no withdrawal routes, so neither has a mail path to catch. The backend `depends_on` it, which is what pulls it into a bare `up backend`. Both `MP_SMTP_AUTH_*` vars are load-bearing: the backend only sends when `SMTP_USER`/`SMTP_PASSWORD` are set, and nodemailer then does `AUTH PLAIN` in the clear on 1025.
 - Service dependencies: bot → proxy + backend + redis; helper → backend + redis; backend → redis; proxy → redis
-- **Healthchecks live in compose** (proxy, backend, redis, plus `cloudflared` in prod), not the image. Web is the exception: its `HEALTHCHECK` stays in its stage (`127.0.0.1`, not `localhost` — Next binds IPv4 only and `localhost` resolves to `[::1]` first), and prod's `cloudflared` waits on it. The bot has none.
+- **Healthchecks live in compose** (proxy, backend, redis, bot, plus `helper` and `cloudflared` in prod), not the image. Web is the exception: its `HEALTHCHECK` stays in its stage (`127.0.0.1`, not `localhost` — Next binds IPv4 only and `localhost` resolves to `[::1]` first), and prod's `cloudflared` waits on it. The bot and helper test a ready file (see "Release and deploy").
+- **Every bun app handles SIGTERM.** Bun runs as PID 1, which ignores a signal it has no handler for, so `docker stop` would wait its 10 s and SIGKILL. The bot kills its clusters and exits; the proxy closes its BullMQ worker **before** its HTTP server, so enqueues keep landing in Redis while active jobs finish.
+- **Every compose file names the GHCR image beside `build:`.** Root: `:${AUTO_PUBLISHER_VERSION:-latest}`; bare `up -d` pulls it and builds only if the pull fails. Prod overlay: `:${IMAGE_TAG:?}`. The base and dev overlay keep `build:` only.
 - Development: File sync with restart, exposed ports, all loopback-bound (`127.0.0.1:3101:8080` backend, `127.0.0.1:3102:8081` backend webhook listener, `127.0.0.1:8081:8080` proxy, `127.0.0.1:6379:6379` redis — a bare `port:port` publishes on every interface, and none of these has auth: the backend's internal routes, a proxy carrying the bot token, Redis without `requirepass`); any subset can be started (`docker compose ... up backend` alone is enough for web/checkout work; `bot` pulls in proxy + backend + redis)
 - Production: No port exposure, health checks enabled
 - **netcup's SCP firewall carries the custom policy "Block outgoing SMTP"** (DROP 25 and 587, then ACCEPT ANY outgoing) instead of the default "netcup Mail block", because mail goes out on 465. Any outgoing rule flips the implicit outgoing rule to DROP, so the trailing ACCEPT ANY must stay.
