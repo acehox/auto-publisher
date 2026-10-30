@@ -1,7 +1,9 @@
+import { writeFileSync } from 'node:fs';
 import { config } from '@ap/config';
 import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import { type Client, Events } from 'discord.js';
+import { READY_FILE } from '#lib/constants.js';
 import { startReconcileLoop, syncMembers } from '#services/reconcile.js';
 import { logger } from '#utils/logger.js';
 
@@ -32,5 +34,6 @@ export class ReadyListener extends Listener {
 
     await syncMembers(guild);
     startReconcileLoop(guild);
+    writeFileSync(READY_FILE, '');
   }
 }

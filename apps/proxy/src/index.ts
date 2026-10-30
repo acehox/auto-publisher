@@ -57,9 +57,11 @@ const main = async () => {
 
   const shutdown = async () => {
     logger.info({ event: 'proxy.shutdown' });
-    server.close();
     metrics.stop();
     try {
+      // HTTP stays up while active jobs finish, so the bot's enqueues keep landing in Redis.
+      await crosspost.closeWorker();
+      server.close();
       await crosspost.shutdown();
     } catch (error) {
       // A host shutdown stops Redis alongside us; the queue is durable, so only the clean close is lost.
