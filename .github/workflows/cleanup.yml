@@ -1,0 +1,32 @@
+name: Clean up images
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: List what would be deleted, delete nothing
+        type: boolean
+        default: true
+
+permissions: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      packages: write
+    steps:
+      # Keeps the newest 20 `sha-` images per package; `main`, `latest` and version
+      # tags are never deleted. A rollback or redeploy pulls from these.
+      - uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          packages: auto-publisher-bot,auto-publisher-proxy,auto-publisher-backend,auto-publisher-web,auto-publisher-helper
+          keep-n-tagged: 20
+          exclude-tags: '^(\d+(\.\d+){0,2}|latest|main)$'
+          use-regex: true
+          delete-untagged: true
+          dry-run: ${{ inputs.dry-run || false }}
+          token: ${{ secrets.GITHUB_TOKEN }}

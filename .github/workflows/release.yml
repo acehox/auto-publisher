@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - ".claude/**"
+      - ".github/assets/**"
+  # Redeploy or roll back to a commit whose images are still on GHCR. Builds nothing.
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full sha of a commit on main
+        required: true
+        type: string
+
+permissions: {}
+
+jobs:
+  checks:
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ github.sha }}
+
+  build:
+    needs: checks
+    strategy:
+      matrix:
+        image: [bot, proxy, backend, helper, web]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/auto-publisher-${{ matrix.image }}
+    steps:
+      # deploy.sh pulls `sha-<7>`. /release pushes the version tag together with main,
+      # so it is already visible here.
+      - id: tags
+        run: |
+          tags="$IMAGE:sha-${GITHUB_SHA:0:7},$IMAGE:main"
+          version="$(git ls-remote --tags "https://github.com/$GITHUB_REPOSITORY" |
+            awk -v sha="$GITHUB_SHA" '$1 == sha { sub("refs/tags/", "", $2); sub(/\^\{\}$/, "", $2); print $2 }' |
+            grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1 || true)"
+          if [ -n "$version" ]; then
+            IFS=. read -r major minor _ <<<"$version"
+            for tag in "$version" "$major.$minor" "$major" latest; do tags+=",$IMAGE:$tag"; done
+          fi
+          echo "tags=$tags" >>"$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: ${{ matrix.image == 'web' && 'web' || 'app' }}
+          build-args: ${{ matrix.image != 'web' && format('APP={0}', matrix.image) || '' }}
+          platforms: linux/amd64
+          # The source label links the package to the repo and is what deploy.sh prunes by.
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: ${{ steps.tags.outputs.tags }}
+          push: true
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  deploy:
+    needs: [checks, build]
+    # A dispatch skips checks and build; a push needs both to pass.
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://auto-publisher.gg
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    permissions: {}
+    steps:
+      # The key's forced command runs deploy.sh with this sha and nothing else.
+      - env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          SHA: ${{ inputs.sha || github.sha }}
+        run: |
+          install -d -m 700 ~/.ssh
+          install -m 600 /dev/null ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_SSH_KEY" >~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" >~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o BatchMode=yes -o ServerAliveInterval=30 "deploy@$DEPLOY_HOST" "$SHA"
