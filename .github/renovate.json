@@ -1,0 +1,59 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    "helpers:pinGitHubActionDigestsToSemver",
+    "security:minimumReleaseAgeNpm"
+  ],
+  "baseBranchPatterns": ["develop"],
+  "branchPrefix": "chore/deps-",
+  "timezone": "Europe/Zagreb",
+  "schedule": ["before 6am on monday"],
+  "osvVulnerabilityAlerts": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "packageRules": [
+    {
+      "description": "Raise every manifest's floor in the same branch, so one package keeps one floor. Scoped to npm: on Docker tags and node-version it would turn 26 into 26.13.0.",
+      "matchManagers": ["npm"],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "One weekly PR. typescript and biome break checks on a minor, and a Redis minor bump is one-way, so each gets its own PR.",
+      "groupName": "non-major dependencies",
+      "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
+      "matchPackageNames": ["!typescript", "!@biomejs/biome", "!redis"]
+    },
+    {
+      "description": "Redis data written by a newer minor will not load in an older one, so the bump cannot be rolled back.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["redis"],
+      "labels": ["one-way"]
+    },
+    {
+      "description": "A Postgres major needs a dump and restore of every self-hoster's db volume.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "A Node major moves NODE_IMAGE, the @types/node override, engines and node-version in ci.yml together.",
+      "matchPackageNames": ["node", "@types/node"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "matchDepTypes": ["engines"],
+      "enabled": false
+    },
+    {
+      "description": "A pnpm bump also changes PNPM_VERSION and both checksums in the Dockerfile, which the hosted app cannot compute.",
+      "matchPackageNames": ["pnpm"],
+      "enabled": false
+    }
+  ]
+}
