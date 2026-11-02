@@ -22,6 +22,12 @@
       "rangeStrategy": "bump"
     },
     {
+      "description": "A peer range states what consumers may bring, not what we install. Bumping it would demand the newest version for no reason.",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["peerDependencies"],
+      "rangeStrategy": "widen"
+    },
+    {
       "description": "One weekly PR. typescript and biome break checks on a minor, and a Redis minor bump is one-way, so each gets its own PR.",
       "groupName": "non-major dependencies",
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
