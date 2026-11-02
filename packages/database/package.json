@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*",
-    "@types/node": "^26.6.5",
+    "@types/node": "^26.6.6",
     "drizzle-kit": "^0.31.11"
   }
 }
