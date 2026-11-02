@@ -27,7 +27,7 @@
     "@paddle/paddle-node-sdk": "^3.10.0",
     "@sapphire/snowflake": "^3.5.5",
     "cron": "^4.4.0",
-    "discord-api-types": "^0.38.56",
+    "discord-api-types": "^0.38.57",
     "drizzle-orm": "^0.45.4",
     "express": "^5.3.0",
     "nodemailer": "^10.3.1",
