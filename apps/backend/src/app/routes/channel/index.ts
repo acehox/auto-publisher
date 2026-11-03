@@ -2,14 +2,18 @@ import { type APIResponse, StatusCodes, sendErrorResponse, validateRequest } fro
 import express, { type Router } from 'express';
 import { Services } from '#services/index.js';
 import {
-  ChannelEnableReqSchema,
-  ChannelReqSchema,
+  GuildChannelEnableReqSchema,
+  GuildChannelReqSchema,
   SetFilterModeReqSchema,
 } from '#utils/validations.js';
 import { Filter } from './filter.js';
+import { requireChannelOfGuild } from './ownership.js';
 
+/** Docker-internal, for the bot. Mounted under the guild router at `/channel/:channelId`. */
 export const Channel: Router = (() => {
   const router = express.Router({ mergeParams: true });
+
+  router.use(requireChannelOfGuild);
 
   // Mount filter subrouter at /filter
   router.use('/filter', Filter);
@@ -18,7 +22,7 @@ export const Channel: Router = (() => {
    * Checks if a specific channel is enabled for auto-publishing
    * Returns channel status with filters and filter mode
    */
-  router.get('/', validateRequest(ChannelReqSchema), async (req, res) => {
+  router.get('/', validateRequest(GuildChannelReqSchema), async (req, res) => {
     const { channelId } = req.params;
 
     const channelData = await Services.Channels.get(channelId);
@@ -42,9 +46,9 @@ export const Channel: Router = (() => {
    * Enables auto-publishing in a specific channel
    * Adds the channel to the Redis cache and stores it in DB
    */
-  router.put('/', validateRequest(ChannelEnableReqSchema), async (req, res) => {
-    const { channelId } = req.params;
-    const { guildId, clearFilters } = req.body;
+  router.put('/', validateRequest(GuildChannelEnableReqSchema), async (req, res) => {
+    const { guildId, channelId } = req.params;
+    const { clearFilters } = req.body;
 
     try {
       await Services.Channels.add(guildId, channelId, { clearFilters });
@@ -62,11 +66,11 @@ export const Channel: Router = (() => {
    * Disables auto-publishing in a specific channel
    * Removes the channel from the Redis cache and DB
    */
-  router.delete('/', validateRequest(ChannelReqSchema), async (req, res) => {
-    const { channelId } = req.params;
+  router.delete('/', validateRequest(GuildChannelReqSchema), async (req, res) => {
+    const { guildId, channelId } = req.params;
 
     try {
-      await Services.Channels.remove(channelId);
+      await Services.Channels.remove(guildId, channelId);
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
         data: { success: true },

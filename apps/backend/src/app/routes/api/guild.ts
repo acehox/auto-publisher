@@ -13,6 +13,7 @@ import type { SetChannelFilters } from '@ap/validations';
 import { DiscordAPIError, HTTPError } from '@discordjs/rest';
 import { type APIGuild, type APIRole, Routes } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
+import { requireChannelOfGuild } from '#app/routes/channel/ownership.js';
 import { Discord } from '#services/discord.js';
 import { Services } from '#services/index.js';
 import { isEntitledStatus } from '#services/subscriptions.js';
@@ -45,16 +46,14 @@ const assertPremiumActive = async (guildId: string): Promise<void> => {
 };
 
 /**
- * Resolve a serving channel that belongs to this guild, or throw. Filters live
- * on the channel row and are mutated by channelId (its PK), so without the
- * guild-ownership check a guild admin could edit filters on a channel
- * registered under a different guild. A paused row is a disabled
- * channel with retained config — not a valid filter-edit target.
+ * Resolve a registered, serving channel, or throw. Guild ownership is
+ * `requireChannelOfGuild`'s job; a paused row is a disabled channel with
+ * retained config — not a valid filter-edit target.
  */
-const requireOwnedServingChannel = async (guildId: string, channelId: string): Promise<void> => {
+const requireServingChannel = async (channelId: string): Promise<void> => {
   const record = await Services.Channels.find(channelId);
-  if (!record || record.guildId !== guildId) {
-    throw createHttpError('Channel does not belong to this guild', StatusCodes.BAD_REQUEST);
+  if (!record) {
+    throw createHttpError('Channel is not registered', StatusCodes.BAD_REQUEST);
   }
   if (record.pausedAt) {
     throw createHttpError('Channel is not enabled', StatusCodes.CONFLICT);
@@ -137,6 +136,8 @@ const buildWithdrawalState = async (
 
 export const GuildApi: Router = (() => {
   const router = express.Router({ mergeParams: true });
+
+  router.use('/channel/:channelId', requireChannelOfGuild);
 
   /**
    * GET /api/guild/:guildId
@@ -281,25 +282,13 @@ export const GuildApi: Router = (() => {
 
   /**
    * DELETE /api/guild/:guildId/channel/:channelId
-   * Disable channel for auto-publishing. Scoped to THIS guild — the channel
-   * row is deleted by channelId (its PK), so without a guild-ownership check a
-   * guild admin could disable a channel registered under a different guild.
+   * Disable channel for auto-publishing.
    */
   router.delete('/channel/:channelId', validateRequest(GuildChannelReqSchema), async (req, res) => {
     const { guildId, channelId } = req.params;
 
     try {
-      const record = await Services.Channels.find(channelId);
-
-      if (record && record.guildId !== guildId) {
-        res.status(StatusCodes.BAD_REQUEST).json({
-          status: StatusCodes.BAD_REQUEST,
-          message: 'Channel does not belong to this guild',
-        } as APIResponse);
-        return;
-      }
-
-      await Services.Channels.remove(channelId);
+      await Services.Channels.remove(guildId, channelId);
 
       res.status(StatusCodes.OK).json({
         status: StatusCodes.OK,
@@ -360,7 +349,7 @@ export const GuildApi: Router = (() => {
 
       try {
         await assertPremiumActive(guildId);
-        await requireOwnedServingChannel(guildId, channelId);
+        await requireServingChannel(channelId);
 
         await Services.Channels.setFilters(channelId, matchMode, conditions);
 
