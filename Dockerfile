@@ -6,17 +6,30 @@ ARG NODE_IMAGE=node:26-alpine
 # Wall-clock cap on every registry-bound pnpm step; a cold install takes 6-60 s.
 ARG INSTALL_TIMEOUT=600
 
-# Standalone binary (no Node needed), so it runs on both bases. Checksums are sha256 of
-# the registry tarball; bump them together with `packageManager` in package.json.
-FROM ${BUN_IMAGE} AS pnpm
+# Version and sha512 come from the lockfile's leading document, which `pnpm install` writes
+# from `packageManager`. A lockfile without it fails here rather than installing an
+# unverified binary.
+FROM ${BUN_IMAGE} AS pnpm-pin
 ARG TARGETARCH
-ARG PNPM_VERSION=12.11.2
-ARG PNPM_SHA256_amd64=eac3349d3314d6333234f1a743ce2e9605f31504a5ea87faf599c1075d0fcf39
-ARG PNPM_SHA256_arm64=bf83e3f808dc061d840c11da9a89196aae89063263e0f136817ad8aa9421ca5a
+COPY pnpm-lock.yaml /tmp/
 RUN set -eu; \
-    case "$TARGETARCH" in amd64) a=x64; sum=$PNPM_SHA256_amd64 ;; arm64) a=arm64; sum=$PNPM_SHA256_arm64 ;; *) exit 1 ;; esac; \
-    wget -q -T 60 -O /tmp/pnpm.tgz "https://registry.npmjs.org/@pnpm/exe.linux-$a-musl/-/exe.linux-$a-musl-$PNPM_VERSION.tgz"; \
-    echo "$sum  /tmp/pnpm.tgz" | sha256sum -c -; \
+    case "$TARGETARCH" in amd64) a=x64 ;; arm64) a=arm64 ;; *) exit 1 ;; esac; \
+    entry=$(sed -n '1{/^---$/!q};2,/^---$/p' /tmp/pnpm-lock.yaml | grep -A1 -m1 "^  '@pnpm/exe.linux-$a-musl@" || true); \
+    version=$(echo "$entry" | sed -n "1s/.*@\(.*\)':\$/\1/p"); \
+    sum=$(echo "$entry" | sed -n '2s/.*integrity: sha512-\([^,}]*\).*/\1/p' | base64 -d 2>/dev/null | od -An -v -tx1 | tr -d ' \n'); \
+    if [ -z "$version" ] || [ ${#sum} -ne 128 ]; then \
+      echo "pnpm-lock.yaml has no valid @pnpm/exe.linux-$a-musl sha512 in its leading document (missing, or its format changed)." >&2; exit 1; \
+    fi; \
+    echo "https://registry.npmjs.org/@pnpm/exe.linux-$a-musl/-/exe.linux-$a-musl-$version.tgz $sum" > /pin
+
+# Standalone binary (no Node needed), so it runs on both bases. Takes only the pin, so a
+# lockfile change that leaves pnpm alone keeps the download cached.
+FROM ${BUN_IMAGE} AS pnpm
+COPY --from=pnpm-pin /pin /tmp/
+RUN set -eu; \
+    read -r url sum < /tmp/pin; \
+    wget -q -T 60 -O /tmp/pnpm.tgz "$url"; \
+    echo "$sum  /tmp/pnpm.tgz" | sha512sum -c -; \
     tar -xzf /tmp/pnpm.tgz -C /tmp; install -D -m 755 /tmp/package/pnpm /out/usr/local/bin/pnpm
 
 # Everything an install needs, so both bases take it in one COPY. Manifests only, so a
