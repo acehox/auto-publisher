@@ -97,7 +97,9 @@ async function login() {
   try {
     say('Log in to Discord with the test account in the Chrome window, then click Authorize.');
     // The profile remembers the Block, so this comes up on the first login only.
-    say('If Chrome asks to let discord.com access other apps, click Block, then Continue to Discord.');
+    say(
+      'If Chrome asks to let discord.com access other apps, click Block, then Continue to Discord.'
+    );
     await waitForDashboardTab(port, chrome);
 
     const browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
