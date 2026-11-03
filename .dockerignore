@@ -68,6 +68,10 @@ scripts/
 # Scraped documentation cache
 .firecrawl/
 
+# Agent browser: saved logins and screenshots
+**/.playwright/
+**/.playwright-cli/
+
 # Supabase
 supabase/.branches
 supabase/.temp

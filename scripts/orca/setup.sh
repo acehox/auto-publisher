@@ -13,6 +13,13 @@ if [ -n "$ORCA_ROOT_PATH" ] && [ "$ORCA_ROOT_PATH" != "$ORCA_WORKTREE_PATH" ]; t
       echo "🔗 Linked $file"
     fi
   done
+
+  # Created in the main checkout when missing, so a browser login made later reaches this worktree.
+  mkdir -p "$ORCA_ROOT_PATH/.playwright/auth" .playwright
+  if [ ! -e .playwright/auth ]; then
+    ln -s "$ORCA_ROOT_PATH/.playwright/auth" .playwright/auth
+    echo "🔗 Linked .playwright/auth"
+  fi
 fi
 
 # Relative, so each worktree runs its own checkout's hooks.
