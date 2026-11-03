@@ -11,13 +11,19 @@ import {
 
 @ApplyOptions<Subcommand.Options>({
   description: 'Manage auto-publishing in announcement channels',
-  requiredUserPermissions: [PermissionFlagsBits.ManageChannels],
   runIn: ['GUILD_ANY'],
   preconditions: ['GuildOnly'],
+  // Enable, disable and filters check the channel they name in the handler
+  // (`handleManageChannelCheck`), not the one the command was typed in. Overview
+  // names no channel, so it keeps the invoking-channel check.
   subcommands: [
     { name: 'enable', chatInputRun: 'chatInputEnable' },
     { name: 'disable', chatInputRun: 'chatInputDisable' },
-    { name: 'overview', chatInputRun: 'chatInputOverview' },
+    {
+      name: 'overview',
+      chatInputRun: 'chatInputOverview',
+      requiredUserPermissions: [PermissionFlagsBits.ManageChannels],
+    },
     { name: 'filters', chatInputRun: 'chatInputFilters' },
   ],
 })

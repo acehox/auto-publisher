@@ -35,8 +35,7 @@ app.use(...createRequestLogger(env.isDevelopment));
 // JSON parser for all remaining routes
 app.use(express.json());
 
-// Existing Docker-internal routes (unchanged)
-app.use('/channel/:channelId', App.Routes.Channel);
+// Docker-internal routes for the bot and helper: no auth, never expose this port
 app.use('/guild/:guildId', App.Routes.Guild);
 app.use('/info', App.Routes.Info);
 app.use('/internal', App.Routes.Internal);

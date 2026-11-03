@@ -43,34 +43,37 @@ const requestWithRetry = async (path: string, init: RequestInit): Promise<Respon
   }
 };
 
-// Channels
+// Channels. Scoped by guild: the backend rejects a channel registered to another one.
+const channelPath = (guildId: Snowflake, channelId: Snowflake) =>
+  `/guild/${guildId}/channel/${channelId}`;
+
 const addChannel = async (
   guildId: Snowflake,
   channelId: Snowflake,
   options: { clearFilters?: boolean } = {}
 ) => {
   return request(
-    `/channel/${channelId}`,
+    channelPath(guildId, channelId),
     {
       method: RequestMethod.Put,
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ guildId, ...(options.clearFilters ? { clearFilters: true } : {}) }),
+      body: JSON.stringify(options.clearFilters ? { clearFilters: true } : {}),
     },
     // `/ap enable` replies to both: 409 already enabled, 400 cap / filters / not announcement
     [400, 409]
   );
 };
 
-const removeChannel = async (channelId: Snowflake) => {
-  return request(`/channel/${channelId}`, {
+const removeChannel = async (guildId: Snowflake, channelId: Snowflake) => {
+  return request(channelPath(guildId, channelId), {
     method: RequestMethod.Delete,
   });
 };
 
-const getChannel = async (channelId: Snowflake) => {
-  return request(`/channel/${channelId}`, {
+const getChannel = async (guildId: Snowflake, channelId: Snowflake) => {
+  return request(channelPath(guildId, channelId), {
     method: RequestMethod.Get,
   });
 };
@@ -152,8 +155,8 @@ const getInfo = async () => {
 };
 
 // Filters
-const addFilter = async (channelId: Snowflake, filterData: CreateFilter) => {
-  return request(`/channel/${channelId}/filter`, {
+const addFilter = async (guildId: Snowflake, channelId: Snowflake, filterData: CreateFilter) => {
+  return request(`${channelPath(guildId, channelId)}/filter`, {
     method: RequestMethod.Post,
     headers: {
       'Content-Type': 'application/json',
@@ -162,20 +165,19 @@ const addFilter = async (channelId: Snowflake, filterData: CreateFilter) => {
   });
 };
 
-const removeFilter = async (channelId: Snowflake, filterId: string) => {
-  return request(`/channel/${channelId}/filter/${filterId}`, {
+const removeFilter = async (guildId: Snowflake, channelId: Snowflake, filterId: string) => {
+  return request(`${channelPath(guildId, channelId)}/filter/${filterId}`, {
     method: RequestMethod.Delete,
   });
 };
 
-const getFilters = async (channelId: Snowflake) => {
-  return request(`/channel/${channelId}/filter`, {
-    method: RequestMethod.Get,
-  });
-};
-
-const updateFilter = async (channelId: Snowflake, filterId: string, filterData: CreateFilter) => {
-  return request(`/channel/${channelId}/filter/${filterId}`, {
+const updateFilter = async (
+  guildId: Snowflake,
+  channelId: Snowflake,
+  filterId: string,
+  filterData: CreateFilter
+) => {
+  return request(`${channelPath(guildId, channelId)}/filter/${filterId}`, {
     method: RequestMethod.Put,
     headers: {
       'Content-Type': 'application/json',
@@ -184,8 +186,8 @@ const updateFilter = async (channelId: Snowflake, filterId: string, filterData: 
   });
 };
 
-const setFilterMode = async (channelId: Snowflake, mode: FilterMatchMode) => {
-  return request(`/channel/${channelId}/filter-mode`, {
+const setFilterMode = async (guildId: Snowflake, channelId: Snowflake, mode: FilterMatchMode) => {
+  return request(`${channelPath(guildId, channelId)}/filter-mode`, {
     method: RequestMethod.Put,
     headers: {
       'Content-Type': 'application/json',
@@ -208,7 +210,6 @@ export const Backend = {
   invalidateGuildRoles,
   addFilter,
   removeFilter,
-  getFilters,
   updateFilter,
   setFilterMode,
 };

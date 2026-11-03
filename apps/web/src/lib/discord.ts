@@ -1,3 +1,6 @@
+/** Discord snowflake: 17-20 digits. */
+export const SNOWFLAKE_REGEX = /^\d{17,20}$/;
+
 /**
  * Discord CDN icon URL for a guild, or null when the guild has no custom icon
  * (caller renders an initial/fallback). Shared by the server list and the
