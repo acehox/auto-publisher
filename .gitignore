@@ -71,3 +71,8 @@ docs/plans/internal/
 .mcp.json
 # The commit production runs (scripts/bot/prod/deploy.sh)
 .deployed-sha
+
+# Playwright CLI: only cli.config.json is committed. auth/ holds a Discord bearer token.
+.playwright/auth
+.playwright/profiles/
+.playwright-cli/
