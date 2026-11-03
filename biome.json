@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**/*.js", "**/*.ts", "**/*.tsx", "**/*.jsx", "**/*.json"]
+    "includes": ["**/*.js", "**/*.ts", "**/*.mts", "**/*.tsx", "**/*.jsx", "**/*.json"]
   },
   "assist": {
     "actions": {
