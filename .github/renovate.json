@@ -28,10 +28,10 @@
       "rangeStrategy": "widen"
     },
     {
-      "description": "One weekly PR. typescript and biome break checks on a minor, and a Redis minor bump is one-way, so each gets its own PR.",
+      "description": "One weekly PR. typescript and biome break checks on a minor, a Redis minor bump is one-way, and pnpm is the binary every install and image build runs, so each gets its own PR.",
       "groupName": "non-major dependencies",
       "matchUpdateTypes": ["minor", "patch", "digest", "pin", "pinDigest"],
-      "matchPackageNames": ["!typescript", "!@biomejs/biome", "!redis"]
+      "matchPackageNames": ["!typescript", "!@biomejs/biome", "!redis", "!pnpm"]
     },
     {
       "description": "Redis data written by a newer minor will not load in an older one, so the bump cannot be rolled back.",
@@ -54,11 +54,6 @@
     },
     {
       "matchDepTypes": ["engines"],
-      "enabled": false
-    },
-    {
-      "description": "A pnpm bump also changes PNPM_VERSION and both checksums in the Dockerfile, which the hosted app cannot compute.",
-      "matchPackageNames": ["pnpm"],
       "enabled": false
     }
   ]
