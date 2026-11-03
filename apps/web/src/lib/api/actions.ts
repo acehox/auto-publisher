@@ -1,6 +1,6 @@
 'use server';
 
-import { BackendError, backendFetch } from '@/lib/api/backend';
+import { apiPath, BackendError, backendFetch } from '@/lib/api/backend';
 import type {
   ChannelLimitReason,
   CheckoutResponse,
@@ -24,15 +24,15 @@ import { LEGAL_DOCUMENTS_VERSION } from '@/lib/legal/documents';
 export type MutationResult = { ok: true } | { ok: false; status: number; code?: string };
 
 export async function getUserGuilds(): Promise<DiscordGuild[]> {
-  return backendFetch<DiscordGuild[]>('/api/user/guilds');
+  return backendFetch<DiscordGuild[]>(apiPath`/api/user/guilds`);
 }
 
 export async function getGuildDashboard(guildId: string): Promise<GuildDashboardData> {
-  return backendFetch<GuildDashboardData>(`/api/guild/${guildId}`);
+  return backendFetch<GuildDashboardData>(apiPath`/api/guild/${guildId}`);
 }
 
 export async function getGuildChannels(guildId: string): Promise<GuildChannel[]> {
-  return backendFetch<GuildChannel[]>(`/api/guild/${guildId}/channels`);
+  return backendFetch<GuildChannel[]>(apiPath`/api/guild/${guildId}/channels`);
 }
 
 export async function enableChannel(
@@ -42,7 +42,7 @@ export async function enableChannel(
   options: { clearFilters?: boolean } = {}
 ): Promise<MutationResult> {
   try {
-    await backendFetch(`/api/guild/${guildId}/channel/${channelId}`, {
+    await backendFetch(apiPath`/api/guild/${guildId}/channel/${channelId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(options.clearFilters ? { clearFilters: true } : {}),
@@ -60,7 +60,7 @@ export async function enableChannel(
 
 export async function disableChannel(guildId: string, channelId: string): Promise<MutationResult> {
   try {
-    await backendFetch(`/api/guild/${guildId}/channel/${channelId}`, {
+    await backendFetch(apiPath`/api/guild/${guildId}/channel/${channelId}`, {
       method: 'DELETE',
     });
     return { ok: true };
@@ -77,7 +77,7 @@ export async function disableChannel(guildId: string, channelId: string): Promis
 /** MIGRATION: Remove after migration period (6 months) */
 export async function migrateGuild(guildId: string, channelIds: string[]): Promise<MutationResult> {
   try {
-    await backendFetch(`/api/guild/${guildId}/migrate`, {
+    await backendFetch(apiPath`/api/guild/${guildId}/migrate`, {
       method: 'POST',
       body: JSON.stringify({ channelIds }),
     });
@@ -91,7 +91,7 @@ export async function migrateGuild(guildId: string, channelIds: string[]): Promi
 }
 
 export async function getSubscription(guildId: string): Promise<SubscriptionDetail | null> {
-  return backendFetch<SubscriptionDetail | null>(`/api/guild/${guildId}/subscription`);
+  return backendFetch<SubscriptionDetail | null>(apiPath`/api/guild/${guildId}/subscription`);
 }
 
 /**
@@ -102,7 +102,7 @@ export async function createCheckout(
   guildId: string,
   interval: 'month' | 'year'
 ): Promise<CheckoutResponse> {
-  return backendFetch<CheckoutResponse>(`/api/guild/${guildId}/subscription/checkout`, {
+  return backendFetch<CheckoutResponse>(apiPath`/api/guild/${guildId}/subscription/checkout`, {
     method: 'POST',
     body: JSON.stringify({
       interval,
@@ -123,7 +123,7 @@ export async function withdrawFromContract(
 ): Promise<{ ok: true; result: WithdrawalResult } | { ok: false; status: number; code?: string }> {
   try {
     const result = await backendFetch<WithdrawalResult>(
-      `/api/guild/${guildId}/subscription/withdrawal`,
+      apiPath`/api/guild/${guildId}/subscription/withdrawal`,
       { method: 'POST', body: JSON.stringify({ notificationAddress }) }
     );
     return { ok: true, result };
@@ -136,7 +136,7 @@ export async function withdrawFromContract(
 }
 
 export async function getGuildRoles(guildId: string): Promise<GuildRole[]> {
-  return backendFetch<GuildRole[]>(`/api/guild/${guildId}/roles`);
+  return backendFetch<GuildRole[]>(apiPath`/api/guild/${guildId}/roles`);
 }
 
 /**
@@ -165,7 +165,7 @@ export async function setChannelFilters(
   data: { matchMode: FilterMatchMode; conditions: FilterInput[] }
 ): Promise<MutationResult> {
   try {
-    await backendFetch(`/api/guild/${guildId}/channel/${channelId}/filters`, {
+    await backendFetch(apiPath`/api/guild/${guildId}/channel/${channelId}/filters`, {
       method: 'PUT',
       body: JSON.stringify({
         matchMode: data.matchMode,
