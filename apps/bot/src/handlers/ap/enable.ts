@@ -14,6 +14,7 @@ import {
 import { Buttons } from '#lib/components/buttons.js';
 import { emojis, notes } from '#lib/constants/index.js';
 import { Services } from '#services/index.js';
+import { handleManageChannelCheck } from '#utils/interactions.js';
 import { logger } from '#utils/logger.js';
 import { formatNotes } from '#utils/notes.js';
 import { checkChannelPermissions, renderPermissionSteps } from '#utils/permissions.js';
@@ -121,6 +122,7 @@ export async function chatInputEnable(
 
   // Get option values
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
+  if (await handleManageChannelCheck(interaction, channel)) return;
 
   const botMember = await interaction.guild?.members.me?.fetch();
   if (!botMember) {

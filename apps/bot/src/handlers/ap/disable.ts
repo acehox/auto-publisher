@@ -12,6 +12,7 @@ import {
 } from 'discord.js';
 import { emojis } from '#lib/constants/index.js';
 import { Services } from '#services/index.js';
+import { handleManageChannelCheck } from '#utils/interactions.js';
 import { logger } from '#utils/logger.js';
 import { buildReply, replyPayload } from '#utils/reply.js';
 
@@ -32,9 +33,10 @@ export async function chatInputDisable(
 
   // Get option values
   const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
+  if (await handleManageChannelCheck(interaction, channel)) return;
 
   try {
-    const channelStatus = await Services.Channel.getStatus(channel.id);
+    const channelStatus = await Services.Channel.getStatus(interaction.guildId, channel.id);
 
     if (!channelStatus?.enabled) {
       return interaction.editReply(
@@ -89,7 +91,7 @@ export async function chatInputDisable(
           });
 
           if (confirmation.customId === 'confirm_disable') {
-            await Services.Channel.disable(channel.id);
+            await Services.Channel.disable(interaction.guildId, channel.id);
 
             return confirmation.update(replyPayload(disabledContainer(channel.id)));
           }
@@ -121,7 +123,7 @@ export async function chatInputDisable(
       }
     }
 
-    await Services.Channel.disable(channel.id);
+    await Services.Channel.disable(interaction.guildId, channel.id);
 
     return interaction.editReply(replyPayload(disabledContainer(channel.id)));
   } catch (error) {

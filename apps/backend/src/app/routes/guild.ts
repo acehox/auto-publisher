@@ -6,9 +6,12 @@ import {
   GuildRegisterReqSchema,
   GuildReqSchema,
 } from '#utils/validations.js';
+import { Channel } from './channel/index.js';
 
 export const Guild: Router = (() => {
   const router = express.Router({ mergeParams: true });
+
+  router.use('/channel/:channelId', Channel);
 
   /**
    * Get a guild's auto-publishing state for the bot's slash commands: serving

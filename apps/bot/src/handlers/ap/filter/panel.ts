@@ -14,7 +14,12 @@ import {
 import { Data } from '#data/index.js';
 import { emojis } from '#lib/constants/index.js';
 import { Services } from '#services/index.js';
-import { handlePremiumCheck } from '#utils/interactions.js';
+import {
+  canManageChannel,
+  handleManageChannelCheck,
+  handlePremiumCheck,
+  manageChannelRequired,
+} from '#utils/interactions.js';
 import { logger } from '#utils/logger.js';
 import { buildFilterModal, extractModalValues, fitsEditModal, modalCustomId } from './modal.js';
 import {
@@ -58,12 +63,13 @@ export async function chatInputFilters(
 
   // This is handled by the GuildOnly precondition
   if (!interaction.inGuild()) return;
+  const { guildId } = interaction;
+
+  const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
+  if (await handleManageChannelCheck(interaction, channel)) return;
 
   // Filters are Premium, resolved per guild — the bot has no plan of its own
-  if (await handlePremiumCheck(interaction, interaction.guildId)) return;
-
-  // Get option values
-  const channel = interaction.options.getChannel<ChannelType.GuildAnnouncement>('channel', true);
+  if (await handlePremiumCheck(interaction, guildId)) return;
 
   const notEnabled = `${emojis.crossmark} <#${channel.id}> is not auto-publishing.\n\n-# To set its filter, first enable auto-publishing with </ap enable:${interaction.commandId}>.`;
   const unreadable = `${emojis.crossmark} Failed to load the filter for <#${channel.id}>. Try again in a few minutes.`;
@@ -99,7 +105,7 @@ export async function chatInputFilters(
 
   /** Fresh read of the channel's rule. */
   const readState = async (): Promise<PanelState | PanelUnavailable> => {
-    const status = await Services.Channel.getStatus(channel.id);
+    const status = await Services.Channel.getStatus(guildId, channel.id);
     // A channel that isn't registered comes back as `{ enabled: false }`; `null` means
     // the read itself failed, which must not be reported as "not enabled".
     if (!status) return 'unreadable';
@@ -146,6 +152,21 @@ export async function chatInputFilters(
     lastResponder = source;
     responderMintedAt = source.createdTimestamp;
     deferExpiry();
+  };
+
+  /**
+   * The panel outlives the command's permission check by up to 10 idle minutes per
+   * action, so every action and every submitted form re-checks the member.
+   */
+  const denyIfNotManager = async (
+    source: MessageComponentInteraction | ModalSubmitInteraction
+  ): Promise<boolean> => {
+    if (canManageChannel(source, channel)) return false;
+    await showView(
+      source,
+      buildNoticeView(`${emojis.crossmark} ${manageChannelRequired(channel.id)}`)
+    );
+    return true;
   };
 
   /** Read state, or render why there's nothing to show and return null. */
@@ -230,6 +251,7 @@ export async function chatInputFilters(
     filterId?: string
   ): Promise<void> => {
     await submit.deferUpdate();
+    if (await denyIfNotManager(submit)) return;
 
     const extracted = extractModalValues(submit, type);
     if (!extracted.valid) {
@@ -244,8 +266,8 @@ export async function chatInputFilters(
     };
 
     const response = filterId
-      ? await Data.API.Backend.updateFilter(channel.id, filterId, filterData)
-      : await Data.API.Backend.addFilter(channel.id, filterData);
+      ? await Data.API.Backend.updateFilter(guildId, channel.id, filterId, filterData)
+      : await Data.API.Backend.addFilter(guildId, channel.id, filterData);
 
     const verb = filterId ? 'updated' : 'added';
     const notice = response.ok
@@ -327,7 +349,7 @@ export async function chatInputFilters(
         const mode = param === FilterMatchMode.Any ? FilterMatchMode.Any : FilterMatchMode.All;
         await component.deferUpdate();
 
-        const response = await Data.API.Backend.setFilterMode(channel.id, mode);
+        const response = await Data.API.Backend.setFilterMode(guildId, channel.id, mode);
         const notice = response.ok
           ? `${emojis.checkmark} ${
               mode === FilterMatchMode.All
@@ -383,7 +405,7 @@ export async function chatInputFilters(
         if (!param) return;
         await component.deferUpdate();
 
-        const response = await Data.API.Backend.removeFilter(channel.id, param);
+        const response = await Data.API.Backend.removeFilter(guildId, channel.id, param);
         const notice = response.ok
           ? `${emojis.checkmark} Condition removed.`
           : `${emojis.crossmark} ${await describeFailure(response, {
@@ -425,6 +447,10 @@ export async function chatInputFilters(
       logger.debug({ customId: component.customId }, 'Filter panel action');
 
       try {
+        if (await denyIfNotManager(component)) {
+          collector.stop('forbidden');
+          return;
+        }
         await route(component);
       } catch (error) {
         logger.error(error, 'Filter panel action failed');
