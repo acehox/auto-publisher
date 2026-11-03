@@ -19,6 +19,7 @@
     "dev:cache": "bash ./scripts/bot/dev/cache.sh",
     "dev:web": "turbo run dev --filter=web",
     "build:web": "turbo run build --filter=web",
+    "browser:login": "node scripts/browser/login.mts",
     "prod:start": "bash ./scripts/bot/prod/start.sh",
     "prod:stop": "bash ./scripts/bot/prod/stop.sh",
     "prod:logs": "bash ./scripts/bot/prod/logs.sh",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
+    "@playwright/test": "^1.64.1",
     "rimraf": "^6.1.3",
     "supabase": "^2.122.0",
     "turbo": "^2.11.10",
