@@ -21,12 +21,21 @@ The dashboard (`pnpm dev:web`, port 3100) and the dev stack (`pnpm dev:start`: b
 ```bash
 pnpm exec playwright cli open
 pnpm exec playwright cli state-load .playwright/auth/state.json
+pnpm exec playwright cli goto http://localhost:3100/api/auth/session
+pnpm exec playwright cli eval "document.body.innerText"
+```
+
+The session is signed in when that text is a JSON object with a `user`. It is signed out when `state-load` reports a missing file or the text is `null`. Then stop and ask the user to run `pnpm browser:login`. That command needs a person: they sign in to Discord in a Chrome window. Never type into a discord.com page yourself.
+
+Check this before you open `/dashboard`, and never open it while signed out. A signed-out dashboard shows a spinner, then sends the browser to discord.com by itself.
+
+Once signed in, open the dashboard:
+
+```bash
 pnpm exec playwright cli goto http://localhost:3100/dashboard
 ```
 
 The session is now signed in as the test Discord account. That account administers test servers that run the dev bot.
-
-The session is signed out when `state-load` reports a missing file, or when `goto` lands on `/login` or `discord.com`. Then stop and ask the user to run `pnpm browser:login`. That command needs a person: they sign in to Discord in a Chrome window. Never type into a discord.com page yourself.
 
 ## 3. Work with the page
 
@@ -45,7 +54,7 @@ Outbound mail, such as the withdrawal acknowledgement, lands in Mailpit at http:
 
 ## Rules
 
-- **Change data freely on the dev stack.** That means enabling channels, editing filters and Paddle sandbox checkouts. The stack runs the dev bot and test servers, never production.
+- **Change data freely on the dev stack.** That means enabling channels and editing filters. The stack runs the dev bot and test servers, never production.
 - **Use localhost only.** Never act on discord.com. Driving a Discord user account outside OAuth is a self-bot, and Discord terminates accounts for it. If a test needs a message posted in Discord, ask the user.
 - **Close the session when done:** `pnpm exec playwright cli close`. The user can watch or take over a session with `pnpm exec playwright cli show`.
 
