@@ -207,10 +207,10 @@ const get = async (channelId: Snowflake) => {
 };
 
 /**
- * Guards in the service, not the route: `PUT /channel/:channelId` (the bot's
- * `/ap enable`) is Docker-internal with no auth and takes `guildId` from the
- * body, and `channel_types` on the slash-command option only restricts the
- * picker — Discord does not document it as a server-side guarantee.
+ * Guards in the service, not the route: `PUT /guild/:guildId/channel/:channelId`
+ * (the bot's `/ap enable`) is Docker-internal with no auth, and `channel_types`
+ * on the slash-command option only restricts the picker — Discord does not
+ * document it as a server-side guarantee.
  *
  * Not redundant with the hot path's own type re-check: a forged row still
  * migrates a legacy guild off auto-publish and burns a free-cap slot, and a
@@ -350,14 +350,22 @@ const add = async (
 };
 
 /**
- * Remove channel from channel DB & cache
+ * Remove a guild's channel from DB & cache. A channel with no row in this guild
+ * is left alone: the cache and the rollover backlog are keyed by channelId only,
+ * so clearing them for an unproven id would let one guild drop another's held
+ * messages.
+ * @param guildId ID of the guild
  * @param channelId ID of the channel
  */
-const remove = async (channelId: Snowflake): Promise<void> => {
+const remove = async (guildId: Snowflake, channelId: Snowflake): Promise<void> => {
   let dbDeleted = false;
 
   try {
-    await db.delete(channelTable).where(eq(channelTable.channelId, channelId));
+    const deleted = await db
+      .delete(channelTable)
+      .where(and(eq(channelTable.channelId, channelId), eq(channelTable.guildId, guildId)))
+      .returning({ channelId: channelTable.channelId });
+    if (deleted.length === 0) return;
     dbDeleted = true;
     await Data.Channels.Cache.remove(channelId);
 

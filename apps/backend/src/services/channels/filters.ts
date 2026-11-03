@@ -65,27 +65,6 @@ const remove = async (channelId: Snowflake, filterId: string): Promise<void> => 
 };
 
 /**
- * Get filters for channel
- * @param channelId ID of the channel
- * @returns Array of filters
- */
-const list = async (channelId: Snowflake): Promise<Filter[]> => {
-  try {
-    const channel = await ChannelOps.find(channelId);
-
-    if (!channel) {
-      throw createHttpError('Channel not found', StatusCodes.NOT_FOUND);
-    }
-
-    return channel.filters as Filter[];
-  } catch (error) {
-    if (error instanceof HttpError) throw error;
-    logger.error(error);
-    throw new Error('Failed to get filters');
-  }
-};
-
-/**
  * Update filter in channel
  * @param channelId ID of the channel
  * @param filterId ID of the filter
@@ -129,5 +108,4 @@ export const Filters = {
   add,
   remove,
   update,
-  list,
 };

@@ -1,6 +1,7 @@
 import { Copy, type OperatorOption } from '@ap/copy';
 import type { SegmentedOption } from '@/components/ui/segmented-control';
 import type { FilterMatchMode, FilterType } from '@/lib/api/types';
+import { SNOWFLAKE_REGEX } from '@/lib/discord';
 
 export type { OperatorOption };
 
@@ -46,9 +47,6 @@ export const MAX_VALUES: Record<FilterType, number> = {
 export const MATCH_MODE_OPTIONS: SegmentedOption<FilterMatchMode>[] = (['all', 'any'] as const).map(
   value => ({ value, label: Copy.filters.matchModes.labels[value] })
 );
-
-/** Discord snowflake: 17-20 digits. */
-export const SNOWFLAKE_REGEX = /^\d{17,20}$/;
 
 /**
  * Per-type value check, shared by the chip inputs (flag invalid chips in red) and

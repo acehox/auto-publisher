@@ -55,12 +55,13 @@ const enable = async (
 
 /**
  * Disable auto-publishing for a channel
+ * @param guildId The guild ID
  * @param channelId The channel ID
  * @returns true if successful, false otherwise
  */
-const disable = async (channelId: Snowflake) => {
+const disable = async (guildId: Snowflake, channelId: Snowflake) => {
   try {
-    const response = await Data.API.Backend.removeChannel(channelId);
+    const response = await Data.API.Backend.removeChannel(guildId, channelId);
 
     if (!response.ok) {
       logger.error(
@@ -79,12 +80,13 @@ const disable = async (channelId: Snowflake) => {
 
 /**
  * Get status of a channel
+ * @param guildId The guild ID
  * @param channelId The channel ID
  * @returns Channel status object with enabled flag, filters, and filter mode, or null if request fails
  */
-const getStatus = async (channelId: Snowflake) => {
+const getStatus = async (guildId: Snowflake, channelId: Snowflake) => {
   try {
-    const response = await Data.API.Backend.getChannel(channelId);
+    const response = await Data.API.Backend.getChannel(guildId, channelId);
 
     if (!response.ok) {
       logger.error(

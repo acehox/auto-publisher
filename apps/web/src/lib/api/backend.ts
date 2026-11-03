@@ -2,6 +2,7 @@ import 'server-only';
 
 import { env } from '@ap/config';
 import { auth } from '@/lib/auth';
+import { SNOWFLAKE_REGEX } from '@/lib/discord';
 
 /** Upper bound on a single backend round-trip before it aborts as transient. */
 const BACKEND_TIMEOUT_MS = 10_000;
@@ -45,6 +46,22 @@ export class AuthExpiredError extends BackendError {
   }
 }
 
+/** A backend path whose every interpolated value is a Discord id. */
+export type ApiPath = string & { readonly __brand: 'ApiPath' };
+
+/**
+ * Tag for every backend path. Server actions are public endpoints that accept any
+ * string, and the backend serves its unauthenticated bot routes on the same port,
+ * so an id like `../../channel/123` would leave `/api` and skip the permission
+ * check. A 404 makes the dashboard treat the id as an unknown server.
+ */
+export function apiPath(strings: TemplateStringsArray, ...ids: string[]): ApiPath {
+  if (!ids.every(id => SNOWFLAKE_REGEX.test(id))) {
+    throw new BackendError(404, 'Unknown id');
+  }
+  return String.raw(strings, ...ids) as ApiPath;
+}
+
 /** Pulls the APIResponse `code`/`message` out of an error body (JSON or raw text) */
 function parseErrorBody(body: string): { message?: string; code?: string } {
   try {
@@ -55,7 +72,7 @@ function parseErrorBody(body: string): { message?: string; code?: string } {
   }
 }
 
-export async function backendFetch<T>(path: string, options?: BackendFetchOptions): Promise<T> {
+export async function backendFetch<T>(path: ApiPath, options?: BackendFetchOptions): Promise<T> {
   const session = await auth();
 
   if (!session) {
