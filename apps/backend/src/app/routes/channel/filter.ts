@@ -4,31 +4,12 @@ import express, { type Router } from 'express';
 import { Services } from '#services/index.js';
 import {
   AddFilterReqSchema,
-  FilterReqSchema,
   RemoveFilterReqSchema,
   UpdateFilterReqSchema,
 } from '#utils/validations.js';
 
 export const Filter: Router = (() => {
   const router = express.Router({ mergeParams: true });
-
-  /**
-   * Get filters for channel
-   */
-  router.get('/', validateRequest(FilterReqSchema), async (req, res) => {
-    const { channelId } = req.params;
-
-    try {
-      const filters = await Services.Channels.Filters.list(channelId);
-      res.status(StatusCodes.OK).json({
-        status: StatusCodes.OK,
-        data: { filters },
-        message: 'Filters retrieved successfully',
-      } as APIResponse);
-    } catch (error) {
-      sendErrorResponse(res, error, 'Failed to get filters');
-    }
-  });
 
   /**
    * Add filter to channel

@@ -16,7 +16,7 @@ export class ChannelDeleteListener extends Listener {
     logger.debug(`Channel deleted: ${channel.id} in guild ${channel.guildId}`);
 
     // Disable channel in DB & cache
-    await Services.Channel.disable(channel.id);
+    await Services.Channel.disable(channel.guildId, channel.id);
 
     // Membership change → bust the backend's cached candidate list
     // so the deleted channel stops appearing without the 5-min wait.
