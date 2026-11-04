@@ -7,7 +7,7 @@ export interface SegmentedOption<T extends string> {
   value: T;
   /**
    * ReactNode, not string, so an option can carry an adornment — the billing
-   * toggle hangs a "Save 17%" pill off "Yearly". Plain strings still work.
+   * toggle hangs a "Save N%" pill off "Yearly". Plain strings still work.
    */
   label: ReactNode;
   /** Accessible name, required when `label` isn't readable text on its own. */
