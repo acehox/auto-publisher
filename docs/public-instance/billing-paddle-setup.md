@@ -28,8 +28,8 @@ web (Paddle.js overlay)                    premium backend
 
 1. **Catalog → Products**: create product `Auto Publisher Premium`.
 2. Add **four** recurring prices to it — two plain, two identical copies carrying a trial:
-   - Monthly: `4.99 USD`, billing period 1 month, no trial → `PADDLE_PRICE_ID_MONTHLY`
-   - Yearly: `49.99 USD`, billing period 1 year, no trial → `PADDLE_PRICE_ID_YEARLY`
+   - Monthly: `3.99 USD`, billing period 1 month, no trial → `PADDLE_PRICE_ID_MONTHLY`
+   - Yearly: `34.99 USD`, billing period 1 year, no trial → `PADDLE_PRICE_ID_YEARLY`
    - Monthly (trial): same amount and period, **trial period 14 days** → `PADDLE_PRICE_ID_MONTHLY_TRIAL`
    - Yearly (trial): same amount and period, **trial period 14 days** → `PADDLE_PRICE_ID_YEARLY_TRIAL`
 
