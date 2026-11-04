@@ -3,12 +3,13 @@
  * PADDLE_PRICE_ID_YEARLY, which are tax-inclusive so one figure is truthful in every
  * VAT jurisdiction.
  *
- * Change the amount on the existing Paddle price. Minting a new price id and swapping
- * the env var makes `isPlanChange` re-stamp every subscriber's
- * withdrawalPeriodStartsAt, handing them all a fresh 14-day full-refund right.
+ * Change the amount on the existing Paddle prices, so no env var moves. If Paddle forces a
+ * new price id, existing subscribers keep the id they bought; never move them onto the new
+ * one, since `isPlanChange` would re-stamp withdrawalPeriodStartsAt and hand each of them a
+ * fresh 14-day full-refund right.
  */
-export const PREMIUM_PRICE_MONTHLY_USD = 4.99;
-export const PREMIUM_PRICE_YEARLY_USD = 49.99;
+export const PREMIUM_PRICE_MONTHLY_USD = 3.99;
+export const PREMIUM_PRICE_YEARLY_USD = 34.99;
 
 /** Display only (the legal pages render it); must match `trial_period` on the Paddle trial prices. */
 export const PREMIUM_TRIAL_DAYS = 14;
