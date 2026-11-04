@@ -272,7 +272,7 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [termsError, setTermsError] = useState(false);
   // Preselect the interval picked on /premium (?upgrade=month|year, forwarded by
-  // the server selector); default yearly, matching the "from $4.17/mo" framing.
+  // the server selector); default yearly, matching the per-month yearly price /premium leads with.
   const [billingInterval, setBillingInterval] = useState<BillingInterval>(
     searchParams.get('upgrade') === 'month' ? 'month' : 'year'
   );
