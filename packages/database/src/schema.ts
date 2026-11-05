@@ -1,5 +1,14 @@
 import { relations, sql } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 export type ChannelFilter = {
   id: string;
@@ -23,6 +32,9 @@ export const guild = pgTable('guild', {
   joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
   firstJoinedAt: timestamp('first_joined_at', { withTimezone: true }).defaultNow().notNull(),
   leftAt: timestamp('left_at', { withTimezone: true }),
+  // The admin's choice, not the effective state: kept through a downgrade so a
+  // re-upgrade restores it. Effective = Premium AND this (`Plans.rolloverInEffect`).
+  rolloverEnabled: boolean('rollover_enabled').default(true).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .defaultNow()
