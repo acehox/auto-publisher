@@ -8,6 +8,7 @@ export type {
   GuildChannel,
   GuildDashboardData,
   GuildRole,
+  RolloverResponse,
   SubscriptionData,
   SubscriptionDetail,
   WithdrawalResult,

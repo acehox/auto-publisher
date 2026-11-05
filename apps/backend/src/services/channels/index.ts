@@ -88,10 +88,10 @@ const initialize = async () => {
       logger.info(`Phase 2 complete: cached ${migratedGuilds.length} migrated guilds`);
     }
 
-    // Premium flags: rebuilt whole, so a flag missed by a crash mid-reconcile cannot outlive a restart
-    const premiumGuildIds = await Plans.getPremiumGuildIds();
-    const { removed } = await Data.Guilds.Premium.replaceAll(premiumGuildIds);
-    logger.info(`Premium flags synced: ${premiumGuildIds.length} set, ${removed} removed`);
+    // Rollover flags: rebuilt whole, so a flag missed by a crash mid-reconcile cannot outlive a restart
+    const rolloverGuildIds = await Plans.getRolloverGuildIds();
+    const { removed } = await Data.Guilds.RolloverFlag.replaceAll(rolloverGuildIds);
+    logger.info(`Rollover flags synced: ${rolloverGuildIds.length} set, ${removed} removed`);
 
     // Phase 3: Remove stale cache entries (channels deleted during downtime)
     const cachedIds = await Data.Channels.Cache.getAll();

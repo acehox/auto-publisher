@@ -18,7 +18,7 @@ export enum Keys {
   Rollover = 'rollover',
   RolloverDrain = 'rollover_drain',
   Migrated = 'migrated', // MIGRATION: removed at sunset, with a one-off SCAN + DEL of `migrated:*`
-  Premium = 'premium',
+  RolloverEnabled = 'rollover_enabled',
   ChannelPermissions = 'channel_permissions',
   Alert = 'alert',
   PaddleEvent = 'paddle_event',
@@ -34,7 +34,7 @@ export const RedisKeys = {
   rollover: keyFor(Keys.Rollover),
   rolloverDrain: keyFor(Keys.RolloverDrain),
   migrated: keyFor(Keys.Migrated),
-  premium: keyFor(Keys.Premium),
+  rolloverEnabled: keyFor(Keys.RolloverEnabled),
   channelPermissions: keyFor(Keys.ChannelPermissions),
   alert: keyFor(Keys.Alert),
   paddleEvent: keyFor(Keys.PaddleEvent),

@@ -54,9 +54,34 @@ const remove = async (guildId: Snowflake) => {
 
 const getFlags = (guildId: Snowflake) => Data.Cache.GuildFlags.get(guildId);
 
+export type RolloverWrite =
+  | { ok: true; rolloverEnabled: boolean }
+  | { ok: false; reason: 'premiumInactive' | 'failed' };
+
+/** `rolloverEnabled` is the backend's effective state after the write, never the one asked for. */
+const setRollover = async (guildId: Snowflake, enabled: boolean): Promise<RolloverWrite> => {
+  try {
+    const response = await Data.API.Backend.setRollover(guildId, enabled);
+    if (response.ok) {
+      const result = (await response.json()) as { data: { rolloverEnabled: boolean } };
+      return { ok: true, rolloverEnabled: result.data.rolloverEnabled };
+    }
+
+    if (response.status === 403) {
+      const body = (await response.json().catch(() => null)) as { code?: string } | null;
+      if (body?.code === 'PREMIUM_INACTIVE') return { ok: false, reason: 'premiumInactive' };
+    }
+    return { ok: false, reason: 'failed' };
+  } catch (error) {
+    logger.error(error, `Error setting rollover for guild ${guildId}`);
+    return { ok: false, reason: 'failed' };
+  }
+};
+
 export const Guild = {
   register,
   registerIfPendingJoin,
   remove,
   getFlags,
+  setRollover,
 };

@@ -11,7 +11,20 @@ import {
 import { Buttons } from '../lib/components/buttons.js';
 import { emojis } from '../lib/constants/index.js';
 import { Services } from '../services/index.js';
-import { buildReply, replyPayload } from './reply.js';
+import { buildReply, type ReplyOptions, replyPayload } from './reply.js';
+
+/**
+ * The upgrade message for a Premium-only control. Mirrors the dashboard's locked
+ * Filters card: the eyebrow names the gate, the body says what the feature does,
+ * and the CTA names its destination rather than promising the upgrade itself.
+ */
+export const premiumLockedPayload = (pitch: ReplyOptions['body']) => ({
+  flags: [MessageFlags.IsComponentsV2] as const,
+  components: [
+    buildReply({ title: `${emojis.warning} ${Copy.premium.lockedEyebrow}`, body: pitch }),
+    new ActionRowBuilder<ButtonBuilder>().addComponents(Buttons.getPremium),
+  ],
+});
 
 /**
  * Premium gate for a guild-scoped command. One bot serves both plans, so the
@@ -25,22 +38,12 @@ import { buildReply, replyPayload } from './reply.js';
 export async function handlePremiumCheck(
   interaction: ChatInputCommandInteraction,
   guildId: string,
-  pitch = Copy.filters.locked.pitch
+  pitch: ReplyOptions['body'] = Copy.filters.locked.pitch
 ): Promise<boolean> {
   const guildChannels = await Services.Channel.getGuildChannels(guildId);
   if (guildChannels?.premium) return false;
 
-  // Mirrors the dashboard's locked Filters card: the eyebrow names the gate, the
-  // sentence says what the feature does, and the CTA names its destination
-  // rather than promising the upgrade itself.
-  await interaction.editReply({
-    flags: [MessageFlags.IsComponentsV2],
-    components: [
-      buildReply({ title: `${emojis.warning} ${Copy.filters.locked.eyebrow}`, body: pitch }),
-      new ActionRowBuilder<ButtonBuilder>().addComponents(Buttons.getPremium),
-    ],
-  });
-
+  await interaction.editReply(premiumLockedPayload(pitch));
   return true;
 }
 

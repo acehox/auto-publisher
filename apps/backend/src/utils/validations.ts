@@ -84,6 +84,16 @@ export const GuildChannelEnableReqSchema = z.object({
     .default({}),
 });
 
+/** Shared by the bot's `/ap rollover` and the dashboard. */
+export const GuildRolloverReqSchema = z.object({
+  params: z.object({
+    guildId: Validations.snowflakeId,
+  }),
+  body: z.object({
+    enabled: z.boolean(),
+  }),
+});
+
 // MIGRATION: Remove after migration period (6 months)
 export const GuildMigrateReqSchema = z.object({
   params: z.object({

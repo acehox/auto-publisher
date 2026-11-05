@@ -167,6 +167,8 @@ export interface GuildDashboardData {
   migrated: boolean;
   /** Max enabled channels for the guild's plan; 0 = unlimited (Premium) */
   channelLimit: number;
+  /** Effective Rollover: Premium AND the guild's setting. Always false on the Free plan. */
+  rolloverEnabled: boolean;
   /**
    * Whether an upgrade started now would carry the 14-day free trial: the guild has never
    * held a subscription (one trial per guild, ever) AND both trial prices are configured.
@@ -177,6 +179,11 @@ export interface GuildDashboardData {
   trialAvailable: boolean;
   channels: GuildChannel[];
   subscription: SubscriptionData | null;
+}
+
+/** `PUT /api/guild/:guildId/rollover` response: the effective state after the write */
+export interface RolloverResponse {
+  rolloverEnabled: boolean;
 }
 
 /** Checkout response: transaction ID consumed by Paddle.js overlay checkout */

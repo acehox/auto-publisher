@@ -14,7 +14,7 @@ export function LockedFeature({ guildId }: { guildId: string; trialAvailable: bo
     <div className="space-y-3.5 rounded-xl border border-slate-800 bg-slate-900 p-5">
       <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-yellow-500">
         <Zap className="size-3.5 shrink-0" aria-hidden="true" />
-        {Copy.filters.locked.eyebrow}
+        {Copy.premium.lockedEyebrow}
       </p>
       <p className="text-sm leading-relaxed text-slate-200">{Copy.filters.locked.pitch}</p>
       <ul className="space-y-2 text-xs text-slate-400">

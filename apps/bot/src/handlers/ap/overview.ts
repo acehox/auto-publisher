@@ -1,5 +1,5 @@
 import { config } from '@ap/config';
-import { Copy } from '@ap/copy';
+import { Copy, type OverLimitState } from '@ap/copy';
 import { sortBySidebarOrder } from '@ap/utils';
 import type { Subcommand } from '@sapphire/plugin-subcommands';
 import {
@@ -15,11 +15,11 @@ import {
   type Snowflake,
 } from 'discord.js';
 import { Buttons } from '#lib/components/buttons.js';
-import { emojis, legacySunsetTimestamp, notes } from '#lib/constants/index.js';
+import { emojis, legacySunsetTimestamp } from '#lib/constants/index.js';
 import type { PausedChannel } from '#services/channel.js';
 import { Services } from '#services/index.js';
 import { logger } from '#utils/logger.js';
-import { formatNotes } from '#utils/notes.js';
+import { formatNotes, overLimitState } from '#utils/notes.js';
 import {
   checkChannelPermissions,
   renderDiscordSteps,
@@ -52,8 +52,8 @@ interface OverviewState {
   guildId: Snowflake;
   /** MIGRATION: false = legacy guild (publishes every announcement channel). */
   migrated: boolean;
-  /** Whether the guild is on Premium — decides which hourly-limit note shows. */
-  premium: boolean;
+  /** Which hourly-limit note shows: the guild's plan and Rollover setting. */
+  overLimit: OverLimitState;
   /** Registered + serving channels, broken-first. Empty for a legacy guild. */
   channels: OverviewChannel[];
   /** Retained but not serving, in sidebar order, with filter counts. */
@@ -178,7 +178,7 @@ const loadOverviewState = async (
   return {
     guildId: interaction.guildId,
     migrated: guildChannels.migrated,
-    premium: guildChannels.premium,
+    overLimit: overLimitState(guildChannels),
     channels: buildOverviewChannels(guildChannels.channelIds, guild, botMember),
     pausedChannels: orderPausedChannels(guildChannels.pausedChannels, guild),
     announcementChannelCount: guild ? announcementChannels.length : null,
@@ -339,8 +339,8 @@ const renderPausedBlock = (state: OverviewState): string[] | null => {
   return [`${emojis.warning} ${Copy.channels.paused.count(total)} ${reason}`, rows.join('\n')];
 };
 
-const renderNotes = (premium: boolean): string =>
-  formatNotes([premium ? notes.overLimitPremium : notes.overLimitFree]).trimStart();
+const renderNotes = (overLimit: OverLimitState): string =>
+  formatNotes([Copy.publishing.overLimit.body(overLimit)]).trimStart();
 
 const addDashboardSection = (container: ContainerBuilder, guildId: Snowflake, text: string) =>
   container.addSectionComponents(section =>
@@ -411,7 +411,7 @@ const buildLegacyContainer = (state: OverviewState): ContainerBuilder => {
   }
 
   container.addTextDisplayComponents(textDisplay =>
-    textDisplay.setContent(renderNotes(state.premium))
+    textDisplay.setContent(renderNotes(state.overLimit))
   );
 
   container.addSeparatorComponents(separator => separator);
@@ -448,7 +448,7 @@ const buildOverviewContainer = (state: OverviewState): ContainerBuilder => {
   }
 
   container.addTextDisplayComponents(textDisplay =>
-    textDisplay.setContent(renderNotes(state.premium))
+    textDisplay.setContent(renderNotes(state.overLimit))
   );
 
   container.addSeparatorComponents(separator => separator);

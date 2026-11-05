@@ -4,21 +4,21 @@ import { Redis } from './redis.js';
 
 const client = Redis.Guilds;
 
-export type GuildFlags = { migrated: boolean; premium: boolean };
+export type GuildFlags = { migrated: boolean; rollover: boolean };
 
 /**
  * One MGET for both flags the publish path needs.
- * MIGRATION: at sunset `migrated` drops and this becomes a GET of `premium:`.
+ * MIGRATION: at sunset `migrated` drops and this becomes a GET of `rollover_enabled:`.
  */
 const get = async (guildId: Snowflake): Promise<GuildFlags> => {
   try {
-    const [migrated, premium] = await client.mget(
+    const [migrated, rollover] = await client.mget(
       RedisKeys.migrated(guildId),
-      RedisKeys.premium(guildId)
+      RedisKeys.rolloverEnabled(guildId)
     );
-    return { migrated: migrated !== null, premium: premium !== null };
+    return { migrated: migrated !== null, rollover: rollover !== null };
   } catch {
-    return { migrated: false, premium: false };
+    return { migrated: false, rollover: false };
   }
 };
 

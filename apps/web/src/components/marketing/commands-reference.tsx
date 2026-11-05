@@ -14,6 +14,7 @@ const commands: Command[] = [
   { name: '/ap disable', description: Copy.commands.ap.disable },
   { name: '/ap overview', description: Copy.commands.ap.overview },
   { name: '/ap filters', description: Copy.commands.ap.filters, premium: true },
+  { name: '/ap rollover', description: Copy.commands.ap.rollover, premium: true },
   { name: '/help', description: Copy.commands.help },
 ];
 
