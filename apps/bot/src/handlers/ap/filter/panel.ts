@@ -21,6 +21,7 @@ import {
   manageChannelRequired,
 } from '#utils/interactions.js';
 import { logger } from '#utils/logger.js';
+import { buildPanelClosedNotice, PANEL_IDLE_MS } from '#utils/reply.js';
 import { buildFilterModal, extractModalValues, fitsEditModal, modalCustomId } from './modal.js';
 import {
   buildFocusView,
@@ -32,8 +33,6 @@ import {
   totalPages,
 } from './render.js';
 
-/** Panel dies after 10 min of inactivity — well inside the 15-min interaction token life. */
-const PANEL_IDLE_MS = 600_000;
 /** Must stay under the panel's idle window: a form outliving its panel submits into a corpse. */
 const MODAL_TIMEOUT_MS = 540_000;
 /** Discord kills an interaction token 15 min after its interaction, margin included. */
@@ -480,9 +479,7 @@ export async function chatInputFilters(
       lastResponder
         .editReply(
           panelPayload(
-            buildNoticeView(
-              `${emojis.info} This filter editor closed after 10 minutes of inactivity. Run </ap filters:${interaction.commandId}> to open it again.`
-            )
+            buildPanelClosedNotice('filter editor', `</ap filters:${interaction.commandId}>`)
           )
         )
         .catch(() => {});

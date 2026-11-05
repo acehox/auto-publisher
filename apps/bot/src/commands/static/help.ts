@@ -35,27 +35,30 @@ export class HelpCommand extends Command {
     // to the plain command name.
     const command = (subcommand: string): string =>
       apCommandId ? `</ap ${subcommand}:${apCommandId}>` : `\`/ap ${subcommand}\``;
+    // Each line reads the description Discord's command picker shows, so the two cannot drift.
+    const line = (emoji: string, subcommand: keyof typeof Copy.commands.ap): string =>
+      `${emoji}  ${command(subcommand)} - ${Copy.commands.ap[subcommand]}`;
 
     const replyContainer = buildReply({
       title: `${emojis.botBrand} How to use Auto Publisher`,
       body: [
-        `${emojis.greenCircle}  Use ${command('enable')} to enable auto-publishing in a channel.`,
-        `${emojis.redCircle}  Use ${command('disable')} to disable auto-publishing in a channel.`,
-        `${emojis.info}  Use ${command('overview')} to see the auto-publishing status of every channel in this server.`,
+        line(emojis.greenCircle, 'enable'),
+        line(emojis.redCircle, 'disable'),
+        line(emojis.info, 'overview'),
       ],
     });
 
-    const filtersLine = `${emojis.filter}  Use ${command('filters')} to choose which messages a channel auto-publishes.`;
+    const premiumLines = [line(emojis.rollover, 'rollover'), line(emojis.filter, 'filters')];
 
     // The heading is the only difference: a self-hosted copy has one plan, so
     // calling its own features "Premium" would just be confusing.
     if (config.isPublicInstance) {
       replyContainer
         .addSeparatorComponents(separator => separator)
-        .addTextDisplayComponents(textDisplay => textDisplay.setContent('### Premium features'))
-        .addTextDisplayComponents(textDisplay => textDisplay.setContent(filtersLine));
-    } else {
-      replyContainer.addTextDisplayComponents(textDisplay => textDisplay.setContent(filtersLine));
+        .addTextDisplayComponents(textDisplay => textDisplay.setContent('### Premium features'));
+    }
+    for (const line of premiumLines) {
+      replyContainer.addTextDisplayComponents(textDisplay => textDisplay.setContent(line));
     }
 
     replyContainer.addSeparatorComponents(separator => separator);

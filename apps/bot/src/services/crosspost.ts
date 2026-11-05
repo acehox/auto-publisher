@@ -19,19 +19,19 @@ const isCrosspostable = (message: Message): boolean => {
  * Pipeline:
  *  1. crosspostable bit-flag check
  *  2. sync permission check (cache-only)
- *  3. guild flags (one `Guilds` MGET: migrated marker + premium flag), then for
+ *  3. guild flags (one `Guilds` MGET: migrated marker + rollover flag), then for
  *     migrated guilds the allowlist gate + filter eval, one `EnabledChannels`
  *     read of the channel's rule
  *     MIGRATION: at sunset every guild is allowlist-model — the rule read
  *     becomes unconditional (migrated marker dropped)
- *  4. fire-and-forget to proxy, with the premium flag forwarded as rollover and
+ *  4. fire-and-forget to proxy, with the rollover flag forwarded and
  *     a URL without an embed flagged so the proxy waits for the link preview
  */
 const handle = async (message: Message, channel: NewsChannel) => {
   if (!isCrosspostable(message)) return;
   if (!Services.Permissions.canCrosspostInChannel(channel)) return;
 
-  const { migrated, premium } = await Services.Guild.getFlags(channel.guildId);
+  const { migrated, rollover } = await Services.Guild.getFlags(channel.guildId);
   // MIGRATION: at sunset drop the `migrated` condition — the allowlist read
   // runs unconditionally. A legacy guild has no channel rows, so no rule either.
   if (migrated) {
@@ -44,7 +44,7 @@ const handle = async (message: Message, channel: NewsChannel) => {
   const waitForPreview =
     Boolean(message.content) && !message.embeds.length && RegExPatterns.url.test(message.content);
 
-  return push(message, channel.guildId, { rollover: premium, waitForPreview });
+  return push(message, channel.guildId, { rollover, waitForPreview });
 };
 
 const MAX_PUSH_ATTEMPTS = 3;

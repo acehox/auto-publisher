@@ -12,14 +12,14 @@ import { PageHeader } from '@/components/dashboard/page-header';
  * the two tabs state them identically.
  */
 export default function OverviewPage() {
-  const { guild, data } = useGuild();
+  const { data } = useGuild();
 
   return (
     <div className="space-y-4">
       <PageHeader title="Overview" />
       <GuildNotices />
       <ChannelStatus />
-      {data.channels.length > 0 && <HowPublishingWorks hasSubscription={guild.hasSubscription} />}
+      {data.channels.length > 0 && <HowPublishingWorks />}
     </div>
   );
 }

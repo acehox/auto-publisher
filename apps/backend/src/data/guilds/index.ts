@@ -1,5 +1,5 @@
-import { Premium } from './premium.js';
+import { RolloverFlag } from './rolloverFlag.js';
 
 export const Guilds = {
-  Premium,
+  RolloverFlag,
 };

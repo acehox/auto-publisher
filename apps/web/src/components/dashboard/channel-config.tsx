@@ -21,6 +21,7 @@ import { HowPublishingWorks } from '@/components/dashboard/how-publishing-works'
 import { LegacyMigrateModal } from '@/components/dashboard/legacy-migrate-modal';
 import { NoticeAction, NoticeStrip } from '@/components/dashboard/notice-strip';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { RolloverCard } from '@/components/dashboard/rollover-card';
 import { useLegacySunsetLabel } from '@/components/site-config-context';
 import { Switch } from '@/components/ui/switch';
 import { disableChannel, enableChannel } from '@/lib/api/actions';
@@ -31,7 +32,6 @@ import { channelLabel } from '@/lib/utils';
 interface ChannelConfigProps {
   guildId: string;
   channels: GuildChannel[];
-  hasSubscription: boolean;
   /** Max enabled channels for the guild's plan; 0 = unlimited (Premium) */
   channelLimit: number;
   /** MIGRATION: false = legacy guild. Removed at sunset. */
@@ -43,13 +43,7 @@ interface ChannelConfigProps {
  * carries a summary, and Overview never carries a toggle. The header states the
  * plan cap and nothing else — the plan name is already in the server switcher.
  */
-export function ChannelConfig({
-  guildId,
-  channels,
-  hasSubscription,
-  channelLimit,
-  migrated,
-}: ChannelConfigProps) {
+export function ChannelConfig({ guildId, channels, channelLimit, migrated }: ChannelConfigProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [pendingChannelId, setPendingChannelId] = useState<string | null>(null);
@@ -228,6 +222,8 @@ export function ChannelConfig({
         </NoticeStrip>
       )}
 
+      {channels.length > 0 && <RolloverCard />}
+
       {channels.length === 0 ? (
         <EmptyState icon={Megaphone} title={Copy.channels.empty.noAnnouncement}>
           {Copy.channels.empty.noAnnouncementBody}
@@ -310,7 +306,7 @@ export function ChannelConfig({
         </div>
       )}
 
-      {channels.length > 0 && <HowPublishingWorks hasSubscription={hasSubscription} />}
+      {channels.length > 0 && <HowPublishingWorks />}
 
       {limitHit && (
         <ChannelLimitModal
@@ -360,7 +356,6 @@ export function ChannelConfig({
       {guideChannel && (
         <ChannelEnableGuideModal
           channelName={channelLabel(guideChannel.channel.name)}
-          hasSubscription={hasSubscription}
           onConfirm={confirmEnableFromGuide}
           onCancel={() => setGuideChannel(null)}
         />

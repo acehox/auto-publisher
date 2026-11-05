@@ -2,7 +2,7 @@
 
 import { Copy } from '@ap/copy';
 import { PermissionSteps } from '@/components/dashboard/channel-fix-steps';
-import { useRolloverEntitled } from '@/components/dashboard/over-limit-note';
+import { useOverLimitState } from '@/components/dashboard/use-over-limit-state';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -25,16 +25,14 @@ import { Button } from '@/components/ui/button';
  */
 export function ChannelEnableGuideModal({
   channelName,
-  hasSubscription,
   onConfirm,
   onCancel,
 }: {
   channelName: string;
-  hasSubscription: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const entitled = useRolloverEntitled(hasSubscription);
+  const overLimitState = useOverLimitState();
 
   return (
     <AlertDialog
@@ -53,7 +51,7 @@ export function ChannelEnableGuideModal({
         <PermissionSteps />
 
         <p className="border-slate-800 border-t pt-3 text-xs leading-relaxed text-slate-400">
-          {Copy.publishing.overLimit.body(entitled)}
+          {Copy.publishing.overLimit.body(overLimitState)}
         </p>
 
         <AlertDialogFooter>

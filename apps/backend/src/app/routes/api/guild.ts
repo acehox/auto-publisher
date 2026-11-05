@@ -14,6 +14,7 @@ import { DiscordAPIError, HTTPError } from '@discordjs/rest';
 import { type APIGuild, type APIRole, Routes } from 'discord-api-types/v10';
 import express, { type Router } from 'express';
 import { requireChannelOfGuild } from '#app/routes/channel/ownership.js';
+import { Rollover } from '#app/routes/rollover.js';
 import { Discord } from '#services/discord.js';
 import { Services } from '#services/index.js';
 import { isEntitledStatus } from '#services/subscriptions.js';
@@ -138,6 +139,7 @@ export const GuildApi: Router = (() => {
   const router = express.Router({ mergeParams: true });
 
   router.use('/channel/:channelId', requireChannelOfGuild);
+  router.use('/rollover', Rollover);
 
   /**
    * GET /api/guild/:guildId
@@ -196,6 +198,8 @@ export const GuildApi: Router = (() => {
           guildId,
           migrated,
           channelLimit,
+          // channelLimit 0 = Premium.
+          rolloverEnabled: Services.Plans.rolloverInEffect(channelLimit === 0, guildRow),
           // The fact the pre-contractual trial disclosure is built from, so it comes from
           // the checkout's own predicate rather than being re-derived client-side.
           trialAvailable: Services.Subscriptions.isTrialAvailable(sub),

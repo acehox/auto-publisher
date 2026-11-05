@@ -4,25 +4,25 @@ import { Drivers } from '#data/drivers/index.js';
 
 const client = Drivers.Redis.Guilds;
 
-const set = async (guildId: Snowflake, premium: boolean): Promise<void> => {
-  if (premium) await client.set(RedisKeys.premium(guildId), '1');
-  else await client.del(RedisKeys.premium(guildId));
+const set = async (guildId: Snowflake, enabled: boolean): Promise<void> => {
+  if (enabled) await client.set(RedisKeys.rolloverEnabled(guildId), '1');
+  else await client.del(RedisKeys.rolloverEnabled(guildId));
 };
 
 const remove = (guildId: Snowflake) => set(guildId, false);
 
-/** Flags exactly `guildIds`, deleting every other `premium:` key. */
+/** Flags exactly `guildIds`, deleting every other `rollover_enabled:` key. */
 const replaceAll = async (guildIds: Snowflake[]): Promise<{ removed: number }> => {
   const keep = new Set(guildIds);
-  const stale = (await scanKeys(client, keyPattern(Keys.Premium)))
-    .map(key => idFromKey(Keys.Premium, key))
+  const stale = (await scanKeys(client, keyPattern(Keys.RolloverEnabled)))
+    .map(key => idFromKey(Keys.RolloverEnabled, key))
     .filter(guildId => !keep.has(guildId));
 
   const pipeline = client.multi();
-  for (const guildId of keep) pipeline.set(RedisKeys.premium(guildId), '1');
-  for (const guildId of stale) pipeline.del(RedisKeys.premium(guildId));
+  for (const guildId of keep) pipeline.set(RedisKeys.rolloverEnabled(guildId), '1');
+  for (const guildId of stale) pipeline.del(RedisKeys.rolloverEnabled(guildId));
   await pipeline.exec();
   return { removed: stale.length };
 };
 
-export const Premium = { set, remove, replaceAll };
+export const RolloverFlag = { set, remove, replaceAll };

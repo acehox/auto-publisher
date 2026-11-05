@@ -85,6 +85,21 @@ const getGuildChannels = async (guildId: Snowflake) => {
   });
 };
 
+// Server-wide Rollover setting; 403 `PREMIUM_INACTIVE` turns into the upgrade message
+const setRollover = async (guildId: Snowflake, enabled: boolean) => {
+  return request(
+    `/guild/${guildId}/rollover`,
+    {
+      method: RequestMethod.Put,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ enabled }),
+    },
+    [403]
+  );
+};
+
 const deleteGuild = async (guildId: Snowflake) => {
   return requestWithRetry(`/guild/${guildId}`, {
     method: RequestMethod.Delete,
@@ -202,6 +217,7 @@ export const Backend = {
   removeChannel,
   getChannel,
   getGuildChannels,
+  setRollover,
   deleteGuild,
   registerNewGuild,
   pushJoinDates,

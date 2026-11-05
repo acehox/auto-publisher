@@ -2,7 +2,7 @@
 
 import { Copy } from '@ap/copy';
 import { Info } from 'lucide-react';
-import { useRolloverEntitled } from '@/components/dashboard/over-limit-note';
+import { useOverLimitState } from '@/components/dashboard/use-over-limit-state';
 
 /**
  * The ambient publishing fact that closes both the Overview and Channels tabs —
@@ -10,8 +10,8 @@ import { useRolloverEntitled } from '@/components/dashboard/over-limit-note';
  * never state it differently. The enable guide repeats it where it is
  * decision-relevant.
  */
-export function HowPublishingWorks({ hasSubscription }: { hasSubscription: boolean }) {
-  const entitled = useRolloverEntitled(hasSubscription);
+export function HowPublishingWorks() {
+  const state = useOverLimitState();
 
   return (
     <section className="mt-8">
@@ -20,7 +20,7 @@ export function HowPublishingWorks({ hasSubscription }: { hasSubscription: boole
         Disclaimer
       </h2>
       <p className="mt-2.5 text-xs leading-relaxed text-slate-500">
-        {Copy.publishing.overLimit.body(entitled)}
+        {Copy.publishing.overLimit.body(state)}
       </p>
     </section>
   );
