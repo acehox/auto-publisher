@@ -13,6 +13,7 @@ import {
 import { easeOut, motion, useReducedMotion, useTime, useTransform } from 'motion/react';
 import { useRef } from 'react';
 import { DiscordIcon } from '@/components/icons/discord-icon';
+import { PlanFeatureText } from '@/components/plan-feature-text';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { links } from '@/lib/constants';
@@ -248,7 +249,7 @@ export function PremiumWelcomeModal({ guildName, trialing, onClose }: PremiumWel
                 >
                   <Check className="size-3.5 text-green-400" aria-hidden="true" />
                 </motion.span>
-                {feature.label}
+                <PlanFeatureText feature={feature} />
                 <FeatureIcon
                   className="ml-auto size-4 shrink-0 text-slate-600"
                   aria-hidden="true"

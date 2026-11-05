@@ -1,5 +1,5 @@
 import { config, isPublicInstance, premiumTrialEnabled } from '@ap/config';
-import { Filter, RotateCwFadingClock } from 'lucide-react';
+import { Filter, RotateCwFadingClock, Zap } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -31,16 +31,23 @@ export default function PremiumPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 pt-32 pb-24 sm:px-6 lg:px-8">
-      <header className="mx-auto mb-16 max-w-3xl text-center">
-        <h1 className="mb-6 text-balance text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
+      <header className="mx-auto mb-12 max-w-4xl text-center">
+        <p className="mb-3 inline-flex items-center gap-2.5 text-xl font-semibold uppercase tracking-[0.2em] text-white sm:text-2xl">
+          <Zap className="size-7 fill-yellow-500 text-yellow-500" aria-hidden="true" />
+          Premium
+        </p>
+        <h1 className="mb-4 text-balance text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-[2.75rem]">
           Get more from{' '}
           <span className="bg-linear-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
             your announcements.
           </span>
         </h1>
-        <p className="mx-auto max-w-2xl text-lg text-slate-300 sm:text-xl">
+        <p className="mx-auto max-w-xl text-base text-slate-300">
           Premium publishes the messages beyond Discord&apos;s hourly limit once it resets, and adds
           message filters, unlimited channels and priority support.
+        </p>
+        <p className="mt-4 text-sm text-slate-500">
+          Trusted by {formatNumberFull(values.activeServers)} servers
         </p>
       </header>
 
@@ -48,12 +55,8 @@ export default function PremiumPage() {
           none. Not routed through getSiteConfig() because this page and PricingPlans are
           both server components. */}
       <PricingPlans trialOffered={premiumTrialEnabled} />
-      <p className="mt-8 text-center text-sm text-slate-500">
-        Trusted by {formatNumberFull(values.activeServers)} servers using Auto Publisher · Secure
-        payment via Paddle
-      </p>
 
-      <div className="mx-auto mt-32 max-w-6xl space-y-28">
+      <div className="mx-auto mt-20 max-w-6xl space-y-28">
         <FeatureSection
           id="rollover"
           icon={RotateCwFadingClock}
@@ -94,16 +97,8 @@ export default function PremiumPage() {
         <PremiumPerks freeChannelLimit={freeChannelLimit} />
       </div>
 
-      <section aria-labelledby="compare-title" className="mx-auto mt-28 max-w-4xl">
-        <h2
-          id="compare-title"
-          className="mb-8 text-center text-2xl font-bold text-white sm:text-3xl"
-        >
-          Free vs Premium
-        </h2>
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 sm:p-8">
-          <PlanComparisonTable freeChannelLimit={freeChannelLimit} />
-        </div>
+      <section aria-label="Plans comparison" className="mx-auto mt-28 max-w-5xl">
+        <PlanComparisonTable title="Plans comparison" freeChannelLimit={freeChannelLimit} />
       </section>
     </div>
   );

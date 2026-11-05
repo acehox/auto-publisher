@@ -11,6 +11,7 @@ import { NoticeStrip } from '@/components/dashboard/notice-strip';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { shouldOfferWithdrawal, WithdrawalPanel } from '@/components/dashboard/withdrawal-panel';
 import { PlanComparisonTable } from '@/components/plan-comparison-table';
+import { PlanFeatureText } from '@/components/plan-feature-text';
 import { useLegacySunsetLabel, useSiteConfig } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -159,7 +160,7 @@ function BillingCard({
         {PREMIUM_PLAN_FEATURES.map(feature => (
           <li key={feature.id} className="flex items-center gap-2.5 text-sm text-slate-200">
             <Check className="size-4 shrink-0 text-green-400" aria-hidden="true" />
-            {feature.label}
+            <PlanFeatureText feature={feature} />
           </li>
         ))}
       </ul>
