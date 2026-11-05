@@ -133,12 +133,12 @@ const normalizePausedChannels = (
 /**
  * Get a guild's auto-publishing state: serving channel IDs, paused ones
  * (retained but over the free limit), whether the guild is migrated,
- * and whether it is on Premium.
+ * whether it is on Premium, and whether Rollover is in effect.
  *
  * `premium` is the bot's ONLY source for a guild's plan — one bot serves both,
  * so nothing about the running process implies it.
  * @param guildId The guild ID
- * @returns { channelIds, pausedChannels, migrated, premium }, or null if request fails
+ * @returns { channelIds, pausedChannels, migrated, premium, rolloverEnabled }, or null if request fails
  */
 const getGuildChannels = async (guildId: Snowflake) => {
   try {
@@ -160,6 +160,7 @@ const getGuildChannels = async (guildId: Snowflake) => {
         pausedChannelIds?: string[];
         migrated?: boolean;
         premium?: boolean;
+        rolloverEnabled?: boolean;
       };
       message: string;
     };
@@ -171,6 +172,7 @@ const getGuildChannels = async (guildId: Snowflake) => {
       // Defaults false: claiming Premium a guild does not have would offer
       // controls whose every write the backend then rejects with 403.
       premium: result.data.premium ?? false,
+      rolloverEnabled: result.data.rolloverEnabled ?? false,
       // MIGRATION: default true so a backend that predates the field degrades
       // to the allowlist view rather than claiming a migrated guild is legacy
       // ("every announcement channel is published automatically" is the most

@@ -10,6 +10,7 @@ import type {
   GuildChannel,
   GuildDashboardData,
   GuildRole,
+  RolloverResponse,
   SubscriptionDetail,
   WithdrawalResult,
 } from '@/lib/api/types';
@@ -69,6 +70,28 @@ export async function disableChannel(guildId: string, channelId: string): Promis
     // rather than silently swallowing a sanitized thrown error.
     if (error instanceof BackendError) {
       return { ok: false, status: error.status, code: error.code as ChannelLimitReason };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Returns the effective state, not the request: it can differ (Premium lapsed),
+ * and the switch should show what runs. A free guild enabling gets 403 PREMIUM_INACTIVE.
+ */
+export async function setRollover(
+  guildId: string,
+  enabled: boolean
+): Promise<{ ok: true; rolloverEnabled: boolean } | { ok: false; status: number; code?: string }> {
+  try {
+    const { rolloverEnabled } = await backendFetch<RolloverResponse>(
+      apiPath`/api/guild/${guildId}/rollover`,
+      { method: 'PUT', body: JSON.stringify({ enabled }) }
+    );
+    return { ok: true, rolloverEnabled };
+  } catch (error) {
+    if (error instanceof BackendError) {
+      return { ok: false, status: error.status, code: error.code };
     }
     throw error;
   }

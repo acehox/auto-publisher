@@ -288,18 +288,20 @@ const isEntitled = async (guildId: string): Promise<boolean> => {
   }
 };
 
-/** Guilds holding an entitled subscription, limited to those with a guild row. */
-const getEntitledGuildIds = async (): Promise<string[]> => {
+/** Guilds holding an entitled subscription whose guild row has Rollover turned on. */
+const getEntitledRolloverGuildIds = async (): Promise<string[]> => {
   try {
     const rows = await db
       .select({ guildId: subscription.guildId })
       .from(subscription)
       .innerJoin(guild, eq(subscription.guildId, guild.guildId))
-      .where(inArray(subscription.status, [...ENTITLED_STATUSES]));
+      .where(
+        and(inArray(subscription.status, [...ENTITLED_STATUSES]), eq(guild.rolloverEnabled, true))
+      );
     return rows.map(row => row.guildId);
   } catch (error) {
     logger.error(error);
-    throw new Error('Failed to retrieve entitled guild ids');
+    throw new Error('Failed to retrieve entitled rollover guild ids');
   }
 };
 
@@ -460,7 +462,7 @@ export const Subscriptions = {
   getByPaddleSubscriptionId,
   applyPaddleSubscription,
   isEntitled,
-  getEntitledGuildIds,
+  getEntitledRolloverGuildIds,
   countEntitled,
   getSubscriberUserIds,
   getRevokedWithBotPresent,

@@ -16,7 +16,7 @@ import { logger } from '#utils/logger.js';
  * from the per-guild limit count.
  */
 
-/** Drops every held rollover message in the guild, for a guild that just lost Premium. */
+/** Drops every held rollover message in the guild, for a guild that lost Premium or turned Rollover off. */
 const clearRollover = async (guildId: Snowflake): Promise<void> => {
   const rows = await db
     .select({ channelId: channelTable.channelId })

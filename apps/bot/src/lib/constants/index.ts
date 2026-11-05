@@ -1,5 +1,4 @@
 import { config, env, isPublicInstance } from '@ap/config';
-import { Copy } from '@ap/copy';
 import { getDiscordFormat } from '@ap/utils';
 
 const HOSTNAME = 'auto-publisher.gg';
@@ -90,6 +89,7 @@ export const emojis = {
   info: 'ℹ️',
   warning: '⚠️',
   filter: '🔍',
+  rollover: '🔁',
   greenCircle: '🟢',
   redCircle: '🔴',
 };
@@ -110,19 +110,7 @@ export const emojiNames: Record<keyof typeof emojis, string> = {
   info: 'info',
   warning: 'warning',
   filter: 'filter',
+  rollover: 'rollover',
   greenCircle: 'green_circle_dot',
   redCircle: 'red_circle_dot',
 };
-
-/**
- * The ambient publishing facts, from `@ap/copy` so the dashboard cannot state
- * them differently. ZZP čl. 60 st. 2 makes them contract terms.
- *
- * There is no `permissionsExtendedDisable` note any more: it promised an
- * auto-disable that has never existed, and contradicted this bot's own "grant
- * the permissions and publishing resumes on its own".
- */
-export const notes = {
-  overLimitFree: Copy.publishing.overLimit.body(false),
-  overLimitPremium: Copy.publishing.overLimit.body(true),
-} as const;
