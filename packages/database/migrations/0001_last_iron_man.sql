@@ -1,0 +1,1 @@
+ALTER TABLE "guild" ADD COLUMN "rollover_enabled" boolean DEFAULT true NOT NULL;

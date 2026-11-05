@@ -29,7 +29,7 @@ import type { GuildChannel } from '@/lib/api/types';
  */
 export function ChannelStatus() {
   const { guild, data } = useGuild();
-  const footer = <OverLimitFooter hasSubscription={guild.hasSubscription} />;
+  const footer = <OverLimitFooter />;
   return data.migrated ? (
     <MigratedStatus guildId={guild.id} channels={data.channels} footer={footer} />
   ) : (

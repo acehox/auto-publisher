@@ -20,22 +20,67 @@ const countOf = (count: number, noun: string): string =>
 
 /* Publishing facts --------------------------------------------------------- */
 
+/** The product name, so a rename is one edit. */
+const rolloverName = 'Rollover';
+
+/**
+ * `on`: Rollover is in effect. `off`: a Premium server turned it off. `upsell`: the
+ * Free Plan, which never applies on a self-host.
+ */
+export type OverLimitState = 'on' | 'off' | 'upsell';
+
 /**
  * ZZP čl. 60 st. 2 makes these contract terms, so they must describe what runs.
- * The limit is Discord's 10/hour/channel sublimit; only Premium publishes the
- * excess after it resets. `entitled` is true on a self-host, which has no Free Plan.
+ * The limit is Discord's 10/hour/channel sublimit; only Rollover publishes the
+ * excess after it resets.
  */
 const publishing = {
   overLimit: {
-    body: (entitled: boolean): string =>
-      entitled
-        ? 'Discord limits each channel to 10 published messages per hour. Messages beyond that limit are published automatically after the limit resets, in the order they were posted, for up to 24 hours.'
-        : "Discord limits each channel to 10 published messages per hour. Messages beyond that limit can't be published. Premium publishes them automatically once the limit resets, in the order they were posted, for up to 24 hours.",
+    body: (state: OverLimitState): string => {
+      const limit = 'Discord limits each channel to 10 published messages per hour.';
+      switch (state) {
+        case 'on':
+          return `${limit} Messages beyond that limit are published automatically after the limit resets, in the order they were posted, for up to 24 hours.`;
+        case 'off':
+          return `${limit} Messages beyond that limit are not published. Turn on ${rolloverName} to publish them automatically after the limit resets, in the order they were posted, for up to 24 hours.`;
+        case 'upsell':
+          return `${limit} Messages beyond that limit cannot be published. Premium publishes them automatically once the limit resets, in the order they were posted, for up to 24 hours.`;
+      }
+    },
 
-    short: (entitled: boolean): string =>
-      entitled
-        ? "Messages beyond Discord's hourly limit are published after the limit resets, for up to 24 hours."
-        : "Messages beyond Discord's hourly limit are not published.",
+    short: (state: OverLimitState): string => {
+      switch (state) {
+        case 'on':
+          return "Messages beyond Discord's hourly limit are published after the limit resets, for up to 24 hours.";
+        case 'off':
+          return `Messages beyond Discord's hourly limit are not published. Turn on ${rolloverName} to publish them after the limit resets.`;
+        case 'upsell':
+          return "Messages beyond Discord's hourly limit are not published.";
+      }
+    },
+  },
+} as const;
+
+/* Rollover ----------------------------------------------------------------- */
+
+const rolloverStatus = (on: boolean): string => `${rolloverName} is ${on ? 'on' : 'off'}`;
+
+/** A server-wide setting. Turning it off also drops the messages already waiting. */
+const rollover = {
+  name: rolloverName,
+  description:
+    "Publishes messages beyond Discord's hourly limit after the limit resets, for up to 24 hours.",
+  premiumOnly: `${rolloverName} is available on Premium.`,
+  status: rolloverStatus,
+  turnedOn: {
+    title: rolloverStatus(true),
+    detail:
+      "Messages beyond Discord's hourly limit are published after the limit resets, for up to 24 hours.",
+  },
+  turnedOff: {
+    title: rolloverStatus(false),
+    detail:
+      "Messages beyond Discord's hourly limit are not published, including those already waiting for the limit to reset.",
   },
 } as const;
 
@@ -194,7 +239,6 @@ const filters = {
    * which is a channel refused for holding a filter.
    */
   locked: {
-    eyebrow: 'Premium feature',
     pitch:
       "A filter lets a channel auto-publish only the messages you choose. It can check a message's content, author, mentions or webhook.",
   },
@@ -203,6 +247,8 @@ const filters = {
 /* Premium ------------------------------------------------------------------ */
 
 const premium = {
+  /** Heads every Premium-locked surface. */
+  lockedEyebrow: 'Premium feature',
   /** Names its destination — "Get Premium" read as the upgrade itself. */
   seePlans: 'See Premium plans',
 } as const;
@@ -343,6 +389,7 @@ const commands = {
     disable: 'Disable auto-publishing in an announcement channel',
     overview: 'Show the auto-publishing status of every channel in this server',
     filters: 'Choose which messages a channel auto-publishes',
+    rollover: "Choose whether messages beyond Discord's hourly limit are published after it resets",
   },
   help: 'See the available commands and where to get help',
 } as const;
@@ -354,6 +401,7 @@ const actions = {
 export const Copy = {
   actions,
   publishing,
+  rollover,
   permissions,
   filters,
   premium,

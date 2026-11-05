@@ -7,6 +7,7 @@ import {
   chatInputEnable,
   chatInputFilters,
   chatInputOverview,
+  chatInputRollover,
 } from '../handlers/ap/index.js';
 
 @ApplyOptions<Subcommand.Options>({
@@ -15,7 +16,9 @@ import {
   preconditions: ['GuildOnly'],
   // Enable, disable and filters check the channel they name in the handler
   // (`handleManageChannelCheck`), not the one the command was typed in. Overview
-  // names no channel, so it keeps the invoking-channel check.
+  // names no channel, so it keeps the invoking-channel check. Rollover is a
+  // server-wide setting, so Manage Server, a guild-level permission the invoking
+  // channel cannot change.
   subcommands: [
     { name: 'enable', chatInputRun: 'chatInputEnable' },
     { name: 'disable', chatInputRun: 'chatInputDisable' },
@@ -25,6 +28,11 @@ import {
       requiredUserPermissions: [PermissionFlagsBits.ManageChannels],
     },
     { name: 'filters', chatInputRun: 'chatInputFilters' },
+    {
+      name: 'rollover',
+      chatInputRun: 'chatInputRollover',
+      requiredUserPermissions: [PermissionFlagsBits.ManageGuild],
+    },
   ],
 })
 export class APCommand extends Subcommand {
@@ -80,6 +88,13 @@ export class APCommand extends Subcommand {
           )
       );
 
+      // Registered unconditionally, like filters; free servers get the upgrade message.
+      command.addSubcommand(subcommand =>
+        subcommand //
+          .setName('rollover')
+          .setDescription(Copy.commands.ap.rollover)
+      );
+
       return command;
     });
   }
@@ -89,4 +104,5 @@ export class APCommand extends Subcommand {
   public chatInputDisable = chatInputDisable;
   public chatInputOverview = chatInputOverview;
   public chatInputFilters = chatInputFilters;
+  public chatInputRollover = chatInputRollover;
 }

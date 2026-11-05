@@ -7,16 +7,18 @@ import {
   GuildReqSchema,
 } from '#utils/validations.js';
 import { Channel } from './channel/index.js';
+import { Rollover } from './rollover.js';
 
 export const Guild: Router = (() => {
   const router = express.Router({ mergeParams: true });
 
   router.use('/channel/:channelId', Channel);
+  router.use('/rollover', Rollover);
 
   /**
    * Get a guild's auto-publishing state for the bot's slash commands: serving
-   * channel IDs, paused ones, whether the guild is migrated, and whether it is
-   * on Premium.
+   * channel IDs, paused ones, whether the guild is migrated, whether it is on
+   * Premium, and whether Rollover is in effect.
    *
    * `premium` is here rather than on its own endpoint because every command that
    * needs it (`/ap filters`, `/ap overview`, `/ap enable`) already calls this —
@@ -40,7 +42,13 @@ export const Guild: Router = (() => {
         // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt
         // NULL. A legacy guild has no channel rows, so without this the bot
         // can't tell "publishes everything" from "publishes nothing".
-        data: { channelIds, pausedChannels, migrated: !!guildRow?.migratedAt, premium },
+        data: {
+          channelIds,
+          pausedChannels,
+          migrated: !!guildRow?.migratedAt,
+          premium,
+          rolloverEnabled: Services.Plans.rolloverInEffect(premium, guildRow),
+        },
         message: 'Channels retrieved successfully',
       } as APIResponse);
     } catch (error) {

@@ -37,7 +37,7 @@ export function PremiumPerks({ freeChannelLimit }: { freeChannelLimit: number })
         title="Unlimited channels"
         free={`Up to ${freeChannelLimit}`}
         premium="Unlimited"
-        body="No limit on announcement channels per server."
+        body="Auto-publish in as many channels as you want!"
       />
       <PerkCard
         icon={BadgeCheck}
@@ -45,7 +45,7 @@ export function PremiumPerks({ freeChannelLimit }: { freeChannelLimit: number })
         title="Priority support"
         free="Standard"
         premium="Priority"
-        body="Your requests are handled before Free ones, by email or in our Discord support server."
+        body="Your requests are handled first, by email or in our Discord support server."
       />
     </section>
   );

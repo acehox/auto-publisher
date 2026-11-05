@@ -12,11 +12,11 @@ import {
   type Snowflake,
 } from 'discord.js';
 import { Buttons } from '#lib/components/buttons.js';
-import { emojis, notes } from '#lib/constants/index.js';
+import { emojis } from '#lib/constants/index.js';
 import { Services } from '#services/index.js';
 import { handleManageChannelCheck } from '#utils/interactions.js';
 import { logger } from '#utils/logger.js';
-import { formatNotes } from '#utils/notes.js';
+import { formatNotes, overLimitState } from '#utils/notes.js';
 import { checkChannelPermissions, renderPermissionSteps } from '#utils/permissions.js';
 import { buildReply, replyPayload } from '#utils/reply.js';
 
@@ -160,18 +160,15 @@ export async function chatInputEnable(
       clearBlocked: false,
     });
 
-    // The guild's plan decides which hourly-limit note to show. One bot serves
-    // both, so this is a backend read, not a process constant. A failed read
-    // falls back to the free note — promising a rollover that won't run is the
-    // worse error.
-    const premium =
-      (await Services.Channel.getGuildChannels(interaction.guildId))?.premium ?? false;
+    // The guild's plan and Rollover setting decide which hourly-limit note to
+    // show. One bot serves both plans, so this is a backend read.
+    const overLimit = overLimitState(await Services.Channel.getGuildChannels(interaction.guildId));
 
     return buildReply({
       title: `${emojis.checkmark} ${Copy.channels.outcome.enabled}`,
       body:
         Copy.channels.outcome.enabledDetail(`<#${channel.id}>`) +
-        formatNotes([premium ? notes.overLimitPremium : notes.overLimitFree]),
+        formatNotes([Copy.publishing.overLimit.body(overLimit)]),
     });
   };
 
