@@ -89,7 +89,7 @@ function buildQuestions(limit: number): Question[] {
     },
     {
       name: 'premium',
-      title: 'Are you interested in Premium features like message filters?',
+      title: "Do you want to publish beyond Discord's hourly limit or filter published messages?",
       choices: yesNo,
     },
   ];
