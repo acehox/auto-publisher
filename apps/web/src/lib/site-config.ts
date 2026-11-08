@@ -1,5 +1,6 @@
 import 'server-only';
 import { config, env, isPublicInstance } from '@ap/config';
+import { headers } from 'next/headers';
 
 export type SiteConfig = {
   /** False for a self-hosted copy: no billing, no upgrade paths. */
@@ -34,6 +35,8 @@ export type SiteConfig = {
    * the backend uses, so the overlay cannot talk to sandbox while the webhooks talk to live.
    */
   paddleEnvironment: 'sandbox' | 'production';
+  /** See `isCroatianVisitor`. Per request, unlike every other field. */
+  croatianVisitor: boolean;
 };
 
 /** Public origin of this deployment, the base for every absolute URL in page metadata. */
@@ -46,12 +49,28 @@ export function getLogoUrl(): string {
 }
 
 /**
+ * Whether this visitor sees what only Croatian law asks for: the EUR price beside each USD
+ * price, the "Price on 10 Oct 2026" line and the /cjenik link. Keyed on the country Cloudflare
+ * reads from the visitor's IP. A missing or unknown country counts as Croatian, so a broken
+ * header shows them to everyone rather than to nobody.
+ *
+ * Never gate the `hrvatski` link with this (AUT-114): missing that notice gives the buyer a
+ * 12-month withdrawal right, and the duty follows the consumer, not their IP.
+ */
+async function isCroatianVisitor(): Promise<boolean> {
+  if (!isPublicInstance) return false;
+  const country = (await headers()).get('cf-ipcountry');
+  // XX = no country data, T1 = Tor.
+  return country === null || country === 'HR' || country === 'XX' || country === 'T1';
+}
+
+/**
  * Resolve deployment config on the server, once per render.
  *
  * `botId` is `DISCORD_CLIENT_ID`: one application logs the admin in and is the
  * bot they invite.
  */
-export function getSiteConfig(): SiteConfig {
+export async function getSiteConfig(): Promise<SiteConfig> {
   return {
     isPublicInstance,
     botId: env.DISCORD_CLIENT_ID,
@@ -60,5 +79,6 @@ export function getSiteConfig(): SiteConfig {
     legacySunsetDate: config.legacySunsetDate,
     paddleClientToken: isPublicInstance ? env.PADDLE_CLIENT_TOKEN : '',
     paddleEnvironment: env.PADDLE_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
+    croatianVisitor: await isCroatianVisitor(),
   };
 }

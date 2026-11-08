@@ -2,8 +2,10 @@ import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   index,
+  integer,
   jsonb,
   pgTable,
+  serial,
   text,
   timestamp,
   uniqueIndex,
@@ -173,9 +175,22 @@ export const withdrawal = pgTable(
   ]
 );
 
+// The published Croatian price lists (Odluka o objavi cjenika, NN 101/2026): one row per
+// file, appended when Paddle's EUR price changes and never updated. The serial is the
+// file's "broj pohrane".
+export const priceList = pgTable('price_list', {
+  storageNumber: serial('storage_number').primaryKey(),
+  publishedAt: timestamp('published_at', { withTimezone: true }).defaultNow().notNull(),
+  currency: text('currency').notNull(),
+  // Tax-inclusive, in the currency's lowest denomination.
+  monthAmount: integer('month_amount').notNull(),
+  yearAmount: integer('year_amount').notNull(),
+});
+
 export type Guild = typeof guild.$inferSelect;
 export type Channel = typeof channel.$inferSelect;
 export type Subscription = typeof subscription.$inferSelect;
 export type NewSubscription = typeof subscription.$inferInsert;
 export type Withdrawal = typeof withdrawal.$inferSelect;
 export type NewWithdrawal = typeof withdrawal.$inferInsert;
+export type PriceList = typeof priceList.$inferSelect;

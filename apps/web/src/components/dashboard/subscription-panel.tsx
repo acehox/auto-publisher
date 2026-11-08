@@ -1,5 +1,6 @@
 'use client';
 
+import type { BillingInterval } from '@ap/api-types';
 import { Copy } from '@ap/copy';
 import { AlertTriangle, Check, Clock, ExternalLink, Loader2, Zap } from 'lucide-react';
 import Link from 'next/link';
@@ -22,12 +23,9 @@ import type { SubscriptionData, SubscriptionDetail } from '@/lib/api/types';
 import { guildIconUrl } from '@/lib/discord';
 import { PREMIUM_PLAN_FEATURES } from '@/lib/plans';
 import {
-  formatUsd,
-  PREMIUM_PRICE_MONTHLY_USD,
-  PREMIUM_PRICE_YEARLY_USD,
   PREMIUM_TRIAL_DAYS,
-  PREMIUM_YEARLY_PER_MONTH_USD,
   PREMIUM_YEARLY_SAVINGS_PERCENT,
+  planPriceDisplay,
 } from '@/lib/pricing';
 import { useSubscriptionDetail } from '@/lib/use-subscription-detail';
 import { cn, formatDate } from '@/lib/utils';
@@ -238,8 +236,6 @@ function BillingCard({
   );
 }
 
-type BillingInterval = 'month' | 'year';
-
 const BILLING_INTERVAL_OPTIONS: SegmentedOption<BillingInterval>[] = [
   { value: 'month', label: 'Monthly' },
   {
@@ -264,7 +260,7 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
   const { guild, data } = useGuild();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { freeChannelLimit } = useSiteConfig();
+  const { freeChannelLimit, croatianVisitor } = useSiteConfig();
   const sunsetLabel = useLegacySunsetLabel();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState(false);
@@ -277,6 +273,7 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
   const [billingInterval, setBillingInterval] = useState<BillingInterval>(
     searchParams.get('upgrade') === 'month' ? 'month' : 'year'
   );
+  const price = planPriceDisplay(billingInterval, croatianVisitor, data.eurPrices);
 
   // MIGRATION: Premium's value lives on registered channel rows that only exist
   // post-migration, so checkout is gated on it. Removed at sunset.
@@ -361,19 +358,15 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
         <div>
           <p className="flex items-baseline gap-1.5">
             <span className="text-3xl font-semibold tracking-tight text-white">
-              {formatUsd(
-                billingInterval === 'month'
-                  ? PREMIUM_PRICE_MONTHLY_USD
-                  : PREMIUM_YEARLY_PER_MONTH_USD
-              )}
+              {price.perMonth.usd}
             </span>
+            {price.perMonth.eur && (
+              <span className="text-sm text-slate-400">({price.perMonth.eur})</span>
+            )}
             <span className="text-xs text-slate-400">/ month</span>
           </p>
-          {billingInterval === 'year' && (
-            <p className="mt-1.5 text-xs text-slate-500">
-              Billed annually at {formatUsd(PREMIUM_PRICE_YEARLY_USD)}.
-            </p>
-          )}
+          <p className="mt-1.5 text-xs text-slate-500">{price.billing}</p>
+          {price.reference && <p className="mt-1.5 text-xs text-slate-500">{price.reference}</p>}
           {/* The pre-contractual trial disclosure, and the reason the trial could
               not ship without it: the 14-day withdrawal right stays a one-time
               right only if the buyer is told at the point of purchase that
@@ -387,11 +380,8 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
               Paddle's overlay shows the exact date on the next screen. */}
           {trialAvailable && (
             <p className="mt-1.5 text-xs leading-relaxed text-slate-300">
-              After the {PREMIUM_TRIAL_DAYS}-day trial,{' '}
-              {billingInterval === 'year'
-                ? `${formatUsd(PREMIUM_PRICE_YEARLY_USD)} per year`
-                : `${formatUsd(PREMIUM_PRICE_MONTHLY_USD)} per month`}{' '}
-              is charged automatically.
+              After the {PREMIUM_TRIAL_DAYS}-day trial, {price.charge} per {billingInterval} is
+              charged automatically.
             </p>
           )}
         </div>

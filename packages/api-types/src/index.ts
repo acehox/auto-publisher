@@ -80,6 +80,18 @@ export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'paused' |
 /** Billing interval */
 export type BillingInterval = 'month' | 'year';
 
+/** Tax-inclusive plan prices in one currency, in major units. */
+export type PlanPrices = Record<BillingInterval, number>;
+
+/** One Croatian price list (`GET /pricing`): what Paddle charges a Croatian buyer from `publishedAt`. */
+export interface PublishedPriceList {
+  /** The file's "broj pohrane". */
+  storageNumber: number;
+  publishedAt: string;
+  currency: string;
+  prices: PlanPrices;
+}
+
 /** Pending scheduled change on a subscription (cancel/pause at period end) */
 export interface SubscriptionScheduledChange {
   action: 'cancel' | 'pause' | 'resume';
@@ -177,6 +189,11 @@ export interface GuildDashboardData {
    * the checkout then contradicts creates a second 14-day withdrawal right over a real charge.
    */
   trialAvailable: boolean;
+  /**
+   * What Paddle charges a euro-area buyer, shown beside every USD price because Croatian law
+   * binds us to a EUR price. Null when no price list is published yet.
+   */
+  eurPrices: PlanPrices | null;
   channels: GuildChannel[];
   subscription: SubscriptionData | null;
 }

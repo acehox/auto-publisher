@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { StaticNavbar } from '@/components/layout/navbar-static';
 import { SiteShell } from '@/components/layout/site-shell';
 import { Prose } from '@/components/prose';
-import { legalDocuments } from '@/lib/legal/documents';
+import { legalDocuments, linkedFor } from '@/lib/legal/documents';
+import { getSiteConfig } from '@/lib/site-config';
 
 /**
  * Shared chrome for the legal documents. Holds no operative text: everything
@@ -16,16 +17,19 @@ import { legalDocuments } from '@/lib/legal/documents';
  */
 export const dynamic = 'force-dynamic';
 
-export default function LegalLayout({
+export default async function LegalLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { croatianVisitor } = await getSiteConfig();
+  const documents = linkedFor(legalDocuments, croatianVisitor);
+
   return (
     <SiteShell nav={<StaticNavbar />}>
       <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
         <nav aria-label="Legal documents" className="mb-12 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-          {legalDocuments.map(document => (
+          {documents.map(document => (
             <Link
               key={document.href}
               href={document.href}

@@ -20,6 +20,7 @@ const SiteConfigContext = createContext<SiteConfig>({
   legacySunsetDate: '',
   paddleClientToken: '',
   paddleEnvironment: 'sandbox',
+  croatianVisitor: false,
 });
 
 export function SiteConfigProvider({
