@@ -1,3 +1,4 @@
+import type { PlanPrices } from '@ap/api-types';
 import { Check } from 'lucide-react';
 import Link from 'next/link';
 import { PlanFeatureText } from '@/components/plan-feature-text';
@@ -5,12 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CANCEL_PLAN_FEATURE, PREMIUM_PLAN_FEATURES, REFUND_PLAN_FEATURE } from '@/lib/plans';
 import {
-  formatUsd,
-  PREMIUM_PRICE_MONTHLY_USD,
-  PREMIUM_PRICE_YEARLY_USD,
+  type PlanPriceDisplay,
   PREMIUM_TRIAL_DAYS,
-  PREMIUM_YEARLY_PER_MONTH_USD,
   PREMIUM_YEARLY_SAVINGS_PERCENT,
+  planPriceDisplay,
 } from '@/lib/pricing';
 import { cn } from '@/lib/utils';
 
@@ -32,10 +31,15 @@ const CARD_FEATURES = [REFUND_PLAN_FEATURE, ...PREMIUM_PLAN_FEATURES, CANCEL_PLA
  * "once per server" rather than asserting the reader still has one. The per-server truth is
  * on the subscription panel, which reads `trialAvailable` for the actual guild.
  */
-export function PricingPlans({ trialOffered }: { trialOffered: boolean }) {
-  const billingLine = (amount: number, cadence: 'annually' | 'monthly'): string =>
-    `Billed ${cadence} at ${formatUsd(amount)}.`;
-
+export function PricingPlans({
+  trialOffered,
+  croatianVisitor,
+  eurPrices,
+}: {
+  trialOffered: boolean;
+  croatianVisitor: boolean;
+  eurPrices: PlanPrices | null;
+}) {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto items-stretch">
@@ -44,15 +48,13 @@ export function PricingPlans({ trialOffered }: { trialOffered: boolean }) {
           name="Annual"
           band="Best Value"
           badge={`Save ${PREMIUM_YEARLY_SAVINGS_PERCENT}%`}
-          pricePerMonth={PREMIUM_YEARLY_PER_MONTH_USD}
-          billing={billingLine(PREMIUM_PRICE_YEARLY_USD, 'annually')}
+          price={planPriceDisplay('year', croatianVisitor, eurPrices)}
           cta="Choose Annual"
           href="/dashboard?upgrade=year"
         />
         <PlanCard
           name="Monthly"
-          pricePerMonth={PREMIUM_PRICE_MONTHLY_USD}
-          billing={billingLine(PREMIUM_PRICE_MONTHLY_USD, 'monthly')}
+          price={planPriceDisplay('month', croatianVisitor, eurPrices)}
           cta="Choose Monthly"
           href="/dashboard?upgrade=month"
         />
@@ -82,16 +84,14 @@ function PlanCard({
   name,
   band,
   badge,
-  pricePerMonth,
-  billing,
+  price,
   cta,
   href,
 }: {
   name: string;
   band?: string;
   badge?: string;
-  pricePerMonth: number;
-  billing: string;
+  price: PlanPriceDisplay;
   cta: string;
   href: string;
 }) {
@@ -122,11 +122,13 @@ function PlanCard({
 
         <div className="mt-6 flex items-baseline gap-1.5">
           <span className="bg-linear-to-r from-blue-300 to-blue-500 bg-clip-text text-4xl font-bold text-transparent">
-            {formatUsd(pricePerMonth)}
+            {price.perMonth.usd}
           </span>
+          {price.perMonth.eur && <span className="text-slate-400">({price.perMonth.eur})</span>}
           <span className="text-slate-400">/month</span>
         </div>
-        <p className="mt-2 text-sm text-slate-400">{billing}</p>
+        <p className="mt-2 text-sm text-slate-400">{price.billing}</p>
+        {price.reference && <p className="mt-1 text-xs text-slate-500">{price.reference}</p>}
 
         <ul className="mt-6 mb-8 flex-1 space-y-3 text-slate-400">
           {CARD_FEATURES.map(feature => (

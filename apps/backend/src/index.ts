@@ -13,6 +13,7 @@ import {
 import express, { type Express } from 'express';
 import { App } from '#app/index.js';
 import { runGuildReconcile, startGuildReconcile } from '#cron/guildReconcile.js';
+import { runPriceListRefresh, startPriceListRefresh } from '#cron/priceListRefresh.js';
 import {
   runSubscriptionReconcile,
   startSubscriptionReconcile,
@@ -39,6 +40,7 @@ app.use(express.json());
 app.use('/guild/:guildId', App.Routes.Guild);
 app.use('/info', App.Routes.Info);
 app.use('/internal', App.Routes.Internal);
+if (isPublicInstance) app.use('/pricing', App.Routes.Pricing);
 app.get('/health', createHealthRoute);
 
 // Public API routes (with CORS + Discord auth)
@@ -109,6 +111,10 @@ if (isPublicInstance) {
 
   // Retry sweep for unsent withdrawal acknowledgements (ZZP čl. 81.a st. 6)
   startWithdrawalAcknowledgeRetry();
+
+  // Croatian price list (Odluka o objavi cjenika, NN 101/2026) and the EUR price the site shows
+  startPriceListRefresh();
+  void runPriceListRefresh();
 }
 
 // Startup reconcile: repairs presence state lost while down — Discord never

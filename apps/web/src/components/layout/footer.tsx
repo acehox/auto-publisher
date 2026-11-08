@@ -2,8 +2,8 @@ import { isPublicInstance } from '@ap/config';
 import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { links, values } from '@/lib/constants';
-import { englishLegalDocuments } from '@/lib/legal/documents';
 import { formatNumberFull } from '@/lib/utils';
+import { FooterLegalNav } from './footer-legal-nav';
 import { Logo } from './logo';
 import { publicOnlyHrefs } from './nav-config';
 
@@ -77,29 +77,7 @@ export function Footer() {
         </div>
 
         <div className="pt-8 border-t border-slate-800 space-y-4 text-slate-500 text-xs">
-          <nav aria-label="Legal">
-            <ul className="flex flex-wrap items-center justify-center sm:justify-end gap-x-3 gap-y-1 sm:gap-x-2">
-              {englishLegalDocuments.map((document, index) => (
-                <li key={document.href} className="flex items-center gap-x-2">
-                  {/* Separators only from sm up: below that the row wraps, and a wrapped
-                      line would start with a stray divider. */}
-                  {index > 0 && (
-                    <span aria-hidden="true" className="hidden sm:inline text-slate-700">
-                      |
-                    </span>
-                  )}
-                  <Link
-                    href={document.href}
-                    lang={document.lang}
-                    hrefLang={document.lang}
-                    className="hover:text-slate-300 transition-colors"
-                  >
-                    {document.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <FooterLegalNav />
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-sm">
             <p>

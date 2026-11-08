@@ -101,8 +101,8 @@ const steps: { title: string; description: ReactNode }[] = [
   },
 ];
 
-export default function MigrationPage() {
-  const { isPublicInstance, legacySunsetDate } = getSiteConfig();
+export default async function MigrationPage() {
+  const { isPublicInstance, legacySunsetDate } = await getSiteConfig();
   const sunsetLabel = legacySunsetLabel(legacySunsetDate);
   // The server check is about the free cap, the retiring bots and Premium, none of which a self-host has.
   const contents = [

@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { PublishedPriceList } from '@ap/api-types';
 import { env } from '@ap/config';
 import { auth } from '@/lib/auth';
 import { SNOWFLAKE_REGEX } from '@/lib/discord';
@@ -85,6 +86,21 @@ export async function backendFetch<T>(path: ApiPath, options?: BackendFetchOptio
     throw new AuthExpiredError('No Discord access token');
   }
 
+  return requestBackend<T>(path, {
+    ...options,
+    headers: { Authorization: `Bearer ${token}`, ...options?.headers },
+  });
+}
+
+/**
+ * The published Croatian price lists, newest first. The one read without a session: /premium
+ * and /cjenik render for visitors who are not logged in. The backend serves it on the public
+ * instance only.
+ */
+export const getPriceLists = (): Promise<PublishedPriceList[]> =>
+  requestBackend<PublishedPriceList[]>(apiPath`/pricing`);
+
+async function requestBackend<T>(path: ApiPath, options?: BackendFetchOptions): Promise<T> {
   const url = `${getBackendUrl()}${path}`;
 
   // Bound READS so a hung upstream (e.g. a stalled DB connection) fails fast
@@ -97,11 +113,7 @@ export async function backendFetch<T>(path: ApiPath, options?: BackendFetchOptio
   const isRead = (options?.method ?? 'GET') === 'GET';
   const response = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options?.headers,
-    },
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
     ...(isRead ? { signal: AbortSignal.timeout(BACKEND_TIMEOUT_MS) } : {}),
   });
 

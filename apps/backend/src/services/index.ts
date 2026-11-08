@@ -6,6 +6,7 @@ import { Info } from './info.js';
 import { PaddleService } from './paddle.js';
 import { Plans } from './plans.js';
 import { PresenceHeal } from './presenceHeal.js';
+import { PriceLists } from './priceList.js';
 import { PublishState } from './publishState.js';
 import { Retention } from './retention.js';
 import { Subscriptions } from './subscriptions.js';
@@ -20,6 +21,7 @@ export const Services = {
   Paddle: PaddleService,
   Plans,
   PresenceHeal,
+  PriceLists,
   PublishState,
   Retention,
   Subscriptions,
