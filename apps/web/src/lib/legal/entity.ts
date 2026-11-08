@@ -1,3 +1,5 @@
+const address = { street: 'Selska ulica 25', postcode: '42242', city: 'Tužno' } as const;
+
 /**
  * The operating entity's registered particulars — the single source for every legal
  * document and the site footer. ZTD cl. 21(4)-(5) requires this exact set on a
@@ -19,7 +21,8 @@ export const entity = {
   },
 
   /** ZEIT cl. 6 + ZTD cl. 21(4). Must be a street address, not a PO box. */
-  seat: 'Selska ulica 25, 42242 Tužno, Croatia',
+  seat: `${address.street}, ${address.postcode} ${address.city}, Croatia`,
+  address,
 
   /** ZEIT cl. 6 wants the register number AND particulars of the register. */
   registryCourt: 'Trgovački sud u Varaždinu',

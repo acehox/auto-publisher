@@ -9,8 +9,10 @@ import { PremiumPerks } from '@/components/marketing/premium/premium-perks';
 import { RolloverDemo } from '@/components/marketing/premium/rollover-demo';
 import { PricingPlans } from '@/components/marketing/pricing-plans';
 import { PlanComparisonTable } from '@/components/plan-comparison-table';
+import { getPriceLists } from '@/lib/api/backend';
 import { values } from '@/lib/constants';
 import { guidePath } from '@/lib/guides';
+import { getSiteConfig } from '@/lib/site-config';
 import { formatNumberFull } from '@/lib/utils';
 
 export const metadata: Metadata = {
@@ -23,11 +25,19 @@ export const metadata: Metadata = {
 // čl. 60 st. 2 makes every sentence on this page a contract term. Rollover is best effort
 // within 24h and the queue has no priority (ADR 0001): never "instant", "guaranteed",
 // "unlimited publishing", "bypass", or a support response time.
-export default function PremiumPage() {
+export default async function PremiumPage() {
   // A self-hosted instance has no billing, so there are no plans to sell.
   if (!isPublicInstance) notFound();
 
   const freeChannelLimit = config.limits.freeChannelsPerGuild;
+  const { croatianVisitor } = await getSiteConfig();
+  // Without the backend the page still sells, in USD only, rather than failing.
+  const eurPrices = croatianVisitor
+    ? await getPriceLists().then(
+        ([current]) => current?.prices ?? null,
+        () => null
+      )
+    : null;
 
   return (
     <div className="mx-auto max-w-7xl px-4 pt-32 pb-24 sm:px-6 lg:px-8">
@@ -52,9 +62,12 @@ export default function PremiumPage() {
       </header>
 
       {/* Read on the server, so a public instance with no trial prices configured advertises
-          none. Not routed through getSiteConfig() because this page and PricingPlans are
-          both server components. */}
-      <PricingPlans trialOffered={premiumTrialEnabled} />
+          none. */}
+      <PricingPlans
+        trialOffered={premiumTrialEnabled}
+        croatianVisitor={croatianVisitor}
+        eurPrices={eurPrices}
+      />
 
       <div className="mx-auto mt-20 max-w-6xl space-y-28">
         <FeatureSection

@@ -216,6 +216,31 @@ async function* listAllSubscriptions(): AsyncGenerator<PaddleSubscription> {
 }
 
 /**
+ * What Paddle Checkout charges a buyer in `countryCode` for each plan: tax-inclusive totals in
+ * the lowest denomination, converted when automatic currency conversion is on for that
+ * country's currency.
+ */
+const previewPrices = async (
+  countryCode: 'HR'
+): Promise<{ currency: string; month: number; year: number }> => {
+  const priceIds = { month: env.PADDLE_PRICE_ID_MONTHLY, year: env.PADDLE_PRICE_ID_YEARLY };
+  const preview = await ensurePaddle().pricingPreview.preview({
+    items: Object.values(priceIds).map(priceId => ({ priceId, quantity: 1 })),
+    address: { countryCode },
+  });
+  const total = (priceId: string): number => {
+    const line = preview.details.lineItems.find(item => item.price.id === priceId);
+    if (!line) throw new Error(`Paddle pricing preview has no line for ${priceId}`);
+    return Number(line.totals.total);
+  };
+  return {
+    currency: preview.currencyCode,
+    month: total(priceIds.month),
+    year: total(priceIds.year),
+  };
+};
+
+/**
  * Verifies the Paddle-Signature header and parses the event.
  */
 const unmarshalWebhook = (rawBody: string, signature: string): Promise<EventEntity> => {
@@ -229,6 +254,7 @@ export const PaddleService = {
   refundTransaction,
   cancelSubscriptionImmediately,
   listAllSubscriptions,
+  previewPrices,
 };
 
 // Exported separately to avoid leaking Paddle types through the Services aggregate

@@ -183,10 +183,11 @@ export const GuildApi: Router = (() => {
       // Publish capability per channel rides along, served from the bot-pushed
       // publish-state cache with a REST write-back fallback. Drives
       // the "Publishing / Not publishing" indicator + migrate-modal preselection.
-      const [channels, guildRow, channelLimit] = await Promise.all([
+      const [channels, guildRow, channelLimit, eurPrices] = await Promise.all([
         Services.Channels.getChannelsForDashboard(guildId),
         Services.Guilds.find(guildId),
         Services.Plans.channelLimit(guildId),
+        isPublicInstance ? Services.PriceLists.currentEurPrices() : null,
       ]);
 
       // MIGRATION: legacy guild = no row yet (pre-reconcile) or migratedAt NULL
@@ -203,6 +204,7 @@ export const GuildApi: Router = (() => {
           // The fact the pre-contractual trial disclosure is built from, so it comes from
           // the checkout's own predicate rather than being re-derived client-side.
           trialAvailable: Services.Subscriptions.isTrialAvailable(sub),
+          eurPrices,
           channels,
           subscription: sub
             ? {

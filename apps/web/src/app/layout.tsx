@@ -37,14 +37,14 @@ export const viewport: Viewport = {
   themeColor: BRAND_COLOR,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   // Resolved server-side and handed to the client tree, so the deployment is
   // configured purely at runtime — no NEXT_PUBLIC_* baked in at build time.
-  const siteConfig = getSiteConfig();
+  const siteConfig = await getSiteConfig();
 
   return (
     <html lang="en" data-scroll-behavior="smooth">

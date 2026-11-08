@@ -15,6 +15,13 @@
       "when": 1793829844341,
       "tag": "0001_last_iron_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794153096581,
+      "tag": "0002_marvelous_mantis",
+      "breakpoints": true
     }
   ]
 }
