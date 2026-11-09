@@ -26,7 +26,7 @@
     "prod:ps": "bash ./scripts/bot/prod/ps.sh"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.4",
+    "@biomejs/biome": "2.6.6",
     "@playwright/test": "^1.64.1",
     "rimraf": "^6.1.3",
     "supabase": "^2.122.0",
