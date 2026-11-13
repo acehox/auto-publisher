@@ -35,7 +35,7 @@ Then the lockfile:
 
 - Its leading document (`packageManagerDependencies`, the pnpm pin) is still there.
 - List every version it moves, transitive ones included: `git diff origin/develop...origin/<branch> -- pnpm-lock.yaml | grep -E "^[+-]  ?[^ ].*@[0-9]"`. Name each new package and each transitive major.
-- Publish date of each moved version: `npm view <name> time --json | jq -r '.["<version>"]'`. Renovate does not apply its 3-day rule to the lockfile, so a version can be 1 day old. Younger than 3 days is `WAIT` until the date it turns 3 days old.
+- Publish date of each moved version: `npm view <name> time --json | jq -r '.["<version>"]'`. pnpm's 3-day `minimumReleaseAge` should keep every one at least 3 days old; a younger one came in through a `minimumReleaseAgeExclude` entry or a changed setting. Younger than 3 days is `WAIT` until the date it turns 3 days old.
 
 ## 3. Read what changed upstream
 
