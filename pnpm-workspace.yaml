@@ -1,6 +1,9 @@
 packages:
   - apps/*
   - packages/*
+# Minutes. Matches Renovate's 3-day rule, which covers only manifest ranges, so the versions
+# a Renovate PR re-resolves in the lockfile are as old as the ones it names.
+minimumReleaseAge: 4320
 allowBuilds:
   esbuild: true
   msgpackr-extract: true
