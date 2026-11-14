@@ -18,8 +18,8 @@
     "@ap/tsconfig": "workspace:*",
     "@ap/utils": "workspace:*",
     "@discordjs/rest": "^2.6.3",
-    "bullmq": "^6.5.1",
-    "discord-api-types": "^0.38.57",
+    "bullmq": "^6.7.4",
+    "discord-api-types": "^0.38.58",
     "express": "^5.3.0",
     "ioredis": "^6.0.0"
   },

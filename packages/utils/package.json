@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@ap/validations": "workspace:*",
-    "discord-api-types": "^0.38.57"
+    "discord-api-types": "^0.38.58"
   },
   "devDependencies": {
     "@ap/tsconfig": "workspace:*"

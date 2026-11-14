@@ -13,8 +13,8 @@
   "dependencies": {
     "@ap/config": "workspace:*",
     "cors": "^2.8.6",
-    "discord-api-types": "^0.38.57",
-    "express-rate-limit": "^8.7.2",
+    "discord-api-types": "^0.38.58",
+    "express-rate-limit": "^8.7.4",
     "http-status-codes": "^2.3.0",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
