@@ -16,3 +16,6 @@ overrides:
   "drizzle-kit>@esbuild-kit/esm-loader": "-"
   # One copy: two break @ap/express type-checking. Move together with the web image's Node major.
   "@types/node": "^26.6.6"
+minimumReleaseAgeExclude:
+  # Renovate security update: next@16.4.5
+  - next@16.4.5
