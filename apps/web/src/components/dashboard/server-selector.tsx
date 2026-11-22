@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { GuildErrorCard } from '@/components/dashboard/guild-error-card';
 import { useGuildList } from '@/components/dashboard/guild-list-context';
+import { LegacyTag } from '@/components/legacy-tag';
 import { useIsPublicInstance, useSiteConfig } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import type { DiscordGuild } from '@/lib/api/types';
@@ -165,11 +166,7 @@ export function ServerSelector() {
                     className="size-4 shrink-0 text-yellow-500"
                   />
                 )}
-                {legacy && (
-                  <span className="shrink-0 rounded border border-amber-500/45 bg-amber-500/10 px-2 py-0.5 font-semibold text-[10px] uppercase tracking-wider text-amber-400">
-                    Legacy
-                  </span>
-                )}
+                {legacy && <LegacyTag />}
 
                 <span className="flex-1" />
                 {!absent && <ChevronRight className="size-4 shrink-0 text-slate-600" />}
