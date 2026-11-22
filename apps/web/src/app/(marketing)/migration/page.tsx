@@ -200,7 +200,8 @@ export default async function MigrationPage() {
               <Clock className="size-5 shrink-0 text-amber-400" aria-hidden="true" />
               <span>
                 Switch over before legacy mode ends on{' '}
-                <span className="whitespace-nowrap font-bold text-white">{sunsetLabel}</span>.
+                <span className="whitespace-nowrap font-bold text-white">{sunsetLabel}</span> to
+                keep publishing.
               </span>
             </p>
             <div className="flex flex-col items-center gap-4 md:items-start">
