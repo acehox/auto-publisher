@@ -11,6 +11,7 @@ interface InviteBotButtonProps {
   children: ReactNode;
   className?: string;
   size?: ComponentProps<typeof Button>['size'];
+  variant?: ComponentProps<typeof Button>['variant'];
   /**
    * Offer a one-tap route to the dashboard after the invite opens. The invite
    * opens in a new tab and — logged out, with no guild context — its success is
@@ -29,6 +30,7 @@ export function InviteBotButton({
   children,
   className,
   size,
+  variant,
   showDashboardNudge,
 }: InviteBotButtonProps) {
   const router = useRouter();
@@ -54,7 +56,7 @@ export function InviteBotButton({
   };
 
   return (
-    <Button size={size} className={className} asChild>
+    <Button size={size} variant={variant} className={className} asChild>
       <Link href={inviteUrl} target="_blank" onClick={handleClick}>
         {children}
       </Link>

@@ -50,7 +50,7 @@ export function NavbarBar({ variant, links, account, mobileAccount, brand }: Nav
 
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-lg border-b border-slate-800/50"
+      className="fixed top-[var(--promo-offset,0px)] left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-lg border-b border-slate-800/50"
       style={{ paddingRight: 'var(--removed-body-scroll-bar-size, 0px)' }}
     >
       <div className={cn('px-4 sm:px-6 lg:px-8', inDashboard ? 'w-full' : 'max-w-7xl mx-auto')}>

@@ -21,6 +21,7 @@ const SiteConfigContext = createContext<SiteConfig>({
   paddleClientToken: '',
   paddleEnvironment: 'sandbox',
   croatianVisitor: false,
+  promo: null,
 });
 
 export function SiteConfigProvider({

@@ -30,16 +30,11 @@ export const values = {
 };
 
 /**
- * MIGRATION: human-readable sunset date, deterministic across server/client
- * (fixed en-US + UTC).
- *
- * The date itself is `config.legacySunsetDate` in `@ap/config` — shared with the
- * bot, which renders the same date in `/ap overview`. Client components get it
- * from `useSiteConfig()`; server components from `getSiteConfig()`. Returns an
- * empty string for an unset date so an absent provider renders nothing rather
- * than "Invalid Date".
+ * A `YYYY-MM-DD` date as "December 31, 2027", deterministic across server and client (fixed
+ * en-US + UTC). Returns an empty string for an unset date so an absent provider renders nothing
+ * rather than "Invalid Date".
  */
-export function legacySunsetLabel(date: string): string {
+export function formatDateLabel(date: string): string {
   const parsed = new Date(`${date}T00:00:00Z`);
   if (Number.isNaN(parsed.getTime())) return '';
   return parsed.toLocaleDateString('en-US', {
@@ -49,3 +44,12 @@ export function legacySunsetLabel(date: string): string {
     timeZone: 'UTC',
   });
 }
+
+/**
+ * MIGRATION: human-readable sunset date.
+ *
+ * The date itself is `config.legacySunsetDate` in `@ap/config` — shared with the
+ * bot, which renders the same date in `/ap overview`. Client components get it
+ * from `useSiteConfig()`; server components from `getSiteConfig()`.
+ */
+export const legacySunsetLabel = formatDateLabel;

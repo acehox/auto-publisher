@@ -1,14 +1,21 @@
 'use client';
 
-import { ArrowRight, MessageCircle } from 'lucide-react';
+import { ArrowRight, MessageCircle, Star, ThumbsUp } from 'lucide-react';
 import { motion } from 'motion/react';
 import Link from 'next/link';
-import { links, PRODUCT_SUMMARY } from '@/lib/constants';
+import { useSiteConfig } from '@/components/site-config-context';
+import { links, PRODUCT_SUMMARY, PUBLIC_BOT_ID } from '@/lib/constants';
 import { Button } from '../ui/button';
 import { HeroDemo } from './hero-demo';
 import { InviteBotButton } from './invite-bot-button';
 
+const secondaryCtaClass =
+  'rounded-lg border-slate-700 bg-slate-800/50 px-8 py-4 text-white transition-all hover:-translate-y-0.5 hover:bg-slate-800';
+
 export function Hero() {
+  // The top.gg page belongs to the public bot, so a differently-configured copy does not link it.
+  const showVote = useSiteConfig().botId === PUBLIC_BOT_ID;
+
   return (
     <section id="home" className="relative mx-auto max-w-7xl px-4 pt-32 pb-20 sm:px-6 lg:px-8">
       <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-15">
@@ -68,13 +75,20 @@ export function Hero() {
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </InviteBotButton>
 
-            <Button
-              variant="outline"
-              size="xl"
-              className="rounded-lg border-slate-700 bg-slate-800/50 px-8 py-4 text-white transition-all hover:-translate-y-0.5 hover:bg-slate-800"
-              asChild
-            >
-              <Link href="/how-it-works">How It Works</Link>
+            {showVote && (
+              <Button variant="outline" size="xl" className={secondaryCtaClass} asChild>
+                <Link href={links.topggVote} target="_blank" rel="noopener noreferrer">
+                  <ThumbsUp className="h-5 w-5" />
+                  Vote
+                </Link>
+              </Button>
+            )}
+
+            <Button variant="outline" size="xl" className={secondaryCtaClass} asChild>
+              <Link href={links.githubRepo} target="_blank" rel="noopener noreferrer">
+                <Star className="h-5 w-5" />
+                Star on GitHub
+              </Link>
             </Button>
           </motion.div>
 

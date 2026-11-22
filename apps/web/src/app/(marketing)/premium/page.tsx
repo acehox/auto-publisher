@@ -9,6 +9,7 @@ import { PremiumPerks } from '@/components/marketing/premium/premium-perks';
 import { RolloverDemo } from '@/components/marketing/premium/rollover-demo';
 import { PricingPlans } from '@/components/marketing/pricing-plans';
 import { PlanComparisonTable } from '@/components/plan-comparison-table';
+import { PromoBanner } from '@/components/promo-banner';
 import { getPriceLists } from '@/lib/api/backend';
 import { values } from '@/lib/constants';
 import { guidePath } from '@/lib/guides';
@@ -60,6 +61,8 @@ export default async function PremiumPage() {
           Trusted by {formatNumberFull(values.activeServers)} servers
         </p>
       </header>
+
+      <PromoBanner className="mx-auto mb-10 max-w-4xl" />
 
       {/* Read on the server, so a public instance with no trial prices configured advertises
           none. */}

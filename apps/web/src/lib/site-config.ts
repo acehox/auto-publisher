@@ -1,6 +1,7 @@
 import 'server-only';
 import { config, env, isPublicInstance } from '@ap/config';
 import { headers } from 'next/headers';
+import { activePromo, type Promo } from '@/lib/promo';
 
 export type SiteConfig = {
   /** False for a self-hosted copy: no billing, no upgrade paths. */
@@ -37,6 +38,11 @@ export type SiteConfig = {
   paddleEnvironment: 'sandbox' | 'production';
   /** See `isCroatianVisitor`. Per request, unlike every other field. */
   croatianVisitor: boolean;
+  /**
+   * The promo code to show, or null. Decided here, per request, so the client components that
+   * render it never compare dates themselves and cannot hydrate to a different answer.
+   */
+  promo: Promo | null;
 };
 
 /** Public origin of this deployment, the base for every absolute URL in page metadata. */
@@ -80,5 +86,6 @@ export async function getSiteConfig(): Promise<SiteConfig> {
     paddleClientToken: isPublicInstance ? env.PADDLE_CLIENT_TOKEN : '',
     paddleEnvironment: env.PADDLE_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
     croatianVisitor: await isCroatianVisitor(),
+    promo: isPublicInstance ? activePromo() : null,
   };
 }
