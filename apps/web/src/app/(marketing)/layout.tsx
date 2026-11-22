@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/layout/navbar';
 import { SiteShell } from '@/components/layout/site-shell';
+import { PromoTopBanner } from '@/components/promo-top-banner';
 
 /**
  * Marketing pages render at request time rather than being prerendered.
@@ -16,5 +17,16 @@ import { SiteShell } from '@/components/layout/site-shell';
 export const dynamic = 'force-dynamic';
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
-  return <SiteShell nav={<Navbar />}>{children}</SiteShell>;
+  return (
+    <SiteShell
+      nav={
+        <>
+          <PromoTopBanner />
+          <Navbar />
+        </>
+      }
+    >
+      {children}
+    </SiteShell>
+  );
 }

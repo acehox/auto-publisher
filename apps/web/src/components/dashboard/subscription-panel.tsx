@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/dashboard/page-header';
 import { shouldOfferWithdrawal, WithdrawalPanel } from '@/components/dashboard/withdrawal-panel';
 import { PlanComparisonTable } from '@/components/plan-comparison-table';
 import { PlanFeatureText } from '@/components/plan-feature-text';
+import { PromoBanner } from '@/components/promo-banner';
 import { useLegacySunsetLabel, useSiteConfig } from '@/components/site-config-context';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -385,6 +386,8 @@ function UpgradeCard({ guildId, guildName }: { guildId: string; guildName: strin
             </p>
           )}
         </div>
+
+        <PromoBanner />
 
         <PlanComparisonTable compact freeChannelLimit={freeChannelLimit} />
 
