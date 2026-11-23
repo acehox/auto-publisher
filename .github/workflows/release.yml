@@ -32,7 +32,7 @@ jobs:
     strategy:
       matrix:
         image: [bot, proxy, backend, helper, web]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     permissions:
       contents: read
@@ -81,7 +81,7 @@ jobs:
     needs: [checks, build]
     # A dispatch skips checks and build; a push needs both to pass.
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     environment:
       name: production
