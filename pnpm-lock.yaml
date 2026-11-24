@@ -193,8 +193,8 @@ importers:
         specifier: ^3.2.0
         version: 3.2.0
       turbo:
-        specifier: ^2.11.11
-        version: 2.11.11
+        specifier: ^2.11.13
+        version: 2.11.13
       typescript:
         specifier: 7.0.2
         version: 7.0.2
@@ -241,11 +241,11 @@ importers:
         specifier: ^3.5.5
         version: 3.5.5
       cron:
-        specifier: ^4.4.0
-        version: 4.4.0
+        specifier: ^4.4.1
+        version: 4.4.1
       discord-api-types:
-        specifier: ^0.38.59
-        version: 0.38.59
+        specifier: ^0.38.60
+        version: 0.38.60
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(postgres@3.4.9)
@@ -253,8 +253,8 @@ importers:
         specifier: ^5.3.0
         version: 5.3.0
       nodemailer:
-        specifier: ^10.5.0
-        version: 10.5.0
+        specifier: ^10.6.1
+        version: 10.6.1
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -359,11 +359,11 @@ importers:
         specifier: ^2.6.3
         version: 2.6.3
       bullmq:
-        specifier: ^6.7.6
-        version: 6.7.6(ioredis@6.0.0)
+        specifier: ^6.7.8
+        version: 6.7.8(ioredis@6.0.0)
       discord-api-types:
-        specifier: ^0.38.59
-        version: 0.38.59
+        specifier: ^0.38.60
+        version: 0.38.60
       express:
         specifier: ^5.3.0
         version: 5.3.0
@@ -414,8 +414,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       lucide-react:
-        specifier: ^1.73.0
-        version: 1.73.0(@types/react@19.3.0)(react@19.3.1)
+        specifier: ^1.77.0
+        version: 1.77.0(@types/react@19.3.0)(react@19.3.1)
       motion:
         specifier: ^14.14.0
         version: 14.14.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -447,8 +447,8 @@ importers:
         specifier: ^2.0.8
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       tailwind-merge:
-        specifier: ^3.7.0
-        version: 3.7.0
+        specifier: ^3.7.1
+        version: 3.7.1
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4.3.5
@@ -557,14 +557,14 @@ importers:
         specifier: ^2.8.6
         version: 2.8.6
       discord-api-types:
-        specifier: ^0.38.59
-        version: 0.38.59
+        specifier: ^0.38.60
+        version: 0.38.60
       express:
         specifier: ^5
         version: 5.3.0
       express-rate-limit:
-        specifier: ^8.7.4
-        version: 8.7.4(express@5.3.0)
+        specifier: ^8.7.5
+        version: 8.7.5(express@5.3.0)
       http-status-codes:
         specifier: ^2.3.0
         version: 2.3.0
@@ -576,7 +576,7 @@ importers:
         version: 11.0.0
       rate-limit-redis:
         specifier: ^6.0.2
-        version: 6.0.2(express-rate-limit@8.7.4(express@5.3.0))
+        version: 6.0.2(express-rate-limit@8.7.5(express@5.3.0))
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -625,8 +625,8 @@ importers:
         specifier: workspace:*
         version: link:../validations
       discord-api-types:
-        specifier: ^0.38.59
-        version: 0.38.59
+        specifier: ^0.38.60
+        version: 0.38.60
       ioredis:
         specifier: ^6.0.0
         version: 6.0.0
@@ -643,8 +643,8 @@ importers:
         specifier: workspace:*
         version: link:../validations
       discord-api-types:
-        specifier: ^0.38.59
-        version: 0.38.59
+        specifier: ^0.38.60
+        version: 0.38.60
     devDependencies:
       '@ap/tsconfig':
         specifier: workspace:*
@@ -2354,33 +2354,33 @@ packages:
     peerDependencies:
       tailwindcss: '>=3.0.0 || >=4.0.0 || insiders'
 
-  '@turbo/darwin-64@2.11.11':
-    resolution: {integrity: sha512-HMMeUIEAsmyIbSYn1ySvF/4gGMa0joiTMq4dQDuloIAnOpbtFT3JEiVsYnASdTWDXvplbRbZlqjU1EBeSR9G1A==}
+  '@turbo/darwin-64@2.11.13':
+    resolution: {integrity: sha512-5IT29i4j55E5O66+la7L8Y46ut7dFaNZqrgUIYYNtcpMt9Ql7aYnSQb/6tZ+prE2AfX1RBCAtRJE41txS2rG3w==}
     cpu: [x64]
     os: [darwin]
 
-  '@turbo/darwin-arm64@2.11.11':
-    resolution: {integrity: sha512-+8iySNgqYWY6PZYUQzYu6zn0C04z2OEq1vQ6oMGsJ9sxN6wOpg1gzi1AJ5VKDHviWvMUjhqng51hTEQZOuiqYQ==}
+  '@turbo/darwin-arm64@2.11.13':
+    resolution: {integrity: sha512-YFJPayVNlhSPRIZSeERiZYGKKqPs6N6qGhim8J3GtBdv5ZjUNF1ixfnAAyCVTqFEnMSkn1W7F0Y07kca8EjWsg==}
     cpu: [arm64]
     os: [darwin]
 
-  '@turbo/linux-64@2.11.11':
-    resolution: {integrity: sha512-uImTKFYCFKsoFxjaXeJXlMPv4uU3OIIDjyzoIwYVqOtu9LnCZ/5/fzu/WP6+G9YfwGAPRplTHkKFfcI5t97RGw==}
+  '@turbo/linux-64@2.11.13':
+    resolution: {integrity: sha512-R5RIQflV4ffBDNuUwjmtmzIr6Y2UeyeeHTtultYF7cnFn3tG1RZ4GRBlpjUhHB6JxuR7l1B450hlbzdtlD3ghg==}
     cpu: [x64]
     os: [android, linux]
 
-  '@turbo/linux-arm64@2.11.11':
-    resolution: {integrity: sha512-Y7xffSVfyyYRGzNy6PLdrFL4xXN6iTuR3W0SyJvH/yd3d4defA6dansZwJpPDVnIpD8a2Qn256DwY/Qin4Ip4g==}
+  '@turbo/linux-arm64@2.11.13':
+    resolution: {integrity: sha512-AwV8pVO/cH/lwx1B7SGfzUA/3e6vmPaygFp9NOSRESs6t3Wr63zrBuXlluDogAOIxIMlHDB2ZbBueDsBnQxh2Q==}
     cpu: [arm64]
     os: [android, linux]
 
-  '@turbo/windows-64@2.11.11':
-    resolution: {integrity: sha512-e2WqNtkPGo3QDwNNwwBo89Dx3PtSJ9Wp9QuRNzn80rrRnSHB+1mfBMZTpdHjA8/G/sG9rl76TdWdpgVsimjRdg==}
+  '@turbo/windows-64@2.11.13':
+    resolution: {integrity: sha512-PGXYTaFaN3FZloe4RffNGJmfB+TIWlqQgKK1PVyKwPN+PUzxGa+byxHBWFHredMaVbnUc6L/F6/QR4iHyM/wug==}
     cpu: [x64]
     os: [win32]
 
-  '@turbo/windows-arm64@2.11.11':
-    resolution: {integrity: sha512-LURivfmgv34Osm8NR1gZGx4vdlux9KAgRM+FoooXNG0838ff0+akWZ76iPSke0NS2rsf7Z4Gw+YSaygzNTZuRA==}
+  '@turbo/windows-arm64@2.11.13':
+    resolution: {integrity: sha512-YdRHWstBUHWt/eChOEM4f9LT0dPiWK5SNgtV77bLCr3JNke9M5E7metqelNYj+tXe36dH0BZrk2CMnFlWqHKng==}
     cpu: [arm64]
     os: [win32]
 
@@ -2631,8 +2631,8 @@ packages:
     resolution: {integrity: sha512-YovQ3rzhaLMIrDjNDMkNS01tea93qhEhG5xy8f6+R0l+dw3Ki+5sCoIoI942iuLZTHWogWktgwVDhU09iNEimQ==}
     engines: {node: 20 || >=22}
 
-  bullmq@6.7.6:
-    resolution: {integrity: sha512-ykp2HGMkOz8BtuE/FBFRMetpI6RHDyFvAkUawqKJv7sDWIaZPz1cPtpzIad879iwW2oMJY4CFMPvfBKnWdB3Rw==}
+  bullmq@6.7.8:
+    resolution: {integrity: sha512-Mt0+nKGNFWAruuwwzEUVE+5yEgK5XgzjoR2BjSKp/JeqfgeYO0pFh6oy78Ls8u9upVTsaLhBzSaEZAhYvjPlJg==}
     engines: {node: '>=14.18.0'}
     peerDependencies:
       bullmq-otel: '>=2.0.0'
@@ -2722,12 +2722,12 @@ packages:
     resolution: {integrity: sha512-tJtZBBHA6vjIAaF6EnIaq6laBBP9aq/Y3ouVJjEfoHbRBcHBAHYcMh/w8LDrk2PvIMMq8gmopa5D4V8RmbrxGw==}
     engines: {node: '>= 0.10'}
 
-  cron-parser@5.10.4:
-    resolution: {integrity: sha512-TagNqYzoV/C7Ty7VAQjrQg+57WsEOuQEUh0tWT5Dc+l/GOuoAdWVIzFU0CqYdQswqdjUalrdmOvaMtQhErYZTA==}
+  cron-parser@5.10.6:
+    resolution: {integrity: sha512-kpoxgQyveO1l29nw+FWdvmotyV7eOSzGHQpxiXOEZIDOjqO1iR6kfgJ0PVHTuV26uBemKq3ppzma7dHFAG7viw==}
     engines: {node: '>=18'}
 
-  cron@4.4.0:
-    resolution: {integrity: sha512-fkdfq+b+AHI4cKdhZlppHveI/mgz2qpiYxcm+t5E5TsxX7QrLS1VE0+7GENEk9z0EeGPcpSciGv6ez24duWhwQ==}
+  cron@4.4.1:
+    resolution: {integrity: sha512-ycMs0wTezbyWLuT6JKQWpLPr2q4H0x9yZfcitH+sThOg/VtijRHFHkikE683gjzgmziz0sdyQY5ZWdcNfBVXtA==}
     engines: {node: '>=18.x'}
 
   csstype@3.2.3:
@@ -2770,11 +2770,8 @@ packages:
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
 
-  discord-api-types@0.38.57:
-    resolution: {integrity: sha512-R1CTSSt4RshqCq23j2Xq2ZscvzB4LzG9OB1CYQdKUGdw8Ti/oF/72EEtK2mNpagG/Vj9NcBT7dw9lKLf+Dacfg==}
-
-  discord-api-types@0.38.59:
-    resolution: {integrity: sha512-LZqh8gvWU/Bhl9qEVIRLeLJuaPGO7rA26IXLrXnMcjXxofh/h5UhP6notfCTj4X5kR1ogMvVgcrVYIuynY/CxQ==}
+  discord-api-types@0.38.60:
+    resolution: {integrity: sha512-2xPScuQP3WOf3H4EKWLzvnhlfNl8sBMD+krT8CcjMVJa6o9D/6ssOSgKPTvHyIhQDKUX+gvUJZ43U4HqE+6tsA==}
 
   discord-hybrid-sharding@3.0.1:
     resolution: {integrity: sha512-a4MhJs9Ga2yiIGEz+Lj0WgBOS785DSqX3PIr/vkOMpqugS1QJk79T8YFvGr26JmOVRAhgqaWE2eUjuekR/8MJA==}
@@ -2973,8 +2970,8 @@ packages:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
 
-  express-rate-limit@8.7.4:
-    resolution: {integrity: sha512-LKBXzX700wz3zAGNNmVnjRI5mEbYkLv7UbMI4+9Xa+JPcg2UZh6AgY/2CZh9RrJjFM5ttC/N1lD+KzyFoZITCw==}
+  express-rate-limit@8.7.5:
+    resolution: {integrity: sha512-wi+v38cx2EqD0JnhE/e74o5tFqKWUOAPFJIgyEiqJ8v2MNpoOAA3kI2hXYOI+YM+HE5yqbdAlVxm2GqOIeYOgA==}
     engines: {node: '>= 16'}
     peerDependencies:
       express: '>= 4.11'
@@ -3234,8 +3231,8 @@ packages:
     resolution: {integrity: sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==}
     engines: {node: 20 || >=22}
 
-  lucide-react@1.73.0:
-    resolution: {integrity: sha512-fVOzGviL9mTfHenG1PbCfIceavyGlnpYNSYr+aGZHLRymAJ7DTP6KHuqt0uBkCKAoenr1UVkwSbDIYt2xIesEQ==}
+  lucide-react@1.77.0:
+    resolution: {integrity: sha512-VS6sOi8ZUH1qm6swBL/tpI4xAhB6pFTdHvw3pfCJD+DaTJwpyynVzfOS6mdyMZ+OCdY/GMSQbqinOMOPbNSrQA==}
     peerDependencies:
       '@types/react': '*'
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -3531,8 +3528,8 @@ packages:
     resolution: {integrity: sha512-s+w+rBWnpTMwSFbaE0UXsRlg7hU4FjekKU4eyAih5T8nJuNZT1nNsskXpxmeqSK9UzkBl6UgRlnKc8hz8IEqOw==}
     hasBin: true
 
-  nodemailer@10.5.0:
-    resolution: {integrity: sha512-L/w/HH5MqpzMDuZD7fQdt/+KqymuvrpaApaIjAH2XA3ILePwlcvXCVVvP75xVrXCEt2ggK2marrrHHFB5Qu0kA==}
+  nodemailer@10.6.1:
+    resolution: {integrity: sha512-d7kfFfS/tR4Aca+SBvRaQ+MXKNv7d2JiRe5TxaRcFT/kYMh4GGPnW9aKksTIEvyEbA7d/7HYWE4YPDEHxzJj/g==}
     engines: {node: '>=20.0.0'}
 
   oauth4webapi@3.8.8:
@@ -3893,8 +3890,8 @@ packages:
     resolution: {integrity: sha512-7+g9yRNdTtldpuHAfL4V66HDtFqsEUwlHg6LcQvd7rEEXBFuQmC3uny9hGoxdT4WzmHLgMjB/XaQcNpLnuHSVw==}
     hasBin: true
 
-  tailwind-merge@3.7.0:
-    resolution: {integrity: sha512-XPPUyAc+cvspz3lHTcR/QgPfW2A0lv/xQNIjX3HGhLR+Nq2lHaLq5MtTesHn8GUr3W3DguT2KT5x3NVgRtYwmA==}
+  tailwind-merge@3.7.1:
+    resolution: {integrity: sha512-v7y4BV4FUlO8exj/4M5UXKeoowDiuugVUg3tkMNIyOUCOHy5xp8+5aWQeXCtZ2491sUV1YPsVeM9EveZ6/xuZQ==}
 
   tailwindcss@4.3.5:
     resolution: {integrity: sha512-FcQk9BuffmEHJP2G0XmB2SplU1aLTI7j07Kunk+U74Ny+XiWOtzXz9aujFZ/avntw1e2cOv/3PkgzflQ7gX2vQ==}
@@ -3931,8 +3928,8 @@ packages:
     engines: {node: '>=18.0.0'}
     hasBin: true
 
-  turbo@2.11.11:
-    resolution: {integrity: sha512-AI4UJbUE/2cVZdoXJ4PODc8qvrjhQQX9Fa93eKGOI6Ims/w7+kUIb9T1jhlgSnZcf+gtUruci/ohSwqtNNC5Yw==}
+  turbo@2.11.13:
+    resolution: {integrity: sha512-2EZ8StW6tqaj71HGF60oUOmJrPQHidmZ5dcwv2VORofya9JthVrfZhxbzRMx/QxjPwYi754i2h5RFsZSDzpnaQ==}
     hasBin: true
 
   tw-animate-css@1.4.0:
@@ -4093,7 +4090,7 @@ snapshots:
       '@discordjs/formatters': 0.6.2
       '@discordjs/util': 1.2.0
       '@sapphire/shapeshift': 4.0.0
-      discord-api-types: 0.38.57
+      discord-api-types: 0.38.60
       fast-deep-equal: 3.1.3
       ts-mixer: 6.0.4
       tslib: 2.9.1
@@ -4104,7 +4101,7 @@ snapshots:
 
   '@discordjs/formatters@0.6.2':
     dependencies:
-      discord-api-types: 0.38.57
+      discord-api-types: 0.38.60
 
   '@discordjs/rest@2.6.3':
     dependencies:
@@ -4113,14 +4110,14 @@ snapshots:
       '@sapphire/async-queue': 1.5.5
       '@sapphire/snowflake': 3.5.5
       '@vladfrangu/async_event_emitter': 2.4.7
-      discord-api-types: 0.38.59
+      discord-api-types: 0.38.60
       magic-bytes.js: 1.13.1
       tslib: 2.9.1
       undici: 6.29.1
 
   '@discordjs/util@1.2.0':
     dependencies:
-      discord-api-types: 0.38.59
+      discord-api-types: 0.38.60
 
   '@discordjs/ws@1.2.3':
     dependencies:
@@ -4130,7 +4127,7 @@ snapshots:
       '@sapphire/async-queue': 1.5.5
       '@types/ws': 8.18.2
       '@vladfrangu/async_event_emitter': 2.4.7
-      discord-api-types: 0.38.57
+      discord-api-types: 0.38.60
       tslib: 2.9.1
       ws: 8.22.1
     transitivePeerDependencies:
@@ -5325,11 +5322,11 @@ snapshots:
 
   '@sapphire/discord-utilities@3.5.0':
     dependencies:
-      discord-api-types: 0.38.57
+      discord-api-types: 0.38.60
 
   '@sapphire/discord-utilities@4.0.0':
     dependencies:
-      discord-api-types: 0.38.57
+      discord-api-types: 0.38.60
 
   '@sapphire/discord.js-utilities@7.3.3':
     dependencies:
@@ -5490,22 +5487,22 @@ snapshots:
       postcss-selector-parser: 7.2.1
       tailwindcss: 4.3.5
 
-  '@turbo/darwin-64@2.11.11':
+  '@turbo/darwin-64@2.11.13':
     optional: true
 
-  '@turbo/darwin-arm64@2.11.11':
+  '@turbo/darwin-arm64@2.11.13':
     optional: true
 
-  '@turbo/linux-64@2.11.11':
+  '@turbo/linux-64@2.11.13':
     optional: true
 
-  '@turbo/linux-arm64@2.11.11':
+  '@turbo/linux-arm64@2.11.13':
     optional: true
 
-  '@turbo/windows-64@2.11.11':
+  '@turbo/windows-64@2.11.13':
     optional: true
 
-  '@turbo/windows-arm64@2.11.11':
+  '@turbo/windows-arm64@2.11.13':
     optional: true
 
   '@types/body-parser@1.19.6':
@@ -5700,9 +5697,9 @@ snapshots:
     dependencies:
       balanced-match: 4.0.4
 
-  bullmq@6.7.6(ioredis@6.0.0):
+  bullmq@6.7.8(ioredis@6.0.0):
     dependencies:
-      cron-parser: 5.10.4
+      cron-parser: 5.10.6
       msgpackr: 2.1.4
       node-abort-controller: 3.1.1
       semver: 7.8.6
@@ -5763,11 +5760,11 @@ snapshots:
       object-assign: 4.1.1
       vary: 1.1.2
 
-  cron-parser@5.10.4:
+  cron-parser@5.10.6:
     dependencies:
       luxon: 3.7.2
 
-  cron@4.4.0:
+  cron@4.4.1:
     dependencies:
       '@types/luxon': 3.7.6
       luxon: 3.7.2
@@ -5798,9 +5795,7 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
-  discord-api-types@0.38.57: {}
-
-  discord-api-types@0.38.59: {}
+  discord-api-types@0.38.60: {}
 
   discord-hybrid-sharding@3.0.1: {}
 
@@ -5813,7 +5808,7 @@ snapshots:
       '@discordjs/util': 1.2.0
       '@discordjs/ws': 1.2.3
       '@sapphire/snowflake': 3.5.5
-      discord-api-types: 0.38.57
+      discord-api-types: 0.38.60
       fast-deep-equal: 3.1.3
       lodash.snakecase: 4.1.1
       magic-bytes.js: 1.13.1
@@ -5984,7 +5979,7 @@ snapshots:
 
   etag@1.8.1: {}
 
-  express-rate-limit@8.7.4(express@5.3.0):
+  express-rate-limit@8.7.5(express@5.3.0):
     dependencies:
       debug: 4.4.3
       express: 5.3.0
@@ -6270,7 +6265,7 @@ snapshots:
 
   lru-cache@11.5.3: {}
 
-  lucide-react@1.73.0(@types/react@19.3.0)(react@19.3.1):
+  lucide-react@1.77.0(@types/react@19.3.0)(react@19.3.1):
     dependencies:
       react: 19.3.1
     optionalDependencies:
@@ -6821,7 +6816,7 @@ snapshots:
       detect-libc: 2.1.2
     optional: true
 
-  nodemailer@10.5.0: {}
+  nodemailer@10.6.1: {}
 
   oauth4webapi@3.8.8: {}
 
@@ -7021,9 +7016,9 @@ snapshots:
 
   range-parser@1.3.0: {}
 
-  rate-limit-redis@6.0.2(express-rate-limit@8.7.4(express@5.3.0)):
+  rate-limit-redis@6.0.2(express-rate-limit@8.7.5(express@5.3.0)):
     dependencies:
-      express-rate-limit: 8.7.4(express@5.3.0)
+      express-rate-limit: 8.7.5(express@5.3.0)
 
   raw-body@3.0.2:
     dependencies:
@@ -7337,7 +7332,7 @@ snapshots:
       '@supabase/cli-windows-arm64': 3.2.0
       '@supabase/cli-windows-x64': 3.2.0
 
-  tailwind-merge@3.7.0: {}
+  tailwind-merge@3.7.1: {}
 
   tailwindcss@4.3.5: {}
 
@@ -7365,14 +7360,14 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.3
 
-  turbo@2.11.11:
+  turbo@2.11.13:
     optionalDependencies:
-      '@turbo/darwin-64': 2.11.11
-      '@turbo/darwin-arm64': 2.11.11
-      '@turbo/linux-64': 2.11.11
-      '@turbo/linux-arm64': 2.11.11
-      '@turbo/windows-64': 2.11.11
-      '@turbo/windows-arm64': 2.11.11
+      '@turbo/darwin-64': 2.11.13
+      '@turbo/darwin-arm64': 2.11.13
+      '@turbo/linux-64': 2.11.13
+      '@turbo/linux-arm64': 2.11.13
+      '@turbo/windows-64': 2.11.13
+      '@turbo/windows-arm64': 2.11.13
 
   tw-animate-css@1.4.0: {}
 
