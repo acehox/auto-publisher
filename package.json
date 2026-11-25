@@ -30,7 +30,7 @@
     "@playwright/test": "^1.65.1",
     "rimraf": "^6.1.4",
     "supabase": "^3.2.0",
-    "turbo": "^2.11.11",
+    "turbo": "^2.11.13",
     "typescript": "7.0.2"
   },
   "packageManager": "pnpm@12.21.0",
