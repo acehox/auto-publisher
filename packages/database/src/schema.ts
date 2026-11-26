@@ -175,7 +175,7 @@ export const withdrawal = pgTable(
   ]
 );
 
-// The published Croatian price lists (Odluka o objavi cjenika, NN 101/2026): one row per
+// The published Croatian price lists (Pravilnik o načinu objave cjenika proizvoda, NN 132/2026): one row per
 // file, appended when Paddle's EUR price changes and never updated. The serial is the
 // file's "broj pohrane".
 export const priceList = pgTable('price_list', {

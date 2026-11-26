@@ -44,12 +44,14 @@ const planPriceLabel = (interval: BillingInterval, eurPrices: PlanPrices | null)
 };
 
 /**
- * The "additional price" Croatian law requires beside every price we display, from 17.11.2026
- * (Odluka NN 101/2026, point II, amended by NN 110/2026). It is the price on 10.9.2026 or, for a
- * service first sold later, its price on the first day of sale, dated. Premium went on sale on
- * 10.10.2026. It shows even when it equals the current price, and a price change never moves it.
+ * The "base price" (bazna cijena) Croatian law requires beside every price we display, from
+ * 17.11.2026 (Pravilnik o isticanju bazne cijene proizvoda, NN 132/2026, čl. 3 st. 1 and čl. 6).
+ * It is the price on 10.9.2026 or, for a service first sold later, its price on the first day of
+ * sale. Premium went on sale on 10.10.2026. It shows even when it equals the current price, and a
+ * price change never moves it. The date is ours, not required: it keeps the line unmistakable
+ * for the current price (čl. 6 st. 4).
  *
- * Premium was sold only in USD that day. The Odluka calls it a retail price, and Pravilnik
+ * Premium was sold only in USD that day. The Pravilnik calls it a retail price, and Pravilnik
  * NN 105/2026 čl. 3 st. 4 wants a retail price in euros, so it is also stated in EUR at the HNB
  * middle rate applicable on 10.10.2026 (exchange rate list 199).
  */

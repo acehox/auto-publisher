@@ -2,15 +2,15 @@ import { isPublicInstance } from '@ap/config';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPriceLists } from '@/lib/api/backend';
-import { priceListFileName, priceListPublishedAt } from '@/lib/price-list';
+import { CURRENT_PRICE_LIST_FILE, priceListFileName, priceListPublishedAt } from '@/lib/price-list';
 
 export const metadata: Metadata = {
   title: 'Cjenik',
   robots: { index: false },
 };
 
-const fileLink = (fileName: string) => (
-  <a href={`/cjenik/${encodeURIComponent(fileName)}`}>{fileName}</a>
+const fileLink = (fileName: string, href = `/cjenik/${encodeURIComponent(fileName)}`) => (
+  <a href={href}>{fileName}</a>
 );
 
 export default async function PriceListPage() {
@@ -26,7 +26,7 @@ export default async function PriceListPage() {
         <>
           <p>
             Važeći cjenik usluga, objavljen {priceListPublishedAt(current)}:{' '}
-            {fileLink(priceListFileName(current))}
+            {fileLink(priceListFileName(current), `/cjenik/${CURRENT_PRICE_LIST_FILE}`)}
           </p>
           {archived.length > 0 && (
             <>
