@@ -1,4 +1,5 @@
 const address = { street: 'Selska ulica 25', postcode: '42242', city: 'Tužno' } as const;
+const oib = '08981682739';
 
 /**
  * The operating entity's registered particulars — the single source for every legal
@@ -28,8 +29,10 @@ export const entity = {
   registryCourt: 'Trgovački sud u Varaždinu',
   registrationNumber: '070204056',
 
+  oib,
+
   /** ZEIT cl. 6 requires this because the company is VAT-registered (the duty is conditional). */
-  vatNumber: 'HR08981682739',
+  vatNumber: `HR${oib}`,
 
   /**
    * ZTD cl. 21(5)(1) requires the amount AND a statement of whether it is paid up.

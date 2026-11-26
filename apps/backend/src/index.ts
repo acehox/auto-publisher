@@ -112,7 +112,7 @@ if (isPublicInstance) {
   // Retry sweep for unsent withdrawal acknowledgements (ZZP čl. 81.a st. 6)
   startWithdrawalAcknowledgeRetry();
 
-  // Croatian price list (Odluka o objavi cjenika, NN 101/2026) and the EUR price the site shows
+  // Croatian price list (Pravilnik o načinu objave cjenika proizvoda, NN 132/2026) and the EUR price the site shows
   startPriceListRefresh();
   void runPriceListRefresh();
 }

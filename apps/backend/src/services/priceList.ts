@@ -5,9 +5,9 @@ import { PaddleService } from '#services/paddle.js';
 import { alerter } from '#utils/alerts.js';
 import { logger } from '#utils/logger.js';
 
-// Odluka NN 101/2026-1213 point II keeps a list available "30 dana od dana objave, odnosno svake
-// promjene", read as 30 days after the change that replaced it. A day of slack covers the hourly run.
-const ARCHIVE_DAYS = 31;
+// Pravilnik NN 132/2026-1584 čl. 3 st. 6 keeps a replaced list available "15 dana od njegove
+// zamjene". A day of slack covers the hourly run.
+const ARCHIVE_DAYS = 16;
 
 const latest = async (): Promise<PriceList | undefined> =>
   (await db.select().from(priceList).orderBy(desc(priceList.storageNumber)).limit(1))[0];
